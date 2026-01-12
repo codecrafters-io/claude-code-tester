@@ -1,6 +1,6 @@
-module github.com/codecrafters-io/grep-tester
+module github.com/codecrafters-io/claude-code-tester
 
-go 1.20
+go 1.25
 
 require github.com/codecrafters-io/tester-utils v0.2.15
 

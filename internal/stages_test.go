@@ -7,15 +7,7 @@ import (
 )
 
 func TestStages(t *testing.T) {
-	testCases := map[string]tester_utils_testing.TesterOutputTestCase{
-		"literal_character": {
-			UntilStageSlug:      "init",
-			CodePath:            "./test_helpers/scenarios/init/failure",
-			ExpectedExitCode:    1,
-			StdoutFixturePath:   "./test_helpers/fixtures/init/failure",
-			NormalizeOutputFunc: normalizeTesterOutput,
-		},
-	}
+	testCases := map[string]tester_utils_testing.TesterOutputTestCase{}
 
 	tester_utils_testing.TestTesterOutput(t, testerDefinition, testCases)
 }

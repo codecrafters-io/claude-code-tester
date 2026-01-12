@@ -4,7 +4,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/codecrafters-io/grep-tester/internal"
+	"github.com/codecrafters-io/claude-code-tester/internal"
 )
 
 func main() {
