@@ -13,6 +13,7 @@ var testerDefinition = tester_definition.TesterDefinition{
 		{
 			Slug:     "yy2",
 			TestFunc: testPromptResponse,
+			Timeout:  30 * time.Second,
 		},
 		{
 			Slug:     "aq1",
@@ -22,6 +23,16 @@ var testerDefinition = tester_definition.TesterDefinition{
 		{
 			Slug:     "md6",
 			TestFunc: testExecuteReadTool,
+			Timeout:  time.Minute,
+		},
+		{
+			Slug:     "yp5",
+			TestFunc: testExecuteMultipleReadTools,
+			Timeout:  time.Minute,
+		},
+		{
+			Slug:     "ff2",
+			TestFunc: testConversationalLoop,
 			Timeout:  time.Minute,
 		},
 		{
@@ -37,11 +48,6 @@ var testerDefinition = tester_definition.TesterDefinition{
 		{
 			Slug:     "oq5",
 			TestFunc: testBashTool,
-			Timeout:  time.Minute,
-		},
-		{
-			Slug:     "ff2",
-			TestFunc: testConversationalLoop,
 			Timeout:  time.Minute,
 		},
 	},
