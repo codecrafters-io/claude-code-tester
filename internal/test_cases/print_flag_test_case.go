@@ -16,7 +16,6 @@ func (t *PrintFlagTestCase) Run(stageHarness *test_case_harness.TestCaseHarness)
 	executable := stageHarness.Executable
 	logger := stageHarness.Logger
 	logger.Infof("$ ./your_program.sh -p \"%s\"", t.InputPrompt)
-
 	result, err := executable.Run("-p", t.InputPrompt)
 
 	if err != nil {

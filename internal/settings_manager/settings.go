@@ -16,10 +16,10 @@ type Settings struct {
 
 func (s *Settings) write() {
 	settingsFilePath := getSettingsFilePath()
-	dir := filepath.Dir(settingsFilePath)
+	settingsDir := filepath.Dir(settingsFilePath)
 
-	if err := os.MkdirAll(dir, 0755); err != nil {
-		panic(fmt.Sprintf("Codecrafters Internal Error - Failed initializing directory %s: %s", dir, err.Error()))
+	if err := os.MkdirAll(settingsDir, 0755); err != nil {
+		panic(fmt.Sprintf("Codecrafters Internal Error - Failed initializing directory %s: %s", settingsDir, err.Error()))
 	}
 
 	settingsContents, err := json.MarshalIndent(s, "", "    ")
