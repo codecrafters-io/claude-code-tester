@@ -13,7 +13,7 @@ func BootstrapExecutableWorkspace(stageHarness *test_case_harness.TestCaseHarnes
 	stageHarness.Executable.WorkingDir = workspaceDirPath
 	stageHarness.Logger.Infof("Setting the workspace directory to %q", workspaceDirPath)
 
-	// Convert path to absolute: This is so that the absolute path is resolved early
+	// Convert path to absolute: This is done to resolve the relative path to absolute early on
 	// since we set the executable's working directory to be a random one
 	absolutePath, err := filepath.Abs(stageHarness.Executable.Path)
 

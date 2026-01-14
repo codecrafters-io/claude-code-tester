@@ -21,23 +21,20 @@ func testPromptResponse(stageHarness *test_case_harness.TestCaseHarness) error {
 	operator := random.RandomElementFromArray([]string{"+", "-", "*"})
 	result := getOperationResult(operator, operand1, operand2)
 
-	prompts := []string{
-		fmt.Sprintf("What is the result of %d%s%d?", operand1, operator, operand2),
-		fmt.Sprintf("Calculate %d %s %d and tell me the answer.", operand1, operator, operand2),
-		fmt.Sprintf("Can you solve this math problem: %d%s%d?", operand1, operator, operand2),
-		fmt.Sprintf("I need help with arithmetic. What does %d%s%d equal?", operand1, operator, operand2),
-		fmt.Sprintf("Please compute %d%s%d and provide the result.", operand1, operator, operand2),
-		fmt.Sprintf("What's the answer to %d%s%d?", operand1, operator, operand2),
-	}
-
-	finalPrompt := fmt.Sprintf(
-		"%s %s",
-		random.RandomElementFromArray(prompts),
-		"Respond only with the final number. Nothing more. Nothing less. No backticks or punctuations.",
+	prompt := utils.GetPromptWithGuardRailPrompt(
+		[]string{
+			fmt.Sprintf("What is the result of %d%s%d?", operand1, operator, operand2),
+			fmt.Sprintf("Calculate %d %s %d and tell me the answer.", operand1, operator, operand2),
+			fmt.Sprintf("Can you solve this math problem: %d%s%d?", operand1, operator, operand2),
+			fmt.Sprintf("I need help with arithmetic. What does %d%s%d equal?", operand1, operator, operand2),
+			fmt.Sprintf("Please compute %d%s%d and provide the result.", operand1, operator, operand2),
+			fmt.Sprintf("What's the answer to %d%s%d?", operand1, operator, operand2),
+		},
+		"Respond ONLY with the final result in number. No backticks or punctuations.",
 	)
 
 	promptTestCase := test_cases.PrintFlagTestCase{
-		InputPrompt: finalPrompt,
+		InputPrompt: prompt,
 		StdoutAssertion: string_assertion.ExactMatchAssertion{
 			ExpectedValue: fmt.Sprintf("%d", result),
 		},

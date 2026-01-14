@@ -5,6 +5,7 @@ import (
 	"math"
 	"os"
 
+	"github.com/codecrafters-io/claude-code-tester/internal/settings_manager"
 	"github.com/codecrafters-io/tester-utils/random"
 )
 
@@ -25,10 +26,19 @@ func CreateTemporaryDirectory() string {
 	return dirPath
 }
 
-func GetBypassPermissionsSettings() []byte {
-	return []byte(`{
-    "permissions": {
-        "defaultMode": "bypassPermissions"
-    }
-}`)
+// GetBypassPermissionsSettings returns the settings for claude code where
+// the permissions are bypassed (useful for stages where permissions are not concerned)
+func GetBypassPermissionsSettings() settings_manager.Settings {
+	return settings_manager.Settings{
+		Permissions: settings_manager.Permissions{
+			DefaultMode: "bypassPermissions",
+		},
+	}
+}
+
+// GetPromptWithGuardRailPrompt returns a prompt randomly chosen from promptChoices and appends
+// the provided guardRailPrompt and returns the result
+func GetPromptWithGuardRailPrompt(promptChoices []string, guardRailPrompt string) string {
+	prompt := random.RandomElementFromArray(promptChoices)
+	return fmt.Sprintf("%s %s", prompt, guardRailPrompt)
 }
