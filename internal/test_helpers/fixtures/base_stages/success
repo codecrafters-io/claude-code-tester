@@ -2,7 +2,7 @@ Debug = true
 
 [33m[tester::#YY2] [0m[94mRunning tests for Stage #YY2 (yy2)[0m
 [33m[tester::#YY2] [0m[94mSetting the workspace directory to "/tmp/pear-6942868155299883972"[0m
-[33m[tester::#YY2] [0m[94m$ ./your_program.sh -p "I need help with arithmetic. What does 9*7 equal? Respond ONLY with the final result in number. No backticks or punctuations."[0m
+[33m[tester::#YY2] [0m[94m$ ./your_claude_code.sh -p "I need help with arithmetic. What does 9*7 equal? Respond ONLY with the final result in number. No backticks or punctuations."[0m
 [33m[your_program] [0m[0m63[0m
 [33m[tester::#YY2] [0m[92mTest passed.[0m
 

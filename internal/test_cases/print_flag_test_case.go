@@ -1,6 +1,7 @@
 package test_cases
 
 import (
+	"path/filepath"
 	"strings"
 
 	"github.com/codecrafters-io/claude-code-tester/internal/assertions/string_assertion"
@@ -15,7 +16,7 @@ type PrintFlagTestCase struct {
 func (t *PrintFlagTestCase) Run(stageHarness *test_case_harness.TestCaseHarness) error {
 	executable := stageHarness.Executable
 	logger := stageHarness.Logger
-	logger.Infof("$ ./your_program.sh -p \"%s\"", t.InputPrompt)
+	logger.Infof("$ ./%s -p \"%s\"", filepath.Base(executable.Path), t.InputPrompt)
 	result, err := executable.Run("-p", t.InputPrompt)
 
 	if err != nil {
