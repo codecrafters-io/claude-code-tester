@@ -7,18 +7,40 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
-        with:
-          lfs: true
-
+        uses: actions/checkout@v4
       - name: Set up Go
-        uses: actions/setup-go@v1
+        uses: actions/setup-go@v6.1.0
         with:
-          go-version: 1.17.x
+          go-version: 1.25.5
+
+      # Required for tests
+      # We'll change the exporting environment variable part after incorporating proxy (which will require OpenRouter's API key instead)
+      # Right now, this is generated from https://platform.claude.com/settings/keys
+      - name: Install Claude Code
+        run: |-
+          curl -fsSL https://claude.ai/install.sh | bash
+          export ANTHROPIC_API_KEY="${{ secrets.ANTHROPIC_API_KEY }}"
 
       - name: Set up Python
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.8'
+          python-version: '3.13'
 
-      - run: make test
+      - name: Run tests
+        run: make test
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v6.1.0
+        with:
+          go-version: 1.25.5
+
+      - uses: dominikh/staticcheck-action@v1.3.1
+        with:
+          version: "2025.1.1"
+          install-go: false
