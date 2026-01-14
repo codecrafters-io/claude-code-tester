@@ -14,7 +14,10 @@ func InitializeSettings(stageHarness *test_case_harness.TestCaseHarness, newSett
 	newSettings.write()
 
 	stageHarness.RegisterTeardownFunc(func() {
-		restoreOriginalSettingsFromBytes(oldSettings)
+		if err := restoreOriginalSettingsFromBytes(oldSettings); err != nil {
+			// Best effort: not much that we can do here: just log the error
+			stageHarness.Logger.Infof("Failed to restore original settings to %s: %s", getSettingsFilePath(), err)
+		}
 	})
 }
 
@@ -43,13 +46,12 @@ func getExistingSettingsAsBytes() (existingSettingsContent []byte) {
 	return nil
 }
 
-func restoreOriginalSettingsFromBytes(originalSettings []byte) {
+func restoreOriginalSettingsFromBytes(originalSettings []byte) error {
 	settingsFilePath := getSettingsFilePath()
 
 	if originalSettings == nil {
-		os.Remove(settingsFilePath)
-		return
+		return os.Remove(settingsFilePath)
 	}
 
-	os.WriteFile(settingsFilePath, originalSettings, 0644)
+	return os.WriteFile(settingsFilePath, originalSettings, 0644)
 }
