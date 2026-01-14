@@ -3,7 +3,7 @@ package settings_manager
 import (
 	"fmt"
 	"os"
-	"path"
+	"path/filepath"
 
 	"github.com/codecrafters-io/tester-utils/test_case_harness"
 )
@@ -25,7 +25,7 @@ func getSettingsFilePath() string {
 		panic("Codecrafters Internal Error - Error getting user's home directory: " + err.Error())
 	}
 
-	return path.Join(homedirPath, ".claude", "settings.json")
+	return filepath.Join(homedirPath, ".claude", "settings.json")
 }
 
 func getExistingSettingsAsBytes() (existingSettingsContent []byte) {
