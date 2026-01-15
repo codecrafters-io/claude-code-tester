@@ -1,41 +1,29 @@
 package proxy_server
 
 import (
-	"bytes"
-	"encoding/json"
-	"io"
 	"net/http"
 	"net/http/httputil"
-	"strings"
 )
 
-type validator struct {
-	allowedModelPrefix string
+// ValidationFunc is a function type that validates a request
+// Returns: ok (bool), errorType (string), errorMessage (string)
+type ValidationFunc func(*http.Request) (ok bool, errorMessage string)
+
+type validationError struct {
+	StatusCode   int
+	errorMessage string
 }
 
-type requestBody struct {
-	Model string `json:"model"`
+type validationMiddleware struct {
+	allowedEndPoints   map[string]bool
+	endpointValidators map[string][]ValidationFunc
 }
 
-type errorResponse struct {
-	Error struct {
-		Message string `json:"message"`
-		Type    string `json:"type"`
-	} `json:"error"`
-}
-
-func (v *validator) wrapProxy(proxy *httputil.ReverseProxy) http.Handler {
+// WrapProxy wraps the reverse proxy with validator middleware
+func (v *validationMiddleware) WrapProxy(proxy *httputil.ReverseProxy) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
-		bodyBytes, err := v.readRequestBody(r)
-
-		if err != nil {
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-			return
-		}
-
-		if v.isModelInvalid(bodyBytes) {
-			v.writeModelNotFoundError(w)
+		if validationError := v.validateRequest(r); validationError != nil {
+			sendErrorResponse(w, *validationError)
 			return
 		}
 
@@ -43,38 +31,42 @@ func (v *validator) wrapProxy(proxy *httputil.ReverseProxy) http.Handler {
 	})
 }
 
-func (v *validator) readRequestBody(r *http.Request) ([]byte, error) {
-	bodyBytes, err := io.ReadAll(r.Body)
-
-	if err != nil {
-		return nil, err
+func (v *validationMiddleware) setAllowedEndPoints(endpoints []string) {
+	v.allowedEndPoints = make(map[string]bool)
+	for _, endpoint := range endpoints {
+		v.allowedEndPoints[endpoint] = true
 	}
-
-	r.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
-	return bodyBytes, nil
 }
 
-func (v *validator) isModelInvalid(requestBodyInbytes []byte) bool {
-	var reqBody requestBody
+func (v *validationMiddleware) validateRequest(r *http.Request) *validationError {
+	endpoint := r.URL.Path
 
-	if err := json.Unmarshal(requestBodyInbytes, &reqBody); err != nil {
-		return false
+	if !v.allowedEndPoints[endpoint] {
+		return &validationError{
+			StatusCode:   401,
+			errorMessage: "Unauthorized endpoint access",
+		}
 	}
 
-	if reqBody.Model == "" {
-		return false
+	validators := v.endpointValidators[endpoint]
+
+	for _, validatorFunc := range validators {
+		ok, errorMessage := validatorFunc(r)
+		if !ok {
+			return &validationError{
+				StatusCode:   500,
+				errorMessage: errorMessage,
+			}
+		}
 	}
 
-	return !strings.HasPrefix(reqBody.Model, v.allowedModelPrefix)
+	return nil
 }
 
-func (v *validator) writeModelNotFoundError(w http.ResponseWriter) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusInternalServerError)
-
-	var errorResp errorResponse
-	errorResp.Error.Message = "Model not found"
-	errorResp.Error.Type = "invalid_request_error"
-
-	json.NewEncoder(w).Encode(errorResp)
+// registerEndPointValidator registers a validation function for a specific endpoint
+func (v *validationMiddleware) registerEndPointValidator(endpoint string, validator ValidationFunc) {
+	if v.endpointValidators == nil {
+		v.endpointValidators = make(map[string][]ValidationFunc)
+	}
+	v.endpointValidators[endpoint] = append(v.endpointValidators[endpoint], validator)
 }

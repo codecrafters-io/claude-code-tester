@@ -1,12 +1,10 @@
 package proxy_server
 
 import (
-	"context"
 	"fmt"
 	"net"
 	"net/http"
 	"net/http/httputil"
-	"net/url"
 	"time"
 
 	"github.com/codecrafters-io/tester-utils/test_case_harness"
@@ -21,45 +19,40 @@ func StartProxyServer(stageHarness *test_case_harness.TestCaseHarness) {
 }
 
 type proxyServer struct {
-	targetUrl *url.URL
-	apiKey    string
-	server    *http.Server
+	server *http.Server
 }
 
 func newProxyServer() *proxyServer {
-	apiKey := mustGetOpenrouterApiKey()
 	targetUrl := mustParseUrl(openRouterUrl)
+	// Prepare the interceptor reverse proxy
+	reverseProxy := httputil.NewSingleHostReverseProxy(targetUrl)
+	reverseProxy.Director = nil
+	reverseProxy.Rewrite = func(req *httputil.ProxyRequest) {
+		req.SetURL(targetUrl)
+		req.Out.Header.Set("Authorization", "Bearer "+mustGetOpenrouterApiKey())
+	}
+
+	validator := &validationMiddleware{}
+
+	validator.setAllowedEndPoints([]string{
+		"/api/api/event_logging/batch",
+		"/api/v1/messages",
+		"/api/v1/chat/completions",
+	})
+
+	validator.registerEndPointValidator("/api/v1/messages", modelValidator)
+	validator.registerEndPointValidator("/api/v1/chat/completions", modelValidator)
 
 	return &proxyServer{
-		targetUrl: targetUrl,
-		apiKey:    apiKey,
+		server: &http.Server{
+			Addr:    "localhost:" + proxyListeningPort,
+			Handler: validator.WrapProxy(reverseProxy),
+		},
 	}
 }
 
 func (s *proxyServer) Start() {
-	proxy := httputil.NewSingleHostReverseProxy(s.targetUrl)
-	proxy.Director = nil
-
-	interceptor := requestInterceptor{
-		targetUrl: s.targetUrl,
-		apiKey:    s.apiKey,
-	}
-
-	// intercept method modifies the outgoing request
-	proxy.Rewrite = interceptor.intercept
-
-	// validator wraps the proxy and returns error in case of invalid requests
-	validator := validator{
-		allowedModelPrefix: "anthropic/claude-haiku",
-	}
-
-	s.server = &http.Server{
-		Addr:    ":" + proxyListeningPort,
-		Handler: validator.wrapProxy(proxy),
-	}
-
 	go s.listenAndServe()
-
 	s.waitForServerStart()
 }
 
@@ -84,9 +77,7 @@ func (s *proxyServer) waitForServerStart() {
 
 func (s *proxyServer) registerTeardown(stageHarness *test_case_harness.TestCaseHarness) {
 	stageHarness.RegisterTeardownFunc(func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-		if err := s.server.Shutdown(ctx); err != nil {
+		if err := s.server.Close(); err != nil {
 			stageHarness.Logger.Infof("Error shutting down proxy server: %v", err)
 		}
 	})
