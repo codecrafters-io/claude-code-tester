@@ -5,7 +5,10 @@ import (
 	"net/http"
 )
 
-// OpenRouter compatible Error response format
+// The error response format was derived using a python script
+// By testing against a wrong model and unauthorized endpoint
+// userId was present, which have been removed here for security reasons
+
 type ErrorResponse struct {
 	Error struct {
 		ErrorMessage string `json:"message"`
@@ -22,5 +25,3 @@ func sendErrorResponse(w http.ResponseWriter, validationError validationError) {
 
 	json.NewEncoder(w).Encode(response)
 }
-
-// {'error': {'message': 'modelName is not a valid model ID', 'code': 400}}

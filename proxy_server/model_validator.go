@@ -13,8 +13,7 @@ type requestBody struct {
 	Model string `json:"model"`
 }
 
-// modelValidator validates that the model in the request body is "anthropic/claude-haiku-4.5"
-// Returns error ONLY when model field exists and is NOT "anthropic/claude-haiku-4.5"
+// modelValidator validates that the model in the request body starts with "anthropic/claude-haiku"
 func modelValidator(r *http.Request) (ok bool, errorMessage string) {
 	if r.Body == nil {
 		return true, ""
