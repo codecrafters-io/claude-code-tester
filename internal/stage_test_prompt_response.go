@@ -13,8 +13,9 @@ import (
 )
 
 func testPromptResponse(stageHarness *test_case_harness.TestCaseHarness) error {
+	stageHarness.Executable.TimeoutInMilliseconds = 30 * 1000
 	workspace_manager.BootstrapExecutableWorkspace(stageHarness)
-	settings_manager.InitializeSettings(stageHarness, utils.GetBypassPermissionsSettings())
+	settings_manager.InitializeBypassPermissionSettings(stageHarness)
 
 	operand1 := random.RandomInt(1, 11)
 	operand2 := random.RandomInt(1, 11)
@@ -23,17 +24,16 @@ func testPromptResponse(stageHarness *test_case_harness.TestCaseHarness) error {
 
 	prompt := utils.GetPromptWithGuardRailPrompt(
 		[]string{
-			fmt.Sprintf("What is the result of %d%s%d?", operand1, operator, operand2),
-			fmt.Sprintf("Calculate %d %s %d and tell me the answer.", operand1, operator, operand2),
-			fmt.Sprintf("Can you solve this math problem: %d%s%d?", operand1, operator, operand2),
-			fmt.Sprintf("I need help with arithmetic. What does %d%s%d equal?", operand1, operator, operand2),
-			fmt.Sprintf("Please compute %d%s%d and provide the result.", operand1, operator, operand2),
-			fmt.Sprintf("What's the answer to %d%s%d?", operand1, operator, operand2),
+			fmt.Sprintf("What is %d%s%d?", operand1, operator, operand2),
+			fmt.Sprintf("Calculate %d %s %d", operand1, operator, operand2),
+			fmt.Sprintf("Can you solve: %d%s%d?", operand1, operator, operand2),
+			fmt.Sprintf("What does %d%s%d equal?", operand1, operator, operand2),
+			fmt.Sprintf("Please compute %d%s%d.", operand1, operator, operand2),
 		},
-		"Respond ONLY with the final result in number. No backticks or punctuations.",
+		"Number only.",
 	)
 
-	promptTestCase := test_cases.PrintFlagTestCase{
+	promptTestCase := test_cases.NonInteractiveTestCase{
 		InputPrompt: prompt,
 		StdoutAssertion: string_assertion.ExactMatchAssertion{
 			ExpectedValue: fmt.Sprintf("%d", result),

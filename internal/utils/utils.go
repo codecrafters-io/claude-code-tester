@@ -2,20 +2,18 @@ package utils
 
 import (
 	"fmt"
-	"math"
 	"os"
 
-	"github.com/codecrafters-io/claude-code-tester/internal/settings_manager"
 	"github.com/codecrafters-io/tester-utils/random"
 )
 
-// CreateTemporaryDirectory creates a random working directory using codecrafters-io/tester-utils/random
+// CreateTempDirWithPrefix creates a random working directory using codecrafters-io/tester-utils/random
 // Returns the path to the directory
-func CreateTemporaryDirectory() string {
+func CreateTempDirWithPrefix(prefix string) string {
 	wordPrefix := random.RandomWord()
-	integerSuffix := random.RandomInt(1, math.MaxInt)
+	integerSuffix := random.RandomInt(1, 1000)
 
-	dirPath := fmt.Sprintf("/tmp/%s-%d", wordPrefix, integerSuffix)
+	dirPath := fmt.Sprintf("/tmp/%s-%s-%d", prefix, wordPrefix, integerSuffix)
 
 	err := os.Mkdir(dirPath, 0755)
 
@@ -24,16 +22,6 @@ func CreateTemporaryDirectory() string {
 	}
 
 	return dirPath
-}
-
-// GetBypassPermissionsSettings returns the settings for claude code where
-// the permissions are bypassed (useful for stages where permissions are not concerned)
-func GetBypassPermissionsSettings() settings_manager.Settings {
-	return settings_manager.Settings{
-		Permissions: settings_manager.Permissions{
-			DefaultMode: "bypassPermissions",
-		},
-	}
 }
 
 // GetPromptWithGuardRailPrompt returns a prompt randomly chosen from promptChoices and appends

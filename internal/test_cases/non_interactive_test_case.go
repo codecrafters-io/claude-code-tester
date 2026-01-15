@@ -4,19 +4,21 @@ import (
 	"path/filepath"
 	"strings"
 
+	"al.essio.dev/pkg/shellescape"
 	"github.com/codecrafters-io/claude-code-tester/internal/assertions/string_assertion"
 	"github.com/codecrafters-io/tester-utils/test_case_harness"
 )
 
-type PrintFlagTestCase struct {
+type NonInteractiveTestCase struct {
 	InputPrompt     string
 	StdoutAssertion string_assertion.StringAssertion
 }
 
-func (t *PrintFlagTestCase) Run(stageHarness *test_case_harness.TestCaseHarness) error {
+func (t *NonInteractiveTestCase) Run(stageHarness *test_case_harness.TestCaseHarness) error {
 	executable := stageHarness.Executable
 	logger := stageHarness.Logger
-	logger.Infof("$ ./%s -p \"%s\"", filepath.Base(executable.Path), t.InputPrompt)
+	shellEscapedPrompt := shellescape.Quote(t.InputPrompt)
+	logger.Infof("$ ./%s -p %s", filepath.Base(executable.Path), shellEscapedPrompt)
 	result, err := executable.Run("-p", t.InputPrompt)
 
 	if err != nil {

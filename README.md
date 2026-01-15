@@ -10,6 +10,6 @@ This is a program that validates your progress on the "Build your own Claude Cod
 
 ## User code requirements
 
-- A binary named `your_claude_code.sh` that executes the program.
+- A binary named `your_program.sh` that executes the program.
 - A file named `codecrafters.yml`, with the following values:
   - `debug`

@@ -1,3 +1,5 @@
+al.essio.dev/pkg/shellescape v1.6.0 h1:NxFcEqzFSEVCGN2yq7Huv/9hyCEGVa/TncnOOBBeXHA=
+al.essio.dev/pkg/shellescape v1.6.0/go.mod h1:6sIqp7X2P6mThCQ7twERpZTuigpr6KbZWtls1U8I890=
 github.com/codecrafters-io/tester-utils v0.2.1 h1:+bdZLJhFMWcf+/E3C4NlGsIvxvsyBWlrrqceXRFyu6E=
 github.com/codecrafters-io/tester-utils v0.2.1/go.mod h1:BeSLyqBpFxUwIm41QlnuRG7ZsabBXWE2Ga3LMFUXAPM=
 github.com/codecrafters-io/tester-utils v0.2.10 h1:Xpu6wzgpRpiZPFNGWMRcJXwAZZ0Yb5Mv6IDOR319f+s=
