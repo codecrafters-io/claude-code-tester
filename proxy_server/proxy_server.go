@@ -24,12 +24,13 @@ type proxyServer struct {
 
 func newProxyServer() *proxyServer {
 	targetUrl := mustParseUrl(openRouterUrl)
+	apiKey := mustGetOpenrouterApiKey()
 	// Prepare the interceptor reverse proxy
 	reverseProxy := httputil.NewSingleHostReverseProxy(targetUrl)
 	reverseProxy.Director = nil
 	reverseProxy.Rewrite = func(req *httputil.ProxyRequest) {
 		req.SetURL(targetUrl)
-		req.Out.Header.Set("Authorization", "Bearer "+mustGetOpenrouterApiKey())
+		req.Out.Header.Set("Authorization", "Bearer "+apiKey)
 	}
 
 	validator := &validationMiddleware{}
