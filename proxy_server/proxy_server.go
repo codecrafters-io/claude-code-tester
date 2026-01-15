@@ -36,7 +36,7 @@ func newProxyServer() *proxyServer {
 	validator := &validationMiddleware{}
 
 	validator.setAllowedEndPoints([]string{
-		"/api/api/event_logging/batch",
+		"/api/event_logging/batch",
 		"/api/v1/messages",
 		"/api/v1/chat/completions",
 	})
