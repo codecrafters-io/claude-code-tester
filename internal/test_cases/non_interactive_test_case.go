@@ -1,6 +1,7 @@
 package test_cases
 
 import (
+	"fmt"
 	"path/filepath"
 	"strings"
 
@@ -23,6 +24,10 @@ func (t *NonInteractiveTestCase) Run(stageHarness *test_case_harness.TestCaseHar
 
 	if err != nil {
 		return err
+	}
+
+	if result.ExitCode != 0 {
+		return fmt.Errorf("expected exit code 0, got %d", result.ExitCode)
 	}
 
 	stdoutContent := strings.TrimSpace(string(result.Stdout))

@@ -61,7 +61,11 @@ func restoreOriginalSettingsFromBytes(originalSettings []byte) error {
 	settingsFilePath := getSettingsFilePath()
 
 	if originalSettings == nil {
-		return os.Remove(settingsFilePath)
+		err := os.Remove(settingsFilePath)
+		if err != nil && !os.IsNotExist(err) {
+			return err
+		}
+		return nil
 	}
 
 	return os.WriteFile(settingsFilePath, originalSettings, 0644)
