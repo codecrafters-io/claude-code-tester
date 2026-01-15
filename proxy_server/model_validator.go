@@ -10,7 +10,7 @@ import (
 )
 
 type requestBody struct {
-	Model string `json:"model"`
+	Model *string `json:"model"`
 }
 
 // modelValidator validates that the model in the request body is "anthropic/claude-haiku-4.5"
@@ -34,8 +34,12 @@ func modelValidator(r *http.Request) (ok bool, errorMessage string) {
 		return true, ""
 	}
 
-	if !strings.HasPrefix(requestBody.Model, "anthropic/claude-haiku") {
-		return false, fmt.Sprintf("%s is not a valid model ID", requestBody.Model)
+	if requestBody.Model == nil {
+		return true, ""
+	}
+
+	if !strings.HasPrefix(*requestBody.Model, "anthropic/claude-haiku") {
+		return false, fmt.Sprintf("%s is not a valid model ID", *requestBody.Model)
 	}
 
 	return true, ""

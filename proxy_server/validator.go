@@ -43,7 +43,7 @@ func (v *validationMiddleware) validateRequest(r *http.Request) *validationError
 
 	if !v.allowedEndPoints[endpoint] {
 		return &validationError{
-			StatusCode:   401,
+			StatusCode:   403,
 			errorMessage: "Unauthorized endpoint access",
 		}
 	}
@@ -54,7 +54,7 @@ func (v *validationMiddleware) validateRequest(r *http.Request) *validationError
 		ok, errorMessage := validatorFunc(r)
 		if !ok {
 			return &validationError{
-				StatusCode:   500,
+				StatusCode:   400,
 				errorMessage: errorMessage,
 			}
 		}
