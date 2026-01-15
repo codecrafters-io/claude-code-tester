@@ -1,6 +1,7 @@
 package test_cases
 
 import (
+	"fmt"
 	"path/filepath"
 	"strings"
 
@@ -10,8 +11,9 @@ import (
 )
 
 type NonInteractiveTestCase struct {
-	InputPrompt     string
-	StdoutAssertion string_assertion.StringAssertion
+	InputPrompt      string
+	StdoutAssertion  string_assertion.StringAssertion
+	ExpectedExitCode int
 }
 
 func (t *NonInteractiveTestCase) Run(stageHarness *test_case_harness.TestCaseHarness) error {
@@ -23,6 +25,10 @@ func (t *NonInteractiveTestCase) Run(stageHarness *test_case_harness.TestCaseHar
 
 	if err != nil {
 		return err
+	}
+
+	if result.ExitCode != t.ExpectedExitCode {
+		return fmt.Errorf("Expected program to exit with exit code %d, got %d instead", t.ExpectedExitCode, result.ExitCode)
 	}
 
 	stdoutContent := strings.TrimSpace(string(result.Stdout))

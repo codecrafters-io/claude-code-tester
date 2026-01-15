@@ -25,7 +25,7 @@ func testPromptResponse(stageHarness *test_case_harness.TestCaseHarness) error {
 	prompt := utils.GetPromptWithGuardRailPrompt(
 		[]string{
 			fmt.Sprintf("What is %d%s%d?", operand1, operator, operand2),
-			fmt.Sprintf("Calculate %d %s %d", operand1, operator, operand2),
+			fmt.Sprintf("Calculate %d %s %d.", operand1, operator, operand2),
 			fmt.Sprintf("Can you solve: %d%s%d?", operand1, operator, operand2),
 			fmt.Sprintf("What does %d%s%d equal?", operand1, operator, operand2),
 			fmt.Sprintf("Please compute %d%s%d.", operand1, operator, operand2),
@@ -34,7 +34,8 @@ func testPromptResponse(stageHarness *test_case_harness.TestCaseHarness) error {
 	)
 
 	promptTestCase := test_cases.NonInteractiveTestCase{
-		InputPrompt: prompt,
+		InputPrompt:      prompt,
+		ExpectedExitCode: 0,
 		StdoutAssertion: string_assertion.ExactMatchAssertion{
 			ExpectedValue: fmt.Sprintf("%d", result),
 		},
