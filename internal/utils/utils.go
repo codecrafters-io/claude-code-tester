@@ -15,6 +15,11 @@ func CreateTempDirWithPrefix(prefix string) string {
 
 	dirPath := fmt.Sprintf("/tmp/%s-%s-%d", prefix, wordPrefix, integerSuffix)
 
+	// Remove any existing directory at this path first. This handles the case where
+	// a previous test run was interrupted before cleanup could happen, and with
+	// deterministic random seeds the same path would be generated again.
+	os.RemoveAll(dirPath)
+
 	err := os.Mkdir(dirPath, 0755)
 
 	if err != nil {
