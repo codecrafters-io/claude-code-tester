@@ -10,6 +10,11 @@ import (
 
 func BootstrapExecutableWorkspace(stageHarness *test_case_harness.TestCaseHarness) {
 	workspaceDirPath := utils.CreateTempDirWithPrefix("workspace")
+
+	stageHarness.RegisterTeardownFunc(func() {
+		os.RemoveAll(workspaceDirPath)
+	})
+
 	stageHarness.Executable.WorkingDir = workspaceDirPath
 	stageHarness.Logger.Debugf("Setting the workspace directory to %q", workspaceDirPath)
 
@@ -23,8 +28,4 @@ func BootstrapExecutableWorkspace(stageHarness *test_case_harness.TestCaseHarnes
 
 	stageHarness.Executable.Path = absolutePath
 
-	// Remove workspace directory after tests
-	stageHarness.RegisterTeardownFunc(func() {
-		os.RemoveAll(workspaceDirPath)
-	})
 }
