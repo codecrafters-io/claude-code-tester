@@ -59,6 +59,7 @@ func (s *proxyServer) Start() {
 	s.waitForServerStart()
 }
 
+// listenAndServe starts listening and serving on specified listening port
 func (s *proxyServer) listenAndServe() {
 	err := s.server.ListenAndServe()
 
@@ -67,6 +68,8 @@ func (s *proxyServer) listenAndServe() {
 	}
 }
 
+// waitForServerStart tries to a establish connection to the proxy's listening port
+// returns immediately after a successful connection has been established
 func (s *proxyServer) waitForServerStart() {
 	for {
 		conn, _ := net.Dial("tcp", "localhost:"+proxyListeningPort)
@@ -78,6 +81,7 @@ func (s *proxyServer) waitForServerStart() {
 	}
 }
 
+// registerTeardown registers a function to close the proxy server
 func (s *proxyServer) registerTeardown(stageHarness *test_case_harness.TestCaseHarness) {
 	stageHarness.RegisterTeardownFunc(func() {
 		if err := s.server.Close(); err != nil {

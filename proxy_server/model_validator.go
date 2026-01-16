@@ -13,7 +13,10 @@ type requestBody struct {
 	Model string `json:"model"`
 }
 
-// modelValidator validates that the model in the request body starts with "anthropic/claude-haiku"
+// modelValidator returns an error only if
+// Request.Body["model"] is present and is not a Haiku model
+// This is done so that every other errors (invalid body / wrong schema), etc
+// are handled by OpenRouter instead of the proxy
 func modelValidator(r *http.Request) (ok bool, errorMessage string) {
 	if r.Body == nil {
 		return true, ""
@@ -25,10 +28,12 @@ func modelValidator(r *http.Request) (ok bool, errorMessage string) {
 		return false, "Failed to read request body"
 	}
 
+	// Restore body
 	r.Body = io.NopCloser(bytes.NewBuffer(requestBodyBytes))
 
 	var requestBody requestBody
 
+	// Ignore unmarshal error -> Will be handled by OpenRouter
 	if err := json.Unmarshal(requestBodyBytes, &requestBody); err != nil {
 		return true, ""
 	}
