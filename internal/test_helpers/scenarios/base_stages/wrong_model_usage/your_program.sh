@@ -4,10 +4,10 @@ import json
 import urllib.request
 
 API_KEY = "dummy-api-key"
-url = "http://localhost:10000/v1/chat/completions"
+url = "http://localhost:10000/api/v1/chat/completions"
 
 payload = {
-    "model": "whatever/model",
+    "model": "openai/gpt-5.2-pro",
     "messages": [
         {"role": "user", "content": "Hello"}
     ],

@@ -5,7 +5,7 @@ import urllib.request
 import urllib.error
 
 # no API key — proxy is expected to inject it
-url = "http://localhost:10000/v1/api-keys"
+url = "http://localhost:10000/api/v1/keys"
 
 payload = {
     "name": "test-key",
