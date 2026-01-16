@@ -38,9 +38,16 @@ func modelValidator(r *http.Request) (ok bool, errorMessage string) {
 		return true, ""
 	}
 
-	if !strings.HasPrefix(requestBody.Model, "anthropic/claude-haiku") {
+	if !isHaikuModel(requestBody.Model) {
 		return false, fmt.Sprintf("%s is not a valid model ID", requestBody.Model)
 	}
 
 	return true, ""
+}
+
+// isHaikuModel checks if the model is a valid Haiku model.
+// This handles both newer naming (anthropic/claude-haiku-4.5) and
+// older naming patterns (anthropic/claude-3-haiku, anthropic/claude-3.5-haiku).
+func isHaikuModel(model string) bool {
+	return strings.HasPrefix(model, "anthropic/claude-") && strings.Contains(model, "haiku")
 }
