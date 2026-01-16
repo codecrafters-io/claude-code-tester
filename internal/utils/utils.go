@@ -15,7 +15,14 @@ func CreateTempDirWithPrefix(prefix string) string {
 
 	dirPath := fmt.Sprintf("/tmp/%s-%s-%d", prefix, wordPrefix, integerSuffix)
 
-	err := os.Mkdir(dirPath, 0755)
+	// Remove directory if it already exists -> Could have been a leftover from an interrupted run
+	err := os.RemoveAll(dirPath)
+	if err != nil {
+		panic("Codecrafters Internal Error - Failed to remove existing directory " + dirPath)
+	}
+
+	// Create the directory
+	err = os.Mkdir(dirPath, 0755)
 
 	if err != nil {
 		panic("Codecrafters Internal Error - Failed to create temporary workspace directory: " + err.Error())
