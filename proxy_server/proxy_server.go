@@ -5,6 +5,7 @@ import (
 	"net"
 	"net/http"
 	"net/http/httputil"
+	"net/url"
 	"time"
 
 	"github.com/codecrafters-io/tester-utils/test_case_harness"
@@ -23,8 +24,9 @@ type proxyServer struct {
 }
 
 func newProxyServer() *proxyServer {
-	targetUrl := mustParseUrl(openRouterUrl)
+	targetUrl, _ := url.Parse("https://openrouter.ai")
 	apiKey := mustGetOpenrouterApiKey()
+
 	// Prepare the interceptor reverse proxy
 	reverseProxy := httputil.NewSingleHostReverseProxy(targetUrl)
 	reverseProxy.Director = nil
@@ -79,7 +81,7 @@ func (s *proxyServer) waitForServerStart() {
 func (s *proxyServer) registerTeardown(stageHarness *test_case_harness.TestCaseHarness) {
 	stageHarness.RegisterTeardownFunc(func() {
 		if err := s.server.Close(); err != nil {
-			stageHarness.Logger.Infof("Error shutting down proxy server: %v", err)
+			panic("Codecrafters Internal Error - Failed closing proxy server: " + err.Error())
 		}
 	})
 }
