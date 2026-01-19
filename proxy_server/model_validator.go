@@ -38,7 +38,7 @@ func modelValidator(r *http.Request) (ok bool, errorMessage string) {
 		return true, ""
 	}
 
-	if !strings.HasPrefix(requestBody.Model, "anthropic/claude-haiku") {
+	if requestBody.Model != "" && !strings.HasPrefix(requestBody.Model, "anthropic/claude-haiku") {
 		return false, fmt.Sprintf("%s is not supported. Allowed: anthropic/claude-haiku-4.5", requestBody.Model)
 	}
 
