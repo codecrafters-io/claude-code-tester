@@ -25,6 +25,20 @@ func TestStages(t *testing.T) {
 			StdoutFixturePath:   "./test_helpers/fixtures/base_stages/stage_1_fail",
 			NormalizeOutputFunc: normalizeTesterOutput,
 		},
+		"wrong_model_usage": {
+			StageSlugs:          []string{"yy2"},
+			CodePath:            "./test_helpers/scenarios/base_stages/wrong_model_usage",
+			ExpectedExitCode:    1,
+			StdoutFixturePath:   "./test_helpers/fixtures/base_stages/wrong_model_usage",
+			NormalizeOutputFunc: normalizeTesterOutput,
+		},
+		"unauthorized_endpoint_access": {
+			StageSlugs:          []string{"yy2"},
+			CodePath:            "./test_helpers/scenarios/base_stages/unauthorized_endpoint_access",
+			ExpectedExitCode:    1,
+			StdoutFixturePath:   "./test_helpers/fixtures/base_stages/unauthorized_endpoint_access",
+			NormalizeOutputFunc: normalizeTesterOutput,
+		},
 	}
 
 	tester_utils_testing.TestTesterOutput(t, testerDefinition, testCases)
