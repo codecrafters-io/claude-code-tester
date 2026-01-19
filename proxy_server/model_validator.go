@@ -39,7 +39,7 @@ func modelValidator(r *http.Request) (ok bool, errorMessage string) {
 	}
 
 	if !strings.HasPrefix(requestBody.Model, "anthropic/claude-haiku") {
-		return false, fmt.Sprintf("%s is not a valid model ID", requestBody.Model)
+		return false, fmt.Sprintf("%s is not supported. Allowed: anthropic/claude-haiku-4.5", requestBody.Model)
 	}
 
 	return true, ""

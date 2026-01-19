@@ -26,11 +26,9 @@ try:
     with urllib.request.urlopen(req) as resp:
         body = resp.read().decode("utf-8")
         print(json.loads(body))
-        print(resp.status)
 except urllib.error.HTTPError as e:
     body = e.read().decode("utf-8")
     print(json.loads(body))
-    print(e.code)
 except urllib.error.URLError as e:
     print({"error": str(e)})
     print("no response status")

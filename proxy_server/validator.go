@@ -1,6 +1,7 @@
 package proxy_server
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httputil"
 )
@@ -44,8 +45,8 @@ func (v *validationMiddleware) validateRequest(r *http.Request) *validationError
 
 	if !v.allowedEndPoints[endpoint] {
 		return &validationError{
-			StatusCode:   403,
-			errorMessage: "Unauthorized endpoint access",
+			StatusCode:   404,
+			errorMessage: fmt.Sprintf("Endpoint not found: %s", endpoint),
 		}
 	}
 
