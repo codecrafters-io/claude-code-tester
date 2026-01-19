@@ -1,0 +1,8 @@
+Debug = true
+
+[33m[tester::#YY2] [0m[94mRunning tests for Stage #YY2 (yy2)[0m
+[33m[tester::#YY2] [0m[36mSetting the workspace directory to "/tmp/workspace-pear-592"[0m
+[33m[tester::#YY2] [0m[94m$ ./your_program.sh -p 'What does 9*7 equal? Number only.'[0m
+[33m[your_program] [0m[0m-1000[0m
+[33m[tester::#YY2] [0m[91mExpected "63", got "-1000"[0m
+[33m[tester::#YY2] [0m[91mTest failed[0m

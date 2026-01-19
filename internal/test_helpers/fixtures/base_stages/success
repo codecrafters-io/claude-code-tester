@@ -1,0 +1,28 @@
+Debug = true
+
+[33m[tester::#YY2] [0m[94mRunning tests for Stage #YY2 (yy2)[0m
+[33m[tester::#YY2] [0m[36mSetting the workspace directory to "/tmp/workspace-pear-592"[0m
+[33m[tester::#YY2] [0m[94m$ ./your_program.sh -p 'What does 9*7 equal? Number only.'[0m
+[33m[your_program] [0m[0m63[0m
+[33m[tester::#YY2] [0m[92mTest passed.[0m
+
+[33m[tester::#AQ1] [0m[94mRunning tests for Stage #AQ1 (aq1)[0m
+[33m[tester::#AQ1] [0m[92mTest passed.[0m
+
+[33m[tester::#MD6] [0m[94mRunning tests for Stage #MD6 (md6)[0m
+[33m[tester::#MD6] [0m[92mTest passed.[0m
+
+[33m[tester::#YP5] [0m[94mRunning tests for Stage #YP5 (yp5)[0m
+[33m[tester::#YP5] [0m[92mTest passed.[0m
+
+[33m[tester::#FF2] [0m[94mRunning tests for Stage #FF2 (ff2)[0m
+[33m[tester::#FF2] [0m[92mTest passed.[0m
+
+[33m[tester::#OZ7] [0m[94mRunning tests for Stage #OZ7 (oz7)[0m
+[33m[tester::#OZ7] [0m[92mTest passed.[0m
+
+[33m[tester::#BP2] [0m[94mRunning tests for Stage #BP2 (bp2)[0m
+[33m[tester::#BP2] [0m[92mTest passed.[0m
+
+[33m[tester::#OQ5] [0m[94mRunning tests for Stage #OQ5 (oq5)[0m
+[33m[tester::#OQ5] [0m[92mTest passed.[0m
