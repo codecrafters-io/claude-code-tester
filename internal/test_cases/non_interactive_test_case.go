@@ -31,10 +31,13 @@ func (t *NonInteractiveTestCase) Run(stageHarness *test_case_harness.TestCaseHar
 		return fmt.Errorf("Expected program to exit with exit code %d, got %d instead", t.ExpectedExitCode, result.ExitCode)
 	}
 
-	stdoutContent := strings.TrimSpace(string(result.Stdout))
+	// Run the assertion only if it is non-nil
+	if t.StdoutAssertion != nil {
+		stdoutContent := strings.TrimSpace(string(result.Stdout))
 
-	if err := t.StdoutAssertion.Run(stdoutContent); err != nil {
-		return err
+		if err := t.StdoutAssertion.Run(stdoutContent, logger); err != nil {
+			return err
+		}
 	}
 
 	return nil
