@@ -22,17 +22,16 @@ func testAgentLoop(stageHarness *test_case_harness.TestCaseHarness) error {
 	stageHarness.Executable.TimeoutInMilliseconds = 30 * 1000
 	workspaceDirPath := stageHarness.Executable.WorkingDir
 
-	// Create app directory
 	appDirPath := filepath.Join(workspaceDirPath, "app")
 	utils.MustCreateDirWithLogging(appDirPath, stageHarness.Logger)
 
-	// Create an extra file that is used by the main file
+	// Create supporting file
 	extraFilePath := filepath.Join(appDirPath, random.RandomElementFromArray([]string{"chemical.py", "substance.py", "expiry.py", "duration.py"}))
 	chemicalExpiryPeriod := random.RandomInt(6, 36) // Random value between 6 and 36 months
 	extraFileContent := fmt.Sprintf("chemical_expiry_period = %d  # months", chemicalExpiryPeriod)
 	utils.MustCreateFileWithContentsWithLogger(extraFilePath, extraFileContent, stageHarness.Logger)
 
-	// Create main.py that imports and uses the module
+	// Create main file
 	mainFilePath := filepath.Join(
 		appDirPath,
 		random.RandomElementFromArray([]string{"main.py", "init.py", "start.py"}),
@@ -50,13 +49,12 @@ if __name__ == "__main__":
 
 	utils.MustCreateFileWithContentsWithLogger(mainFilePath, mainContent, stageHarness.Logger)
 
-	// Create README.md with instructions
+	// Create README.md
 	readmePath := filepath.Join(workspaceDirPath, "README.md")
 	readmeContent := fmt.Sprintf(`This is a simple python project.
 The starting point of this project is app/%s.`, filepath.Base(mainFilePath))
 	utils.MustCreateFileWithContentsWithLogger(readmePath, readmeContent, stageHarness.Logger)
 
-	// Expected output is just the number
 	expectedOutput := fmt.Sprintf("%d", chemicalExpiryPeriod)
 
 	prompt := utils.GetPromptWithGuardRailPrompt(

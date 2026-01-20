@@ -72,17 +72,17 @@ assert area_of_square(5) == 25`,
 		ExpectedExitCode: 0,
 	}
 
-	// Run the test case to execute the prompt
 	if err := promptTestCase.Run(stageHarness); err != nil {
 		return err
 	}
 
-	// Assert each test file has been fixed
-	for _, tf := range testFiles {
-		testFilePath := filepath.Join(appDirPath, tf.name)
+	for _, testFile := range testFiles {
+		testFilePath := filepath.Join(appDirPath, testFile.name)
+
 		fileAssertion := filesystem_assertion.FileContentsAssertion{
-			ExpectedContents: tf.fixedContent,
+			ExpectedContents: testFile.fixedContent,
 		}
+
 		if err := fileAssertion.Run(testFilePath, stageHarness.Logger); err != nil {
 			return err
 		}
