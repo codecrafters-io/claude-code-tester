@@ -2,10 +2,12 @@ module github.com/codecrafters-io/claude-code-tester
 
 go 1.25
 
-require github.com/codecrafters-io/tester-utils v0.4.12
+require (
+	al.essio.dev/pkg/shellescape v1.6.0
+	github.com/codecrafters-io/tester-utils v0.4.13-0.20260120061440-39dfa87f9c2b
+)
 
 require (
-	al.essio.dev/pkg/shellescape v1.6.0 // indirect
 	github.com/creack/pty v1.1.24 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fatih/color v1.18.0 // indirect
