@@ -44,7 +44,7 @@ func (a FileContentsAssertion) Run(path string, logger *logger.Logger) error {
 			logger.Errorf("%s", fileContentsTrimmed)
 		})
 
-		return fmt.Errorf("Expected file contents to be %q, got %q", a.ExpectedContents, string(contents))
+		return fmt.Errorf("Expected file contents to be %q, got %q", a.ExpectedContents, fileContentsTrimmed)
 	}
 
 	logger.Successf("✔ File %s exists with contents:", path)
