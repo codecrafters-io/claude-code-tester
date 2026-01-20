@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/codecrafters-io/claude-code-tester/internal/assertions/filesystem_assertion"
+	"github.com/codecrafters-io/claude-code-tester/internal/assertions/string_assertion"
 	"github.com/codecrafters-io/claude-code-tester/internal/settings_manager"
 	"github.com/codecrafters-io/claude-code-tester/internal/test_cases"
 	"github.com/codecrafters-io/claude-code-tester/internal/utils"
@@ -17,7 +18,7 @@ func testBashTool(stageHarness *test_case_harness.TestCaseHarness) error {
 	proxy_server.StartProxyServer(stageHarness)
 	workspace_manager.BootstrapExecutableWorkspace(stageHarness)
 	settings_manager.InitializeBypassPermissionSettings(stageHarness)
-	stageHarness.Executable.TimeoutInMilliseconds = 45 * 1000
+	stageHarness.Executable.TimeoutInMilliseconds = 30 * 1000
 	workspaceDirPath := stageHarness.Executable.WorkingDir
 
 	appDirPath := filepath.Join(workspaceDirPath, "app")
@@ -52,8 +53,11 @@ main();`
 				"Delete the old readme file.",
 				"Remove the old readme from the project.",
 			},
-			"",
+			"Always respond with `Done`",
 		),
+		StdoutAssertion: string_assertion.ExactMatchAssertion{
+			ExpectedValue: "Done",
+		},
 		ExpectedExitCode: 0,
 	}
 

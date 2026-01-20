@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/codecrafters-io/claude-code-tester/internal/assertions/filesystem_assertion"
+	"github.com/codecrafters-io/claude-code-tester/internal/assertions/string_assertion"
 	"github.com/codecrafters-io/claude-code-tester/internal/settings_manager"
 	"github.com/codecrafters-io/claude-code-tester/internal/test_cases"
 	"github.com/codecrafters-io/claude-code-tester/internal/utils"
@@ -45,8 +46,13 @@ This contains only one file: app/%s.`, mainFileName)
 				"Read the README.md file, identify the file to create, and create that file.",
 				"Read README.md, find out which file should be created, and create it.",
 			},
-			"Use single print statement inside the file.",
+			// We put the `Done` here because there is no way to guarantee fixed output for the fixtures
+			// We cannot 'normalize' the output either. There is no specific pattern if we leave the output up to the LLM
+			"Use single print statement inside the file. Always respond with `Done`",
 		),
+		StdoutAssertion: string_assertion.ExactMatchAssertion{
+			ExpectedValue: "Done",
+		},
 		ExpectedExitCode: 0,
 	}
 

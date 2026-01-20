@@ -4,6 +4,7 @@ import (
 	"path/filepath"
 
 	"github.com/codecrafters-io/claude-code-tester/internal/assertions/filesystem_assertion"
+	"github.com/codecrafters-io/claude-code-tester/internal/assertions/string_assertion"
 	"github.com/codecrafters-io/claude-code-tester/internal/settings_manager"
 	"github.com/codecrafters-io/claude-code-tester/internal/test_cases"
 	"github.com/codecrafters-io/claude-code-tester/internal/utils"
@@ -67,8 +68,11 @@ assert area_of_square(5) == 25`,
 				"Find all files in `app` directory that start with 'test' using glob patterns and fix the bugs in them.",
 				"Identify files in `app` directory that start with 'test' and fix any bugs you discover.",
 			},
-			"",
+			"Always respond with `Done`",
 		),
+		StdoutAssertion: string_assertion.ExactMatchAssertion{
+			ExpectedValue: "Done",
+		},
 		ExpectedExitCode: 0,
 	}
 

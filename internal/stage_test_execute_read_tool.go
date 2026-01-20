@@ -25,7 +25,7 @@ func testExecuteReadTool(stageHarness *test_case_harness.TestCaseHarness) error 
 	filePath := filepath.Join(workspaceDirPath, fileName)
 	fileContents := random.RandomElementFromArray([]string{
 		"print('Hello, World!')",
-		"print('Hello, program!)",
+		"print('Hello, program!')",
 		"print('Hello there!')",
 	})
 
