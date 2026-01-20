@@ -9,7 +9,6 @@ import (
 	"github.com/codecrafters-io/claude-code-tester/internal/utils"
 	"github.com/codecrafters-io/claude-code-tester/internal/workspace_manager"
 	"github.com/codecrafters-io/claude-code-tester/proxy_server"
-	"github.com/codecrafters-io/tester-utils/random"
 	"github.com/codecrafters-io/tester-utils/test_case_harness"
 )
 
@@ -23,7 +22,7 @@ func testGlobTool(stageHarness *test_case_harness.TestCaseHarness) error {
 	appDirPath := filepath.Join(workspaceDirPath, "app")
 	utils.MustCreateDirWithLogging(appDirPath, stageHarness.Logger)
 
-	mainFilePath := filepath.Join(appDirPath, random.RandomElementFromArray([]string{"main.py", "init.py", "start.py"}))
+	mainFilePath := filepath.Join(appDirPath, "main.py")
 	mainContent := `def add(a, b):
     return a + b
 
