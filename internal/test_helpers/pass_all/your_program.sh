@@ -4,7 +4,7 @@ run_claude() {
   ANTHROPIC_DEFAULT_SONNET_MODEL="anthropic/claude-haiku-4.5" \
   ANTHROPIC_DEFAULT_OPUS_MODEL="anthropic/claude-haiku-4.5" \
   ANTHROPIC_DEFAULT_HAIKU_MODEL="anthropic/claude-haiku-4.5" \
-  ANTHROPIC_BASE_URL="http://localhost:10000" \
+  ANTHROPIC_BASE_URL="http://localhost:10000/api" \
   ANTHROPIC_AUTH_TOKEN="dummy-api-key" \
   ANTHROPIC_API_KEY="" \
   claude "$@"
