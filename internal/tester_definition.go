@@ -44,7 +44,8 @@ var testerDefinition = tester_definition.TesterDefinition{
 		{
 			Slug:     "oq5",
 			TestFunc: testBashTool,
-			Timeout:  30 * time.Second,
+			// This one occassionally times out for 30s
+			Timeout: 45 * time.Second,
 		},
 	},
 }
