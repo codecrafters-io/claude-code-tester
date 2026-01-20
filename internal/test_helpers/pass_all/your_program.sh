@@ -4,8 +4,8 @@ run_claude() {
   ANTHROPIC_DEFAULT_SONNET_MODEL="anthropic/claude-haiku-4.5" \
   ANTHROPIC_DEFAULT_OPUS_MODEL="anthropic/claude-haiku-4.5" \
   ANTHROPIC_DEFAULT_HAIKU_MODEL="anthropic/claude-haiku-4.5" \
-  ANTHROPIC_BASE_URL="https://openrouter.ai/api" \
-  ANTHROPIC_AUTH_TOKEN="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" \
+  ANTHROPIC_BASE_URL="http://localhost:10000" \
+  ANTHROPIC_AUTH_TOKEN="dummy-api-key" \
   ANTHROPIC_API_KEY="" \
   claude "$@"
 }
