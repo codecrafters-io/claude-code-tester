@@ -16,7 +16,7 @@ func (a FileDoesNotExistAssertion) Run(filePath string, logger *logger.Logger) e
 	_, err := os.Stat(filePath)
 
 	if err == nil {
-		return fmt.Errorf("Expected file %s to not exist, but it still exists", filePath)
+		return fmt.Errorf("Expected file %s to not exist, but it exists", filePath)
 	}
 
 	if !errors.Is(err, fs.ErrNotExist) {

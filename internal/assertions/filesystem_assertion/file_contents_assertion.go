@@ -1,10 +1,12 @@
 package filesystem_assertion
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
+	"unicode"
 
 	"github.com/codecrafters-io/tester-utils/logger"
 )
@@ -30,7 +32,8 @@ func (a FileContentsAssertion) Run(path string, logger *logger.Logger) error {
 		return fmt.Errorf("Failed to read file %s: %v", path, err)
 	}
 
-	fileContentsTrimmed := strings.TrimSpace(string(contents))
+	// Trim space from the right (File could have an extra \n: That's fine)
+	fileContentsTrimmed := strings.TrimRightFunc(string(contents), unicode.IsSpace)
 	fileName := filepath.Base(path)
 
 	if fileContentsTrimmed != a.ExpectedContents {
@@ -44,7 +47,7 @@ func (a FileContentsAssertion) Run(path string, logger *logger.Logger) error {
 			logger.Errorf("%s", fileContentsTrimmed)
 		})
 
-		return fmt.Errorf("Expected file contents to be %q, got %q", a.ExpectedContents, string(contents))
+		return errors.New("Expected file contents differ from actual contents")
 	}
 
 	logger.Successf("✔ File %s exists with contents:", path)

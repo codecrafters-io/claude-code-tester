@@ -49,7 +49,7 @@ func GetPromptWithGuardRailPrompt(promptChoices []string, guardRailPrompt string
 func MustCreateDirWithLogging(path string, logger *logger.Logger) {
 	err := os.MkdirAll(path, 0755)
 	if err != nil {
-		panic(fmt.Sprintf("Failed to create directory %s: %v", path, err))
+		panic(fmt.Sprintf("Codecrafters Internal Error - Failed to create directory %s: %v", path, err))
 	}
 
 	dirName := filepath.Base(path)
@@ -63,14 +63,14 @@ func MustCreateFileWithContentsWithLogger(path string, contents string, logger *
 	file, err := os.Create(path)
 
 	if err != nil {
-		panic(fmt.Sprintf("Failed to create file %s: %v", path, err))
+		panic(fmt.Sprintf("Codecrafters Internal Error - Failed to create file %s: %v", path, err))
 	}
 
 	defer file.Close()
 	_, err = file.WriteString(contents)
 
 	if err != nil {
-		panic(fmt.Sprintf("Failed to write to file %s: %v", path, err))
+		panic(fmt.Sprintf("Codecrafters Internal Error - Failed to write to file %s: %v", path, err))
 	}
 
 	fileName := filepath.Base(path)

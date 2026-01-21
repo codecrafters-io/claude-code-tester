@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
+	"unicode"
 
 	"al.essio.dev/pkg/shellescape"
 	"github.com/codecrafters-io/claude-code-tester/internal/assertions/string_assertion"
@@ -31,9 +32,9 @@ func (t *NonInteractiveTestCase) Run(stageHarness *test_case_harness.TestCaseHar
 		return fmt.Errorf("Expected program to exit with exit code %d, got %d instead", t.ExpectedExitCode, result.ExitCode)
 	}
 
-	// Run the assertion only if it is non-nil
 	if t.StdoutAssertion != nil {
-		stdoutContent := strings.TrimSpace(string(result.Stdout))
+		// Leave out trailing newlines/spaces if they exist
+		stdoutContent := strings.TrimRightFunc(string(result.Stdout), unicode.IsSpace)
 
 		if err := t.StdoutAssertion.Run(stdoutContent, logger); err != nil {
 			return err

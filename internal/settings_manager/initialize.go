@@ -27,7 +27,7 @@ func InitializeSettings(stageHarness *test_case_harness.TestCaseHarness, newSett
 
 	stageHarness.RegisterTeardownFunc(func() {
 		if err := restoreOriginalSettingsFromBytes(oldSettings); err != nil {
-			panic(fmt.Sprintf("Failed to restore original settings to %s: %s", getSettingsFilePath(), err))
+			panic(fmt.Sprintf("Codecrafters Internal Error - Failed to restore original settings to %s: %s", getSettingsFilePath(), err))
 		}
 	})
 }

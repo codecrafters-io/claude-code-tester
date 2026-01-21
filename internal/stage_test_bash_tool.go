@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"fmt"
 	"path/filepath"
 
 	"github.com/codecrafters-io/claude-code-tester/internal/assertions/filesystem_assertion"
@@ -46,7 +45,6 @@ Entry point: app/`
 main();`
 	utils.MustCreateFileWithContentsWithLogger(mainFilePath, mainContent, stageHarness.Logger)
 
-	// Prompt to delete old readme
 	promptTestCase := test_cases.NonInteractiveTestCase{
 		InputPrompt: utils.GetPromptWithGuardRailPrompt(
 			[]string{
@@ -61,28 +59,30 @@ main();`
 		ExpectedExitCode: 0,
 	}
 
-	// Run the test case to execute the prompt
 	if err := promptTestCase.Run(stageHarness); err != nil {
 		return err
 	}
 
-	oldReadmeAssertion := filesystem_assertion.FileDoesNotExistAssertion{}
-	if err := oldReadmeAssertion.Run(readmeOldPath, stageHarness.Logger); err != nil {
-		return fmt.Errorf("README_old.md deletion assertion failed: %w", err)
-	}
-
-	newReadmeAssertion := filesystem_assertion.FileContentsAssertion{
-		ExpectedContents: readmeContent,
-	}
-	if err := newReadmeAssertion.Run(readmePath, stageHarness.Logger); err != nil {
-		return fmt.Errorf("README.md assertion failed: %w", err)
-	}
-
+	// main.js should be intact
 	mainJsAssertion := filesystem_assertion.FileContentsAssertion{
 		ExpectedContents: mainContent,
 	}
 	if err := mainJsAssertion.Run(mainFilePath, stageHarness.Logger); err != nil {
-		return fmt.Errorf("app/main.js assertion failed: %w", err)
+		return err
+	}
+
+	// New readme should be intact
+	newReadmeAssertion := filesystem_assertion.FileContentsAssertion{
+		ExpectedContents: readmeContent,
+	}
+	if err := newReadmeAssertion.Run(readmePath, stageHarness.Logger); err != nil {
+		return err
+	}
+
+	// Old readme should be deleted
+	oldReadmeAssertion := filesystem_assertion.FileDoesNotExistAssertion{}
+	if err := oldReadmeAssertion.Run(readmeOldPath, stageHarness.Logger); err != nil {
+		return err
 	}
 
 	return nil
