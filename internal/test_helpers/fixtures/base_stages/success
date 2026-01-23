@@ -1,28 +1,102 @@
 Debug = true
 
 [33m[tester::#YY2] [0m[94mRunning tests for Stage #YY2 (yy2)[0m
-[33m[tester::#YY2] [0m[36mSetting the workspace directory to "/tmp/workspace-pear-592"[0m
 [33m[tester::#YY2] [0m[94m$ ./your_program.sh -p 'What does 9*7 equal? Number only.'[0m
 [33m[your_program] [0m[0m63[0m
+[33m[tester::#YY2] [0m[92m✔ Value is "63"[0m
 [33m[tester::#YY2] [0m[92mTest passed.[0m
 
 [33m[tester::#AQ1] [0m[94mRunning tests for Stage #AQ1 (aq1)[0m
+[33m[tester::#AQ1] [0m[94m$ ./your_program.sh -p 'Give the number of tools accessible in this request. Number only.'[0m
+[33m[your_program] [0m[0m10[0m
+[33m[tester::#AQ1] [0m[92m✔ Value is at least 1[0m
 [33m[tester::#AQ1] [0m[92mTest passed.[0m
 
 [33m[tester::#MD6] [0m[94mRunning tests for Stage #MD6 (md6)[0m
+[33m[tester::#MD6] [0m[94mCreating workspace files[0m
+[33m[tester::#MD6] [pear.py] [0m[0mprint('Hello, World!')[0m
+[33m[tester::#MD6] [0m[94m$ ./your_program.sh -p 'Show me what is inside `pear.py`. Print exact file contents without backticks.'[0m
+[33m[your_program] [0m[0mprint('Hello, World!')[0m
+[33m[tester::#MD6] [0m[92m✔ Value is "print('Hello, World!')"[0m
 [33m[tester::#MD6] [0m[92mTest passed.[0m
 
-[33m[tester::#YP5] [0m[94mRunning tests for Stage #YP5 (yp5)[0m
-[33m[tester::#YP5] [0m[92mTest passed.[0m
-
 [33m[tester::#FF2] [0m[94mRunning tests for Stage #FF2 (ff2)[0m
+[33m[tester::#FF2] [0m[94mCreating workspace files[0m
+[33m[tester::#FF2] [README.md] [0m[0mThis is a simple python project.[0m
+[33m[tester::#FF2] [README.md] [0m[0m- The starting point of this project is app/init.py.[0m
+[33m[tester::#FF2] [README.md] [0m[0m- The file app/expiry.py contains chemical properties.[0m
+[33m[tester::#FF2] [app/expiry.py] [0m[0mchemical_expiry_period = 6  # months[0m
+[33m[tester::#FF2] [app/init.py] [0m[0mfrom expiry import chemical_expiry_period[0m
+[33m[tester::#FF2] [app/init.py] [0m[0m[0m
+[33m[tester::#FF2] [app/init.py] [0m[0mdef main():[0m
+[33m[tester::#FF2] [app/init.py] [0m[0m	print(f"Chemical expiry period: {chemical_expiry_period} months")[0m
+[33m[tester::#FF2] [app/init.py] [0m[0m	[0m
+[33m[tester::#FF2] [app/init.py] [0m[0mif __name__ == "__main__":[0m
+[33m[tester::#FF2] [app/init.py] [0m[0m	main()[0m
+[33m[tester::#FF2] [app/init.py] [0m[0m[0m
+[33m[tester::#FF2] [0m[94m$ ./your_program.sh -p 'Determine in how many months the chemical expires by reading README.md. Number only.'[0m
+[33m[your_program] [0m[0m6[0m
+[33m[tester::#FF2] [0m[92m✔ Value is "6"[0m
 [33m[tester::#FF2] [0m[92mTest passed.[0m
 
 [33m[tester::#OZ7] [0m[94mRunning tests for Stage #OZ7 (oz7)[0m
+[33m[tester::#OZ7] [0m[94mCreating workspace files[0m
+[33m[tester::#OZ7] [README.md] [0m[0mThis is a very simple python project.[0m
+[33m[tester::#OZ7] [README.md] [0m[0mThis should print "Hello world"[0m
+[33m[tester::#OZ7] [README.md] [0m[0mThis contains only one file: app/main.py.[0m
+[33m[tester::#OZ7] [0m[94m$ ./your_program.sh -p 'From README.md, create the indicated file. File should have 1 line. Reply with `Created the file`'[0m
+[33m[your_program] [0m[0mCreated the file[0m
+[33m[tester::#OZ7] [0m[94mChecking workspace contents[0m
+[33m[tester::#OZ7] [app/main.py] [0m[92mprint("Hello world")[0m
 [33m[tester::#OZ7] [0m[92mTest passed.[0m
 
 [33m[tester::#BP2] [0m[94mRunning tests for Stage #BP2 (bp2)[0m
+[33m[tester::#BP2] [0m[94mCreating workspace files[0m
+[33m[tester::#BP2] [app/main.py] [0m[0mdef add(a, b):[0m
+[33m[tester::#BP2] [app/main.py] [0m[0m    return a + b[0m
+[33m[tester::#BP2] [app/main.py] [0m[0m[0m
+[33m[tester::#BP2] [app/main.py] [0m[0mdef area_of_square(n):[0m
+[33m[tester::#BP2] [app/main.py] [0m[0m    return n * n[0m
+[33m[tester::#BP2] [app/test_arithmetic.py] [0m[0mfrom main import add[0m
+[33m[tester::#BP2] [app/test_arithmetic.py] [0m[0massert add(1, 1) == 3[0m
+[33m[tester::#BP2] [app/test_geometry.py] [0m[0mfrom main import area_of_square[0m
+[33m[tester::#BP2] [app/test_geometry.py] [0m[0massert area_of_square(5) == 55[0m
+[33m[tester::#BP2] [0m[94m$ ./your_program.sh -p 'Find files in `app` starting with `test` and fix their bugs. Respond with `Fixed all bugs`'[0m
+[33m[your_program] [0m[0mFixed all bugs[0m
+[33m[tester::#BP2] [0m[94mChecking workspace contents[0m
+[33m[tester::#BP2] [app/test_arithmetic.py] [0m[92mfrom main import add[0m
+[33m[tester::#BP2] [app/test_arithmetic.py] [0m[92massert add(1, 1) == 2[0m
+[33m[tester::#BP2] [app/test_geometry.py] [0m[92mfrom main import area_of_square[0m
+[33m[tester::#BP2] [app/test_geometry.py] [0m[92massert area_of_square(5) == 25[0m
 [33m[tester::#BP2] [0m[92mTest passed.[0m
 
 [33m[tester::#OQ5] [0m[94mRunning tests for Stage #OQ5 (oq5)[0m
+[33m[tester::#OQ5] [0m[94mCreating workspace files[0m
+[33m[tester::#OQ5] [app/main.js] [0m[0masync function main() {[0m
+[33m[tester::#OQ5] [app/main.js] [0m[0m  const response = await fetch('https://jsonplaceholder.typicode.com/posts/1');[0m
+[33m[tester::#OQ5] [app/main.js] [0m[0m  const data = await response.json();[0m
+[33m[tester::#OQ5] [app/main.js] [0m[0m  console.log(data);[0m
+[33m[tester::#OQ5] [app/main.js] [0m[0m}[0m
+[33m[tester::#OQ5] [app/main.js] [0m[0m[0m
+[33m[tester::#OQ5] [app/main.js] [0m[0mmain();[0m
+[33m[tester::#OQ5] [README.md] [0m[0m# My Project[0m
+[33m[tester::#OQ5] [README.md] [0m[0mUses async js to demonstrate web fetch.[0m
+[33m[tester::#OQ5] [README.md] [0m[0mEntry point: app/[0m
+[33m[tester::#OQ5] [README_old.md] [0m[0m# My project[0m
+[33m[tester::#OQ5] [README_old.md] [0m[0mUses javascript promise api to demonstrate web fetch.[0m
+[33m[tester::#OQ5] [README_old.md] [0m[0mEntry point: app/[0m
+[33m[tester::#OQ5] [0m[94m$ ./your_program.sh -p 'Remove the old readme from the project. Always respond with `Deleted README_old.md`'[0m
+[33m[your_program] [0m[0mDeleted README_old.md[0m
+[33m[tester::#OQ5] [0m[94mChecking workspace contents[0m
+[33m[tester::#OQ5] [app/main.js] [0m[92masync function main() {[0m
+[33m[tester::#OQ5] [app/main.js] [0m[92m  const response = await fetch('https://jsonplaceholder.typicode.com/posts/1');[0m
+[33m[tester::#OQ5] [app/main.js] [0m[92m  const data = await response.json();[0m
+[33m[tester::#OQ5] [app/main.js] [0m[92m  console.log(data);[0m
+[33m[tester::#OQ5] [app/main.js] [0m[92m}[0m
+[33m[tester::#OQ5] [app/main.js] [0m[92m[0m
+[33m[tester::#OQ5] [app/main.js] [0m[92mmain();[0m
+[33m[tester::#OQ5] [README.md] [0m[92m# My Project[0m
+[33m[tester::#OQ5] [README.md] [0m[92mUses async js to demonstrate web fetch.[0m
+[33m[tester::#OQ5] [README.md] [0m[92mEntry point: app/[0m
+[33m[tester::#OQ5] [0m[92m✔ File README_old.md does not exist[0m
 [33m[tester::#OQ5] [0m[92mTest passed.[0m

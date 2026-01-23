@@ -35,5 +35,10 @@ func CreateTempDirWithPrefix(prefix string) string {
 // the provided guardRailPrompt and returns the result
 func GetPromptWithGuardRailPrompt(promptChoices []string, guardRailPrompt string) string {
 	prompt := random.RandomElementFromArray(promptChoices)
-	return fmt.Sprintf("%s %s", prompt, guardRailPrompt)
+
+	if guardRailPrompt != "" {
+		guardRailPrompt = " " + guardRailPrompt
+	}
+
+	return fmt.Sprintf("%s%s", prompt, guardRailPrompt)
 }

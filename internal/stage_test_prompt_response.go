@@ -15,9 +15,10 @@ import (
 
 func testPromptResponse(stageHarness *test_case_harness.TestCaseHarness) error {
 	proxy_server.StartProxyServer(stageHarness)
-	workspace_manager.BootstrapExecutableWorkspace(stageHarness)
 	settings_manager.InitializeBypassPermissionSettings(stageHarness)
 	stageHarness.Executable.TimeoutInMilliseconds = 30 * 1000
+	workspaceManager := workspace_manager.NewWorkspaceManager()
+	workspaceManager.BootstrapExecutableWorkspace(stageHarness)
 
 	operand1 := random.RandomInt(1, 11)
 	operand2 := random.RandomInt(1, 11)
@@ -27,10 +28,10 @@ func testPromptResponse(stageHarness *test_case_harness.TestCaseHarness) error {
 	prompt := utils.GetPromptWithGuardRailPrompt(
 		[]string{
 			fmt.Sprintf("What is %d%s%d?", operand1, operator, operand2),
-			fmt.Sprintf("Calculate %d %s %d.", operand1, operator, operand2),
-			fmt.Sprintf("Can you solve: %d%s%d?", operand1, operator, operand2),
+			fmt.Sprintf("Calculate: %d %s %d.", operand1, operator, operand2),
+			fmt.Sprintf("Solve: %d %s %d?", operand1, operator, operand2),
 			fmt.Sprintf("What does %d%s%d equal?", operand1, operator, operand2),
-			fmt.Sprintf("Please compute %d%s%d.", operand1, operator, operand2),
+			fmt.Sprintf("Please compute %d %s %d.", operand1, operator, operand2),
 		},
 		"Number only.",
 	)
