@@ -33,6 +33,7 @@ func newProxyServer() *proxyServer {
 	reverseProxy.Rewrite = func(req *httputil.ProxyRequest) {
 		req.SetURL(targetUrl)
 		req.Out.Header.Set("Authorization", "Bearer "+apiKey)
+		req.Out.Header.Del("x-anthropic-billing-header")
 	}
 
 	validator := &validationMiddleware{}
