@@ -33,6 +33,8 @@ func newProxyServer() *proxyServer {
 	reverseProxy.Rewrite = func(req *httputil.ProxyRequest) {
 		req.SetURL(targetUrl)
 		req.Out.Header.Set("Authorization", "Bearer "+apiKey)
+		// This is needed because the tests started randomly failing from
+		// 23 Jan 2026 (https://github.com/codecrafters-io/claude-code-tester/actions/runs/21276441088/job/61237125153?pr=5)
 		req.Out.Header.Del("x-anthropic-billing-header")
 	}
 
