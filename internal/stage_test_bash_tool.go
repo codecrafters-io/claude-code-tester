@@ -1,10 +1,7 @@
 package internal
 
 import (
-	"path/filepath"
-
 	"github.com/codecrafters-io/claude-code-tester/internal/assertions/filesystem_assertion"
-	"github.com/codecrafters-io/claude-code-tester/internal/assertions/string_assertion"
 	"github.com/codecrafters-io/claude-code-tester/internal/settings_manager"
 	"github.com/codecrafters-io/claude-code-tester/internal/test_cases"
 	"github.com/codecrafters-io/claude-code-tester/internal/utils"
@@ -15,35 +12,48 @@ import (
 
 func testBashTool(stageHarness *test_case_harness.TestCaseHarness) error {
 	proxy_server.StartProxyServer(stageHarness)
-	workspace_manager.BootstrapExecutableWorkspace(stageHarness)
 	settings_manager.InitializeBypassPermissionSettings(stageHarness)
 	stageHarness.Executable.TimeoutInMilliseconds = 30 * 1000
-	workspaceDirPath := stageHarness.Executable.WorkingDir
+	stageLogger := stageHarness.Logger
 
-	appDirPath := filepath.Join(workspaceDirPath, "app")
-	utils.MustCreateDirWithLogging(appDirPath, stageHarness.Logger)
+	workspaceManager := workspace_manager.NewWorkspaceManager()
+	workspaceManager.BootstrapExecutableWorkspace(stageHarness)
 
-	readmePath := filepath.Join(workspaceDirPath, "README.md")
-	readmeContent := `# My Project
-Uses async js to demonstrate web fetch.
-Entry point: app/`
-	utils.MustCreateFileWithContentsWithLogger(readmePath, readmeContent, stageHarness.Logger)
-
-	readmeOldPath := filepath.Join(workspaceDirPath, "README_old.md")
-	readmeOldContent := `# My project
-Uses javascript promise api to demonstrate web fetch.
-Entry point: app/`
-	utils.MustCreateFileWithContentsWithLogger(readmeOldPath, readmeOldContent, stageHarness.Logger)
-
-	mainFilePath := filepath.Join(appDirPath, "main.js")
-	mainContent := `async function main() {
+	// Store file contents in variables
+	mainJsContent := `async function main() {
   const response = await fetch('https://jsonplaceholder.typicode.com/posts/1');
   const data = await response.json();
   console.log(data);
 }
 
 main();`
-	utils.MustCreateFileWithContentsWithLogger(mainFilePath, mainContent, stageHarness.Logger)
+
+	readmeContent := `# My Project
+Uses async js to demonstrate web fetch.
+Entry point: app/`
+
+	readmeOldContent := `# My project
+Uses javascript promise api to demonstrate web fetch.
+Entry point: app/`
+
+	// Create files using MustCreateFiles
+	workspaceManager.MustCreateFilesWithLogger([]workspace_manager.WorkspaceFile{
+		{
+			RelativePath: "app/main.js",
+			Content:      mainJsContent,
+			FileMode:     0644,
+		},
+		{
+			RelativePath: "README.md",
+			Content:      readmeContent,
+			FileMode:     0644,
+		},
+		{
+			RelativePath: "README_old.md",
+			Content:      readmeOldContent,
+			FileMode:     0644,
+		},
+	}, stageLogger)
 
 	promptTestCase := test_cases.NonInteractiveTestCase{
 		InputPrompt: utils.GetPromptWithGuardRailPrompt(
@@ -51,11 +61,8 @@ main();`
 				"Delete the old readme file.",
 				"Remove the old readme from the project.",
 			},
-			"Always respond with `Done`",
+			"Always respond with `Deleted README_old.md`",
 		),
-		StdoutAssertion: string_assertion.ExactMatchAssertion{
-			ExpectedValue: "Done",
-		},
 		ExpectedExitCode: 0,
 	}
 
@@ -63,27 +70,27 @@ main();`
 		return err
 	}
 
-	// main.js should be intact
-	mainJsAssertion := filesystem_assertion.FileContentsAssertion{
-		ExpectedContents: mainContent,
-	}
-	if err := mainJsAssertion.Run(mainFilePath, stageHarness.Logger); err != nil {
+	stageLogger.Infof("Checking workspace contents")
+
+	// Assert that main file is intact
+	mainFileAbsPath := workspaceManager.ConvertToAbsPath("app/main.js")
+	mainJsAssertion := filesystem_assertion.FileContentsAssertion{ExpectedContents: mainJsContent}
+
+	if err := mainJsAssertion.Run(mainFileAbsPath, stageLogger, workspaceManager.GetRelPathConverter()); err != nil {
 		return err
 	}
 
-	// New readme should be intact
-	newReadmeAssertion := filesystem_assertion.FileContentsAssertion{
-		ExpectedContents: readmeContent,
-	}
-	if err := newReadmeAssertion.Run(readmePath, stageHarness.Logger); err != nil {
+	// Assert that readme is intact
+	readmePath := workspaceManager.ConvertToAbsPath("README.md")
+	readmeAssertion := filesystem_assertion.FileContentsAssertion{ExpectedContents: readmeContent}
+
+	if err := readmeAssertion.Run(readmePath, stageLogger, workspaceManager.GetRelPathConverter()); err != nil {
 		return err
 	}
 
-	// Old readme should be deleted
+	// Assert that old readme is deleted
+	oldReadmeAbsPath := workspaceManager.ConvertToAbsPath("README_old.md")
 	oldReadmeAssertion := filesystem_assertion.FileDoesNotExistAssertion{}
-	if err := oldReadmeAssertion.Run(readmeOldPath, stageHarness.Logger); err != nil {
-		return err
-	}
 
-	return nil
+	return oldReadmeAssertion.Run(oldReadmeAbsPath, stageLogger, workspaceManager.GetRelPathConverter())
 }

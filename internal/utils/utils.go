@@ -3,9 +3,7 @@ package utils
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 
-	"github.com/codecrafters-io/tester-utils/logger"
 	"github.com/codecrafters-io/tester-utils/random"
 )
 
@@ -43,42 +41,4 @@ func GetPromptWithGuardRailPrompt(promptChoices []string, guardRailPrompt string
 	}
 
 	return fmt.Sprintf("%s%s", prompt, guardRailPrompt)
-}
-
-// MustCreateDirWithLogging creates a directory with given path and logs the creation
-func MustCreateDirWithLogging(path string, logger *logger.Logger) {
-	err := os.MkdirAll(path, 0755)
-	if err != nil {
-		panic(fmt.Sprintf("Codecrafters Internal Error - Failed to create directory %s: %v", path, err))
-	}
-
-	dirName := filepath.Base(path)
-	parentDir := filepath.Dir(path)
-
-	logger.Infof("Created %q inside %q", dirName, parentDir)
-}
-
-// MustCreateFileWithContentsWithLogger creates a file with given path and contents, and logs the file contents using the logger
-func MustCreateFileWithContentsWithLogger(path string, contents string, logger *logger.Logger) {
-	file, err := os.Create(path)
-
-	if err != nil {
-		panic(fmt.Sprintf("Codecrafters Internal Error - Failed to create file %s: %v", path, err))
-	}
-
-	defer file.Close()
-	_, err = file.WriteString(contents)
-
-	if err != nil {
-		panic(fmt.Sprintf("Codecrafters Internal Error - Failed to write to file %s: %v", path, err))
-	}
-
-	fileName := filepath.Base(path)
-	fileDir := filepath.Dir(path)
-
-	logger.Infof("Created %q inside %q", fileName, fileDir)
-
-	logger.WithAdditionalSecondaryPrefix(fileName, func() {
-		logger.Plainf("%s", contents)
-	})
 }

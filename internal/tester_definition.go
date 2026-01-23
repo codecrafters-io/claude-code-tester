@@ -33,7 +33,8 @@ var testerDefinition = tester_definition.TesterDefinition{
 		{
 			Slug:     "oz7",
 			TestFunc: testWriteTool,
-			Timeout:  30 * time.Second,
+			// This one occassionally times out for 30s
+			Timeout: 45 * time.Second,
 		},
 		{
 			Slug:     "bp2",

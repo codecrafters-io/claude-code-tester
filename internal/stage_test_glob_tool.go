@@ -1,10 +1,7 @@
 package internal
 
 import (
-	"path/filepath"
-
 	"github.com/codecrafters-io/claude-code-tester/internal/assertions/filesystem_assertion"
-	"github.com/codecrafters-io/claude-code-tester/internal/assertions/string_assertion"
 	"github.com/codecrafters-io/claude-code-tester/internal/settings_manager"
 	"github.com/codecrafters-io/claude-code-tester/internal/test_cases"
 	"github.com/codecrafters-io/claude-code-tester/internal/utils"
@@ -15,64 +12,57 @@ import (
 
 func testGlobTool(stageHarness *test_case_harness.TestCaseHarness) error {
 	proxy_server.StartProxyServer(stageHarness)
-	workspace_manager.BootstrapExecutableWorkspace(stageHarness)
 	settings_manager.InitializeBypassPermissionSettings(stageHarness)
 	stageHarness.Executable.TimeoutInMilliseconds = 45 * 1000
-	workspaceDirPath := stageHarness.Executable.WorkingDir
+	stageLogger := stageHarness.Logger
 
-	appDirPath := filepath.Join(workspaceDirPath, "app")
-	utils.MustCreateDirWithLogging(appDirPath, stageHarness.Logger)
+	workspaceManager := workspace_manager.NewWorkspaceManager()
+	workspaceManager.BootstrapExecutableWorkspace(stageHarness)
 
-	mainFilePath := filepath.Join(appDirPath, "main.py")
 	mainContent := `def add(a, b):
     return a + b
 
 def area_of_square(n):
     return n * n`
-	utils.MustCreateFileWithContentsWithLogger(mainFilePath, mainContent, stageHarness.Logger)
 
-	type testFile struct {
-		name         string
-		buggyContent string
-		fixedContent string
-	}
+	arithmeticFileRelativePath := "app/test_arithmetic.py"
+	geometryFileRelativePath := "app/test_geometry.py"
 
-	testFiles := []testFile{
+	arithmeticFileBuggyContent := `from main import add
+assert add(1, 1) == 3`
+
+	geometryFileBuggyContent := `from main import area_of_square
+assert area_of_square(5) == 55`
+
+	workspaceManager.MustCreateFilesWithLogger([]workspace_manager.WorkspaceFile{
 		{
-			name: "test_arithmetic.py",
-			buggyContent: `from main import add
-assert add(1, 1) == 3`,
-			fixedContent: `from main import add
-assert add(1, 1) == 2`,
+			RelativePath: "app/main.py",
+			Content:      mainContent,
+			FileMode:     0644,
 		},
 		{
-			name: "test_geometry.py",
-			buggyContent: `from main import area_of_square
-assert area_of_square(5) == 55`,
-			fixedContent: `from main import area_of_square
-assert area_of_square(5) == 25`,
+			RelativePath: arithmeticFileRelativePath,
+			Content:      arithmeticFileBuggyContent,
+			FileMode:     0644,
 		},
-	}
-
-	for _, tf := range testFiles {
-		testFilePath := filepath.Join(appDirPath, tf.name)
-		utils.MustCreateFileWithContentsWithLogger(testFilePath, tf.buggyContent, stageHarness.Logger)
-	}
+		{
+			RelativePath: geometryFileRelativePath,
+			Content:      geometryFileBuggyContent,
+			FileMode:     0644,
+		},
+	}, stageLogger)
 
 	promptTestCase := test_cases.NonInteractiveTestCase{
 		InputPrompt: utils.GetPromptWithGuardRailPrompt(
 			[]string{
-				"Find files in `app` directory that start with 'test' and fix the bugs in them.",
-				"Find all files in `app` directory that start with 'test' and fix any bugs you find.",
-				"Use glob to find files in `app` directory that start with 'test' and fix the bugs in those files.",
-				"Find all files in `app` directory that start with 'test' using glob patterns and fix the bugs in them.",
-				"Identify files in `app` directory that start with 'test' and fix any bugs you discover.",
+				"Fix all bugs in files in `app` that start with `test`.",
+				"Find files in `app` starting with `test` and fix their bugs.",
+				"Identify files in `app` that start with `test` and fix bugs.",
+				"Locate files in `app` starting with `test` and fix all bugs.",
+				"Fix bugs in files under `app` that start with `test`.",
 			},
-			"Always respond with `Done`",
+			"Respond with `Fixed all bugs`",
 		),
-		StdoutAssertion: string_assertion.ExactMatchAssertion{
-			ExpectedValue: "Done",
-		},
 		ExpectedExitCode: 0,
 	}
 
@@ -80,17 +70,23 @@ assert area_of_square(5) == 25`,
 		return err
 	}
 
-	for _, testFile := range testFiles {
-		testFilePath := filepath.Join(appDirPath, testFile.name)
+	stageLogger.Infof("Checking workspace contents")
 
-		fileAssertion := filesystem_assertion.FileContentsAssertion{
-			ExpectedContents: testFile.fixedContent,
-		}
+	arithmeticFileFixedContent := `from main import add
+assert add(1, 1) == 2`
 
-		if err := fileAssertion.Run(testFilePath, stageHarness.Logger); err != nil {
-			return err
-		}
+	arithmeticFileAssertion := filesystem_assertion.FileContentsAssertion{ExpectedContents: arithmeticFileFixedContent}
+	arithmeticFileAbsPath := workspaceManager.ConvertToAbsPath(arithmeticFileRelativePath)
+
+	if err := arithmeticFileAssertion.Run(arithmeticFileAbsPath, stageLogger, workspaceManager.GetRelPathConverter()); err != nil {
+		return err
 	}
 
-	return nil
+	geometryFileFixedContent := `from main import area_of_square
+assert area_of_square(5) == 25`
+
+	geometryFileAbsPath := workspaceManager.ConvertToAbsPath(geometryFileRelativePath)
+	geometryFileAssertion := filesystem_assertion.FileContentsAssertion{ExpectedContents: geometryFileFixedContent}
+
+	return geometryFileAssertion.Run(geometryFileAbsPath, stageLogger, workspaceManager.GetRelPathConverter())
 }

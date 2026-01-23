@@ -12,9 +12,10 @@ import (
 
 func testAdvertiseReadTool(stageHarness *test_case_harness.TestCaseHarness) error {
 	proxy_server.StartProxyServer(stageHarness)
-	workspace_manager.BootstrapExecutableWorkspace(stageHarness)
 	settings_manager.InitializeBypassPermissionSettings(stageHarness)
 	stageHarness.Executable.TimeoutInMilliseconds = 30 * 1000
+	workspaceManager := workspace_manager.NewWorkspaceManager()
+	workspaceManager.BootstrapExecutableWorkspace(stageHarness)
 
 	prompt := utils.GetPromptWithGuardRailPrompt(
 		[]string{

@@ -12,17 +12,18 @@ import (
 type FileDoesNotExistAssertion struct {
 }
 
-func (a FileDoesNotExistAssertion) Run(filePath string, logger *logger.Logger) error {
-	_, err := os.Stat(filePath)
+func (a FileDoesNotExistAssertion) Run(absolutePath string, logger *logger.Logger, shortFilePathConverter func(string) string) error {
+	_, err := os.Stat(absolutePath)
+	shortFilePath := shortFilePathConverter(absolutePath)
 
 	if err == nil {
-		return fmt.Errorf("Expected file %s to not exist, but it exists", filePath)
+		return fmt.Errorf("Expected file %s to not exist, but it exists", shortFilePath)
 	}
 
 	if !errors.Is(err, fs.ErrNotExist) {
-		return fmt.Errorf("Failed to check existence of %s: %v", filePath, err)
+		return fmt.Errorf("Failed to check existence of %s: %v", shortFilePath, err)
 	}
 
-	logger.Successf("✔ File %s does not exist", filePath)
+	logger.Successf("✔ File %s does not exist", shortFilePath)
 	return nil
 }
