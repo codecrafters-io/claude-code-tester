@@ -15,7 +15,7 @@ Debug = true
 [33m[tester::#MD6] [0m[94mRunning tests for Stage #MD6 (md6)[0m
 [33m[tester::#MD6] [0m[94mCreating workspace files[0m
 [33m[tester::#MD6] [pear.py] [0m[0mprint('Hello, World!')[0m
-[33m[tester::#MD6] [0m[94m$ ./your_program.sh -p 'Show me what is inside `pear.py`. Exact file contents without backticks.'[0m
+[33m[tester::#MD6] [0m[94m$ ./your_program.sh -p 'Show me what is inside `pear.py`. Print exact file contents without backticks.'[0m
 [33m[your_program] [0m[0mprint('Hello, World!')[0m
 [33m[tester::#MD6] [0m[92m✔ Value is "print('Hello, World!')"[0m
 [33m[tester::#MD6] [0m[92mTest passed.[0m
