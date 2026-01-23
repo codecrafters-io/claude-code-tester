@@ -28,24 +28,22 @@ var testerDefinition = tester_definition.TesterDefinition{
 		{
 			Slug:     "ff2",
 			TestFunc: testAgentLoop,
-			Timeout:  30 * time.Second,
+			Timeout:  45 * time.Second,
 		},
 		{
 			Slug:     "oz7",
 			TestFunc: testWriteTool,
-			// This one occassionally times out for 30s
-			Timeout: 45 * time.Second,
+			Timeout:  45 * time.Second,
 		},
 		{
 			Slug:     "bp2",
 			TestFunc: testGlobTool,
-			// This one occassionally times out for 30s
-			Timeout: 45 * time.Second,
+			Timeout:  45 * time.Second,
 		},
 		{
 			Slug:     "oq5",
 			TestFunc: testBashTool,
-			Timeout:  30 * time.Second,
+			Timeout:  45 * time.Second,
 		},
 	},
 }

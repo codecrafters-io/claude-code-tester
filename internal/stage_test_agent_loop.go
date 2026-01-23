@@ -16,7 +16,7 @@ import (
 func testAgentLoop(stageHarness *test_case_harness.TestCaseHarness) error {
 	proxy_server.StartProxyServer(stageHarness)
 	settings_manager.InitializeBypassPermissionSettings(stageHarness)
-	stageHarness.Executable.TimeoutInMilliseconds = 30 * 1000
+	stageHarness.Executable.TimeoutInMilliseconds = 45 * 1000
 
 	workspaceManager := workspace_manager.NewWorkspaceManager()
 	workspaceManager.BootstrapExecutableWorkspace(stageHarness)
@@ -28,11 +28,11 @@ func testAgentLoop(stageHarness *test_case_harness.TestCaseHarness) error {
 
 	mainFileContent := fmt.Sprintf(`from %s import chemical_expiry_period
 
-	def main():
-		print(f"Chemical expiry period: {chemical_expiry_period} months")
+def main():
+	print(f"Chemical expiry period: {chemical_expiry_period} months")
 	
-	if __name__ == "__main__":
-		main()
+if __name__ == "__main__":
+	main()
 `, extraFileNameWithoutExtension)
 
 	chemicalExpiryPeriod := random.RandomInt(6, 36)

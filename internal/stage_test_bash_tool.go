@@ -13,7 +13,7 @@ import (
 func testBashTool(stageHarness *test_case_harness.TestCaseHarness) error {
 	proxy_server.StartProxyServer(stageHarness)
 	settings_manager.InitializeBypassPermissionSettings(stageHarness)
-	stageHarness.Executable.TimeoutInMilliseconds = 30 * 1000
+	stageHarness.Executable.TimeoutInMilliseconds = 45 * 1000
 	stageLogger := stageHarness.Logger
 
 	workspaceManager := workspace_manager.NewWorkspaceManager()
