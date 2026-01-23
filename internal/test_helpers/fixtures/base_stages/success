@@ -28,11 +28,11 @@ Debug = true
 [33m[tester::#FF2] [app/expiry.py] [0m[0mchemical_expiry_period = 6  # months[0m
 [33m[tester::#FF2] [app/init.py] [0m[0mfrom expiry import chemical_expiry_period[0m
 [33m[tester::#FF2] [app/init.py] [0m[0m[0m
-[33m[tester::#FF2] [app/init.py] [0m[0m	def main():[0m
-[33m[tester::#FF2] [app/init.py] [0m[0m		print(f"Chemical expiry period: {chemical_expiry_period} months")[0m
+[33m[tester::#FF2] [app/init.py] [0m[0mdef main():[0m
+[33m[tester::#FF2] [app/init.py] [0m[0m	print(f"Chemical expiry period: {chemical_expiry_period} months")[0m
 [33m[tester::#FF2] [app/init.py] [0m[0m	[0m
-[33m[tester::#FF2] [app/init.py] [0m[0m	if __name__ == "__main__":[0m
-[33m[tester::#FF2] [app/init.py] [0m[0m		main()[0m
+[33m[tester::#FF2] [app/init.py] [0m[0mif __name__ == "__main__":[0m
+[33m[tester::#FF2] [app/init.py] [0m[0m	main()[0m
 [33m[tester::#FF2] [app/init.py] [0m[0m[0m
 [33m[tester::#FF2] [0m[94m$ ./your_program.sh -p 'Determine in how many months the chemical expires by reading README.md. Number only.'[0m
 [33m[your_program] [0m[0m6[0m
