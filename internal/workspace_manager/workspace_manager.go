@@ -39,6 +39,15 @@ func (w *WorkspaceManager) BootstrapExecutableWorkspace(stageHarness *test_case_
 		os.RemoveAll(w.workspaceDirPath)
 	})
 
+	// Convert path to absolute: This is done to resolve the relative path to absolute early on
+	// since we set the executable's working directory to be a random one
+	absolutePath, err := filepath.Abs(stageHarness.Executable.Path)
+
+	if err != nil {
+		panic("Codecrafters Internal Error - Failed to convert executable path to absolute: " + err.Error())
+	}
+
+	stageHarness.Executable.Path = absolutePath
 	stageHarness.Executable.WorkingDir = w.workspaceDirPath
 }
 

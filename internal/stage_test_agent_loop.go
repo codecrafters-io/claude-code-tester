@@ -28,11 +28,11 @@ func testAgentLoop(stageHarness *test_case_harness.TestCaseHarness) error {
 
 	mainFileContent := fmt.Sprintf(`from %s import chemical_expiry_period
 
-	def main():
-		print(f"Chemical expiry period: {chemical_expiry_period} months")
-	
-	if __name__ == "__main__":
-		main()
+def main():
+	print(f"Chemical expiry period: {chemical_expiry_period} months")
+
+if __name__ == "__main__":
+	main()
 `, extraFileNameWithoutExtension)
 
 	chemicalExpiryPeriod := random.RandomInt(6, 36)
