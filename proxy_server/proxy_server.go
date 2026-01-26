@@ -14,7 +14,7 @@ import (
 // StartProxyServer spawns a proxy that listens at localhost:10000
 // the server is automatically shutdown as a part of stageHarness' teardown function
 func StartProxyServer(stageHarness *test_case_harness.TestCaseHarness) {
-	proxyServer := newProxyServer()
+	proxyServer := newProxyServer(stageHarness)
 	proxyServer.Start()
 	proxyServer.registerTeardown(stageHarness)
 }
@@ -23,7 +23,7 @@ type proxyServer struct {
 	server *http.Server
 }
 
-func newProxyServer() *proxyServer {
+func newProxyServer(stageHarness *test_case_harness.TestCaseHarness) *proxyServer {
 	targetUrl, _ := url.Parse("https://openrouter.ai")
 	apiKey := mustGetOpenrouterApiKey()
 
@@ -45,10 +45,13 @@ func newProxyServer() *proxyServer {
 	validator.registerEndPointValidator("/api/v1/messages", modelValidator)
 	validator.registerEndPointValidator("/api/v1/chat/completions", modelValidator)
 
+	cacheMiddleWare := newCacheMiddleware(stageHarness.TesterCache)
+	cacheHandler := cacheMiddleWare.Wrap(reverseProxy)
+
 	return &proxyServer{
 		server: &http.Server{
 			Addr:    "localhost:" + proxyListeningPort,
-			Handler: validator.WrapProxy(reverseProxy),
+			Handler: validator.Wrap(cacheHandler),
 		},
 	}
 }

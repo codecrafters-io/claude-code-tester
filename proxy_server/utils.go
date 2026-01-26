@@ -1,6 +1,8 @@
 package proxy_server
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"os"
 )
 
@@ -14,4 +16,10 @@ func mustGetOpenrouterApiKey() string {
 		panic("Codecrafters Internal Error - CODECRAFTERS_SECRET_OPENROUTER_API_KEY environment variable not set")
 	}
 	return apiKey
+}
+
+func getSha256HashString(data []byte) string {
+	hasher := sha256.New()
+	hasher.Write(data)
+	return hex.EncodeToString(hasher.Sum(nil))
 }

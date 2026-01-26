@@ -3,7 +3,6 @@ package proxy_server
 import (
 	"fmt"
 	"net/http"
-	"net/http/httputil"
 )
 
 // ValidationFunc is a function type that validates a request
@@ -21,15 +20,15 @@ type validationMiddleware struct {
 	endpointValidators map[string][]ValidationFunc
 }
 
-// WrapProxy wraps the reverse proxy with validator middleware
-func (v *validationMiddleware) WrapProxy(proxy *httputil.ReverseProxy) http.Handler {
+// WrapProxy wraps the next handler with validator middleware
+func (v *validationMiddleware) Wrap(nextHandler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := v.validateRequest(r); err != nil {
 			sendErrorResponse(w, *err)
 			return
 		}
 
-		proxy.ServeHTTP(w, r)
+		nextHandler.ServeHTTP(w, r)
 	})
 }
 
