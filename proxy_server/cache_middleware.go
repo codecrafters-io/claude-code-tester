@@ -2,8 +2,10 @@ package proxy_server
 
 import (
 	"bytes"
+	"encoding/gob"
 	"io"
 	"net/http"
+	"sort"
 
 	"github.com/codecrafters-io/tester-utils/tester_cache"
 )
@@ -31,14 +33,33 @@ func (c *cacheMiddleware) Wrap(next http.Handler) http.Handler {
 		cachedResponse, found := c.cache.Get(key)
 
 		if found {
-			w.Write(cachedResponse)
-			return
+			var cached cachedResponseData
+			dec := gob.NewDecoder(bytes.NewReader(cachedResponse))
+			if err := dec.Decode(&cached); err == nil {
+				for key, values := range cached.Headers {
+					for _, value := range values {
+						w.Header().Add(key, value)
+					}
+				}
+				w.WriteHeader(cached.StatusCode)
+				w.Write(cached.Body)
+				return
+			}
 		}
 
 		recorder := newResponseRecorder(w)
 		next.ServeHTTP(recorder, r)
 
-		c.cache.Set(key, recorder.responseBuffer.Bytes())
+		cached := cachedResponseData{
+			StatusCode: recorder.statusCode,
+			Headers:    recorder.headers,
+			Body:       recorder.responseBuffer.Bytes(),
+		}
+		var buf bytes.Buffer
+		enc := gob.NewEncoder(&buf)
+		if err := enc.Encode(cached); err == nil {
+			c.cache.Set(key, buf.Bytes())
+		}
 	})
 }
 
@@ -65,8 +86,11 @@ func serializeRequest(r *http.Request) ([]byte, error) {
 		headerKeys = append(headerKeys, key)
 	}
 
-	for key, values := range r.Header {
+	sort.Strings(headerKeys)
+
+	for _, key := range headerKeys {
 		buf.WriteString(key)
+		values := r.Header[key]
 		for _, value := range values {
 			buf.WriteString(value)
 		}
@@ -77,18 +101,50 @@ func serializeRequest(r *http.Request) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
+type cachedResponseData struct {
+	StatusCode int
+	Headers    http.Header
+	Body       []byte
+}
+
 type responseRecorder struct {
 	http.ResponseWriter
 	responseBuffer bytes.Buffer
+	statusCode     int
+	headers        http.Header
+	wroteHeader    bool
 }
 
 func newResponseRecorder(w http.ResponseWriter) *responseRecorder {
 	return &responseRecorder{
 		ResponseWriter: w,
+		statusCode:     http.StatusOK,
+		headers:        make(http.Header),
 	}
 }
 
+func (r *responseRecorder) Header() http.Header {
+	return r.headers
+}
+
+func (r *responseRecorder) WriteHeader(statusCode int) {
+	if r.wroteHeader {
+		return
+	}
+	r.wroteHeader = true
+	r.statusCode = statusCode
+	for key, values := range r.headers {
+		for _, value := range values {
+			r.ResponseWriter.Header().Add(key, value)
+		}
+	}
+	r.ResponseWriter.WriteHeader(statusCode)
+}
+
 func (r *responseRecorder) Write(data []byte) (int, error) {
+	if !r.wroteHeader {
+		r.WriteHeader(http.StatusOK)
+	}
 	r.responseBuffer.Write(data)
 	return r.ResponseWriter.Write(data)
 }
