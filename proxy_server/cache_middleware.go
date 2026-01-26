@@ -49,14 +49,17 @@ func (c *cacheMiddleware) Wrap(next http.Handler) http.Handler {
 		recorder := newResponseRecorder(w)
 		next.ServeHTTP(recorder, r)
 
-		cached := &cachedResponse{
-			StatusCode: recorder.statusCode,
-			Headers:    recorder.headers,
-			Body:       recorder.body.Bytes(),
-		}
+		// Only cache successful (2xx) responses
+		if recorder.statusCode >= 200 && recorder.statusCode < 300 {
+			cached := &cachedResponse{
+				StatusCode: recorder.statusCode,
+				Headers:    recorder.headers,
+				Body:       recorder.body.Bytes(),
+			}
 
-		if encodedResp, err := encodeCachedResponse(cached); err == nil {
-			c.cache.Set(key, encodedResp)
+			if encodedResp, err := encodeCachedResponse(cached); err == nil {
+				c.cache.Set(key, encodedResp)
+			}
 		}
 	})
 }
@@ -73,7 +76,9 @@ func serializeRequest(r *http.Request) ([]byte, error) {
 
 	var buf bytes.Buffer
 	buf.WriteString(r.Method)
+	buf.WriteByte(0) // null byte delimiter
 	buf.WriteString(r.URL.String())
+	buf.WriteByte(0) // null byte delimiter
 
 	// Sort headers by key for consistent ordering
 	headerKeys := make([]string, 0, len(r.Header))
@@ -84,8 +89,10 @@ func serializeRequest(r *http.Request) ([]byte, error) {
 
 	for _, key := range headerKeys {
 		buf.WriteString(key)
+		buf.WriteByte(0) // null byte delimiter
 		for _, value := range r.Header[key] {
 			buf.WriteString(value)
+			buf.WriteByte(0) // null byte delimiter
 		}
 	}
 
@@ -162,4 +169,10 @@ func (r *responseRecorder) Write(data []byte) (int, error) {
 
 	r.body.Write(data)
 	return r.ResponseWriter.Write(data)
+}
+
+func (r *responseRecorder) Flush() {
+	if flusher, ok := r.ResponseWriter.(http.Flusher); ok {
+		flusher.Flush()
+	}
 }
