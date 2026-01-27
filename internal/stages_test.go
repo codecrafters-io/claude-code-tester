@@ -18,6 +18,13 @@ func TestStages(t *testing.T) {
 			StdoutFixturePath:   "./test_helpers/fixtures/base_stages/success",
 			NormalizeOutputFunc: normalizeTesterOutput,
 		},
+		"base_stages_users_code_pass": {
+			StageSlugs:          []string{"yy2", "aq1", "md6", "ff2", "oz7", "bp2", "oq5"},
+			CodePath:            "./test_helpers/scenarios/base_stages/users_code_pass_all",
+			ExpectedExitCode:    0,
+			StdoutFixturePath:   "./test_helpers/fixtures/base_stages/users_code_pass_all",
+			NormalizeOutputFunc: normalizeTesterOutput,
+		},
 		"stage_1_fail": {
 			StageSlugs:          []string{"yy2"},
 			CodePath:            "./test_helpers/scenarios/base_stages/stage_1_fail",

@@ -15,10 +15,10 @@ should_intercept_output=false
 if [ "$1" = "-p" ] && [ -n "$2" ]; then
   prompt="$2"
   case "$prompt" in
-    "What is the length of the tools array available to you in this request? Number only."|\
-    "How many tools are available to you in this request? Number only."|\
-    "Count the number of tools available to you for this request. Number only."|\
-    "Give the number of tools accessible in this request. Number only.")
+    "What is the count of tools available to you in this request? Respond with only a number."|\
+    "How many tools are available to you in this request? Respond with only a number."|\
+    "Count the number of tools available to you for this request. Respond with only a number."|\
+    "Give the number of tools accessible in this request. Respond with only a number.")
       should_intercept_output=true
       ;;
   esac
