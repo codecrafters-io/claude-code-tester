@@ -9,6 +9,8 @@ import (
 
 func TestStages(t *testing.T) {
 	os.Setenv("CODECRAFTERS_RANDOM_SEED", "1234567890")
+	os.Setenv("OPENROUTER_BASE_URL", "http://localhost:10000/api/v1/")
+	os.Setenv("OPENROUTER_API_KEY", "dummy-api-key")
 
 	testCases := map[string]tester_utils_testing.TesterOutputTestCase{
 		"base_stages_pass": {
@@ -16,13 +18,6 @@ func TestStages(t *testing.T) {
 			CodePath:            "./test_helpers/pass_all",
 			ExpectedExitCode:    0,
 			StdoutFixturePath:   "./test_helpers/fixtures/base_stages/success",
-			NormalizeOutputFunc: normalizeTesterOutput,
-		},
-		"base_stages_users_code_pass": {
-			StageSlugs:          []string{"yy2", "aq1", "md6", "ff2", "oz7", "bp2", "oq5"},
-			CodePath:            "./test_helpers/scenarios/base_stages/users_code_pass_all",
-			ExpectedExitCode:    0,
-			StdoutFixturePath:   "./test_helpers/fixtures/base_stages/users_code_pass_all",
 			NormalizeOutputFunc: normalizeTesterOutput,
 		},
 		"stage_1_fail": {

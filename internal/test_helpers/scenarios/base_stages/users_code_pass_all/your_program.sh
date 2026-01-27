@@ -13,9 +13,9 @@ set -e # Exit early if any commands fail
 # - Edit this to change how your program runs locally
 # - Edit .codecrafters/run.sh to change how your program runs remotely
 
+
 SCRIPT_DIR="$(dirname "$0")"
-OPENROUTER_BASE_URL="http://localhost:10000/api/v1/" \
-OPENROUTER_API_KEY="dummy-api-key" \
+
 PYTHONSAFEPATH=1 \
 PYTHONPATH="$SCRIPT_DIR" \
 exec uv run \
