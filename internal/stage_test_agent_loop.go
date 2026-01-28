@@ -66,7 +66,7 @@ if __name__ == "__main__":
 			"Find the chemical expiry period in months from README.md.",
 			"Determine in how many months the chemical expires by reading README.md.",
 		},
-		"Number only.",
+		"Respond with only a number.",
 	)
 
 	promptTestCase := test_cases.NonInteractiveTestCase{

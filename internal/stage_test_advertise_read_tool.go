@@ -19,12 +19,12 @@ func testAdvertiseReadTool(stageHarness *test_case_harness.TestCaseHarness) erro
 
 	prompt := utils.GetPromptWithGuardRailPrompt(
 		[]string{
-			"What is the length of the tools array available to you in this request?",
+			"What is the count of tools available to you in this request?",
 			"How many tools are available to you in this request?",
 			"Count the number of tools available to you for this request.",
 			"Give the number of tools accessible in this request.",
 		},
-		"Number only.",
+		"Respond with only a number.",
 	)
 
 	promptTestCase := test_cases.NonInteractiveTestCase{

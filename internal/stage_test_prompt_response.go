@@ -29,11 +29,11 @@ func testPromptResponse(stageHarness *test_case_harness.TestCaseHarness) error {
 		[]string{
 			fmt.Sprintf("What is %d%s%d?", operand1, operator, operand2),
 			fmt.Sprintf("Calculate: %d %s %d.", operand1, operator, operand2),
-			fmt.Sprintf("Solve: %d %s %d?", operand1, operator, operand2),
+			fmt.Sprintf("Solve: %d %s %d.", operand1, operator, operand2),
 			fmt.Sprintf("What does %d%s%d equal?", operand1, operator, operand2),
 			fmt.Sprintf("Please compute %d %s %d.", operand1, operator, operand2),
 		},
-		"Number only.",
+		"Respond with only a number.",
 	)
 
 	promptTestCase := test_cases.NonInteractiveTestCase{
