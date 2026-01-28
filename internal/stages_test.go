@@ -9,7 +9,7 @@ import (
 
 func TestStages(t *testing.T) {
 	os.Setenv("CODECRAFTERS_RANDOM_SEED", "1234567890")
-	os.Setenv("OPENROUTER_BASE_URL", "http://localhost:10000/api/v1/")
+	os.Setenv("OPENROUTER_BASE_URL", "http://localhost:10000/api/v1")
 	os.Setenv("OPENROUTER_API_KEY", "dummy-api-key")
 
 	testCases := map[string]tester_utils_testing.TesterOutputTestCase{
