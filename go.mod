@@ -4,7 +4,7 @@ go 1.25
 
 require (
 	al.essio.dev/pkg/shellescape v1.6.0
-	github.com/codecrafters-io/tester-utils v0.4.13-0.20260120061440-39dfa87f9c2b
+	github.com/codecrafters-io/tester-utils v0.4.13
 )
 
 require (

@@ -43,7 +43,7 @@ Debug = true
 [33m[tester::#OZ7] [0m[94mCreating workspace files[0m
 [33m[tester::#OZ7] [README.md] [0m[0mThis is a very simple python project.[0m
 [33m[tester::#OZ7] [README.md] [0m[0mThis should print "Hello world"[0m
-[33m[tester::#OZ7] [README.md] [0m[0mThis contains only one file: app/main.py.[0m
+[33m[tester::#OZ7] [README.md] [0m[0mThis project should contain only one file: app/main.py.[0m
 [33m[tester::#OZ7] [0m[94m$ ./your_program.sh -p 'From README.md, create the indicated file. File should have 1 line. Reply with `Created the file`'[0m
 [33m[your_program] [0m[0mCreated the file[0m
 [33m[tester::#OZ7] [0m[94mChecking workspace contents[0m

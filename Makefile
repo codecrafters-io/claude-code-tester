@@ -41,7 +41,12 @@ test_base_with_claude_code: build
 	CODECRAFTERS_TEST_CASES_JSON="[{\"slug\":\"yy2\",\"tester_log_prefix\":\"stage-1\",\"title\":\"Stage #1: Communicate with LLM\"},{\"slug\":\"aq1\",\"tester_log_prefix\":\"stage-2\",\"title\":\"Stage #2: Advertise Read Tool\"},{\"slug\":\"md6\",\"tester_log_prefix\":\"stage-3\",\"title\":\"Stage #3: Execute Read Tool\"},{\"slug\":\"ff2\",\"tester_log_prefix\":\"stage-5\",\"title\":\"Stage #5: Agent Loop\"},{\"slug\":\"oz7\",\"tester_log_prefix\":\"stage-6\",\"title\":\"Stage #6: Write Tool\"},{\"slug\":\"bp2\",\"tester_log_prefix\":\"stage-7\",\"title\":\"Stage #7: Glob Tool\"},{\"slug\":\"oq5\",\"tester_log_prefix\":\"stage-8\",\"title\":\"Stage #8: Bash Tool\"}]" \
 	dist/main.out
 
-test_all: build
+test_base_with_users_code: build
+	CODECRAFTERS_REPOSITORY_DIR=$(shell pwd)/internal/test_helpers/scenarios/base_stages/users_code_pass_all \
+	CODECRAFTERS_TEST_CASES_JSON="[{\"slug\":\"yy2\",\"tester_log_prefix\":\"stage-1\",\"title\":\"Stage #1: Communicate with LLM\"},{\"slug\":\"aq1\",\"tester_log_prefix\":\"stage-2\",\"title\":\"Stage #2: Advertise Read Tool\"},{\"slug\":\"md6\",\"tester_log_prefix\":\"stage-3\",\"title\":\"Stage #3: Execute Read Tool\"},{\"slug\":\"ff2\",\"tester_log_prefix\":\"stage-5\",\"title\":\"Stage #5: Agent Loop\"},{\"slug\":\"oz7\",\"tester_log_prefix\":\"stage-6\",\"title\":\"Stage #6: Write Tool\"},{\"slug\":\"bp2\",\"tester_log_prefix\":\"stage-7\",\"title\":\"Stage #7: Glob Tool\"},{\"slug\":\"oq5\",\"tester_log_prefix\":\"stage-8\",\"title\":\"Stage #8: Bash Tool\"}]" \
+	dist/main.out
+
+test_all_with_claude_code: build
 	make test_base_with_claude_code || true
 
 copy_course_file:

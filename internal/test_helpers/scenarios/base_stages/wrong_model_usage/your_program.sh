@@ -2,9 +2,10 @@
 
 import json
 import urllib.request
+import os
 
-API_KEY = "dummy-api-key"
-url = "http://localhost:10000/api/v1/chat/completions"
+API_KEY = os.environ["OPENROUTER_API_KEY"]
+url = f'{os.environ["OPENROUTER_BASE_URL"]}/chat/completions'
 
 payload = {
     "model": "openai/gpt-5.2-pro",

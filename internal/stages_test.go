@@ -13,28 +13,35 @@ func TestStages(t *testing.T) {
 	os.Setenv("OPENROUTER_API_KEY", "dummy-api-key")
 
 	testCases := map[string]tester_utils_testing.TesterOutputTestCase{
-		"base_stages_pass": {
+		"base_stages_pass_all": {
 			StageSlugs:          []string{"yy2", "aq1", "md6", "ff2", "oz7", "bp2", "oq5"},
 			CodePath:            "./test_helpers/pass_all",
 			ExpectedExitCode:    0,
 			StdoutFixturePath:   "./test_helpers/fixtures/base_stages/success",
 			NormalizeOutputFunc: normalizeTesterOutput,
 		},
-		"stage_1_fail": {
+		"base_stages_stage_1_fail": {
 			StageSlugs:          []string{"yy2"},
 			CodePath:            "./test_helpers/scenarios/base_stages/stage_1_fail",
 			ExpectedExitCode:    1,
 			StdoutFixturePath:   "./test_helpers/fixtures/base_stages/stage_1_fail",
 			NormalizeOutputFunc: normalizeTesterOutput,
 		},
-		"wrong_model_usage": {
+		"base_stages_users_code_pass_all": {
+			StageSlugs:          []string{"yy2", "aq1", "md6", "ff2", "oz7", "bp2", "oq5"},
+			CodePath:            "./test_helpers/scenarios/base_stages/users_code_pass_all",
+			ExpectedExitCode:    0,
+			StdoutFixturePath:   "./test_helpers/fixtures/base_stages/users_code_pass_all",
+			NormalizeOutputFunc: normalizeTesterOutput,
+		},
+		"base_stages_wrong_model_usage": {
 			StageSlugs:          []string{"yy2"},
 			CodePath:            "./test_helpers/scenarios/base_stages/wrong_model_usage",
 			ExpectedExitCode:    1,
 			StdoutFixturePath:   "./test_helpers/fixtures/base_stages/wrong_model_usage",
 			NormalizeOutputFunc: normalizeTesterOutput,
 		},
-		"unauthorized_endpoint_access": {
+		"base_stages_unauthorized_endpoint_access": {
 			StageSlugs:          []string{"yy2"},
 			CodePath:            "./test_helpers/scenarios/base_stages/unauthorized_endpoint_access",
 			ExpectedExitCode:    1,
