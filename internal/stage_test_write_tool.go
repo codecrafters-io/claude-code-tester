@@ -27,7 +27,7 @@ func testWriteTool(stageHarness *test_case_harness.TestCaseHarness) error {
 
 	readmeContent := fmt.Sprintf(`This is a very simple python project.
 This should print "Hello world"
-This contains only one file: app/%s.`, mainFileName)
+This project should contain only one file: app/%s.`, mainFileName)
 
 	workspaceManager.MustCreateDir("app")
 	workspaceManager.MustCreateFilesWithLogger([]workspace_manager.WorkspaceFile{

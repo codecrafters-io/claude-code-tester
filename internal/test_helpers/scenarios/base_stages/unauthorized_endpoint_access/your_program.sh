@@ -3,9 +3,10 @@
 import json
 import urllib.request
 import urllib.error
+import os
 
 # no API key — proxy is expected to inject it
-url = "http://localhost:10000/api/v1/keys"
+url = f'{os.environ["OPENROUTER_BASE_URL"]}/keys'
 
 payload = {
     "name": "test-key",
