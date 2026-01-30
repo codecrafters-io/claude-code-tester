@@ -54,10 +54,10 @@ endef
 
 
 test_base_with_claude_code: build
-	$(call run_test,internal/test_helpers/pass_all,$(READ_TOOL_STAGES))
+	$(call run_test,internal/test_helpers/pass_all,$(BASE_STAGES))
 
 test_base_with_users_code: build
-	$(call run_test,internal/test_helpers/scenarios/base_stages/users_code_pass_all,$(READ_TOOL_STAGES))
+	$(call run_test,internal/test_helpers/scenarios/base_stages/users_code_pass_all,$(BASE_STAGES))
 
 test_all_with_claude_code: build
 	make test_base_with_claude_code || true
