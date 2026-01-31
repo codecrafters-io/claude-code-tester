@@ -46,7 +46,7 @@ func testExecuteReadTool(stageHarness *test_case_harness.TestCaseHarness) error 
 			fmt.Sprintf("Show me what is inside `%s`.", fileName),
 			fmt.Sprintf("What does `%s` contain?", fileName),
 		},
-		"Respond only with file contents without backticks.",
+		"Respond with only file contents, no surrounding text/backticks.",
 	)
 
 	promptTestCase := test_cases.NonInteractiveTestCase{

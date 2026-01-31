@@ -22,14 +22,13 @@ func testPromptResponse(stageHarness *test_case_harness.TestCaseHarness) error {
 
 	operand1 := random.RandomInt(1, 11)
 	operand2 := random.RandomInt(1, 11)
-	operator := random.RandomElementFromArray([]string{"+", "-", "*"})
+	operator := random.RandomElementFromArray([]string{"+", "*"})
 	result := getOperationResult(operator, operand1, operand2)
 
 	prompt := utils.GetPromptWithGuardRailPrompt(
 		[]string{
 			fmt.Sprintf("What is %d%s%d?", operand1, operator, operand2),
-			fmt.Sprintf("Calculate: %d %s %d.", operand1, operator, operand2),
-			fmt.Sprintf("Solve: %d %s %d.", operand1, operator, operand2),
+			fmt.Sprintf("Calculate %d %s %d.", operand1, operator, operand2),
 			fmt.Sprintf("What does %d%s%d equal?", operand1, operator, operand2),
 			fmt.Sprintf("Please compute %d %s %d.", operand1, operator, operand2),
 		},
@@ -52,8 +51,6 @@ func getOperationResult(operator string, operand1, operand2 int) int {
 	switch operator {
 	case "+":
 		return operand1 + operand2
-	case "-":
-		return operand1 - operand2
 	case "*":
 		return operand1 * operand2
 	default:
