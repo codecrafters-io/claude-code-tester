@@ -51,8 +51,6 @@ func getOperationResult(operator string, operand1, operand2 int) int {
 	switch operator {
 	case "+":
 		return operand1 + operand2
-	case "-":
-		return operand1 - operand2
 	case "*":
 		return operand1 * operand2
 	default:
