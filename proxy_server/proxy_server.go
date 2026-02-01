@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"net"
 	"net/http"
 	"net/http/httputil"
@@ -43,7 +44,7 @@ func newProxyServer() *proxyServer {
 		// Reference2: https://github.com/golang/go/issues/20071#issuecomment-926644055
 		// Keep the behavior same, except for context cancelled errors
 		if !errors.Is(err, context.Canceled) {
-			reverseProxy.ErrorLog.Printf("http: proxy error: %v", err)
+			log.Printf("http: proxy error: %v", err)
 		}
 		w.WriteHeader(http.StatusBadGateway)
 	}
