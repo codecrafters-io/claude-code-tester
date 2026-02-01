@@ -52,7 +52,7 @@ jobs:
         run: |
           git config --global user.email "eddie@codecrafters.io"
           git config --global user.name "Eddie"
-          git remote set-url origin https://UdeshyaDhungana:${{ secrets.TESTER_FIXTURE_GENERATION_GITHUB_TOKEN }}@github.com/codecrafters-io/claude-code-tester.git
+          git remote set-url origin https://x-access-token:${{ secrets.TESTER_FIXTURE_GENERATION_GITHUB_TOKEN }}@github.com/codecrafters-io/claude-code-tester.git
 
       - name: Regenerate Fixtures
         run: CODECRAFTERS_RECORD_FIXTURES=true make test
@@ -61,4 +61,4 @@ jobs:
         run: |
           git fetch origin ${{ github.head_ref }}
           git checkout ${{ github.head_ref }}
-          git diff --quiet || (git add . && git commit -m "CI: Add regenerated fixtures" && git push)
+          git add . && git diff --cached --quiet || (git commit -m "CI: Add regenerated fixtures" && git push)
