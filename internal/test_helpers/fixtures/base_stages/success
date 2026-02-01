@@ -1,21 +1,21 @@
 Debug = true
 
 [33m[tester::#YY2] [0m[94mRunning tests for Stage #YY2 (yy2)[0m
-[33m[tester::#YY2] [0m[94m$ ./your_program.sh -p 'What does 9*7 equal? Respond with only a number.'[0m
+[33m[tester::#YY2] [0m[94m$ ./your_program.sh -p 'Calculate 9 * 7. Respond with only a number.'[0m
 [33m[your_program] [0m[0m63[0m
 [33m[tester::#YY2] [0m[92m✔ Value is "63"[0m
 [33m[tester::#YY2] [0m[92mTest passed.[0m
 
 [33m[tester::#AQ1] [0m[94mRunning tests for Stage #AQ1 (aq1)[0m
-[33m[tester::#AQ1] [0m[94m$ ./your_program.sh -p 'Give the number of tools accessible in this request. Respond with only a number.'[0m
+[33m[tester::#AQ1] [0m[94m$ ./your_program.sh -p 'Count the number of tools available to you for this request. Respond with only a number.'[0m
 [33m[your_program] [0m[0m10[0m
 [33m[tester::#AQ1] [0m[92m✔ Value is at least 1[0m
 [33m[tester::#AQ1] [0m[92mTest passed.[0m
 
 [33m[tester::#MD6] [0m[94mRunning tests for Stage #MD6 (md6)[0m
 [33m[tester::#MD6] [0m[94mCreating workspace files[0m
-[33m[tester::#MD6] [pear.py] [0m[0mprint('Hello, World!')[0m
-[33m[tester::#MD6] [0m[94m$ ./your_program.sh -p 'Show me what is inside `pear.py`. Respond only with file contents without backticks.'[0m
+[33m[tester::#MD6] [mango.py] [0m[0mprint('Hello, World!')[0m
+[33m[tester::#MD6] [0m[94m$ ./your_program.sh -p 'What does `mango.py` contain? Respond with only file contents, no surrounding text/backticks.'[0m
 [33m[your_program] [0m[0mprint('Hello, World!')[0m
 [33m[tester::#MD6] [0m[92m✔ Value is "print('Hello, World!')"[0m
 [33m[tester::#MD6] [0m[92mTest passed.[0m
@@ -23,31 +23,31 @@ Debug = true
 [33m[tester::#FF2] [0m[94mRunning tests for Stage #FF2 (ff2)[0m
 [33m[tester::#FF2] [0m[94mCreating workspace files[0m
 [33m[tester::#FF2] [README.md] [0m[0mThis is a simple python project.[0m
-[33m[tester::#FF2] [README.md] [0m[0m- The starting point of this project is app/init.py.[0m
-[33m[tester::#FF2] [README.md] [0m[0m- The file app/expiry.py contains chemical properties.[0m
-[33m[tester::#FF2] [app/expiry.py] [0m[0mchemical_expiry_period = 6  # months[0m
-[33m[tester::#FF2] [app/init.py] [0m[0mfrom expiry import chemical_expiry_period[0m
-[33m[tester::#FF2] [app/init.py] [0m[0m[0m
-[33m[tester::#FF2] [app/init.py] [0m[0mdef main():[0m
-[33m[tester::#FF2] [app/init.py] [0m[0m	print(f"Chemical expiry period: {chemical_expiry_period} months")[0m
-[33m[tester::#FF2] [app/init.py] [0m[0m	[0m
-[33m[tester::#FF2] [app/init.py] [0m[0mif __name__ == "__main__":[0m
-[33m[tester::#FF2] [app/init.py] [0m[0m	main()[0m
-[33m[tester::#FF2] [app/init.py] [0m[0m[0m
-[33m[tester::#FF2] [0m[94m$ ./your_program.sh -p 'Determine in how many months the chemical expires by reading README.md. Respond with only a number.'[0m
-[33m[your_program] [0m[0m6[0m
-[33m[tester::#FF2] [0m[92m✔ Value is "6"[0m
+[33m[tester::#FF2] [README.md] [0m[0m- The starting point of this project is app/start.py.[0m
+[33m[tester::#FF2] [README.md] [0m[0m- The file app/substance.py contains chemical properties.[0m
+[33m[tester::#FF2] [app/substance.py] [0m[0mchemical_expiry_period = 9  # months[0m
+[33m[tester::#FF2] [app/start.py] [0m[0mfrom substance import chemical_expiry_period[0m
+[33m[tester::#FF2] [app/start.py] [0m[0m[0m
+[33m[tester::#FF2] [app/start.py] [0m[0mdef main():[0m
+[33m[tester::#FF2] [app/start.py] [0m[0m	print(f"Chemical expiry period: {chemical_expiry_period} months")[0m
+[33m[tester::#FF2] [app/start.py] [0m[0m	[0m
+[33m[tester::#FF2] [app/start.py] [0m[0mif __name__ == "__main__":[0m
+[33m[tester::#FF2] [app/start.py] [0m[0m	main()[0m
+[33m[tester::#FF2] [app/start.py] [0m[0m[0m
+[33m[tester::#FF2] [0m[94m$ ./your_program.sh -p 'Find the chemical expiry period in months from README.md. Respond with only a number.'[0m
+[33m[your_program] [0m[0m9[0m
+[33m[tester::#FF2] [0m[92m✔ Value is "9"[0m
 [33m[tester::#FF2] [0m[92mTest passed.[0m
 
 [33m[tester::#OZ7] [0m[94mRunning tests for Stage #OZ7 (oz7)[0m
 [33m[tester::#OZ7] [0m[94mCreating workspace files[0m
 [33m[tester::#OZ7] [README.md] [0m[0mThis is a very simple python project.[0m
 [33m[tester::#OZ7] [README.md] [0m[0mThis should print "Hello world"[0m
-[33m[tester::#OZ7] [README.md] [0m[0mThis project should contain only one file: app/main.py.[0m
-[33m[tester::#OZ7] [0m[94m$ ./your_program.sh -p 'From README.md, create the indicated file. File should have 1 line. Reply with `Created the file`'[0m
+[33m[tester::#OZ7] [README.md] [0m[0mThis project should contain only one file: app/start.py.[0m
+[33m[tester::#OZ7] [0m[94m$ ./your_program.sh -p 'Use README.md to create the file needed. File should have 1 line. Reply with `Created the file`'[0m
 [33m[your_program] [0m[0mCreated the file[0m
 [33m[tester::#OZ7] [0m[94mChecking workspace contents[0m
-[33m[tester::#OZ7] [app/main.py] [0m[92mprint("Hello world")[0m
+[33m[tester::#OZ7] [app/start.py] [0m[92mprint("Hello world")[0m
 [33m[tester::#OZ7] [0m[92mTest passed.[0m
 
 [33m[tester::#BP2] [0m[94mRunning tests for Stage #BP2 (bp2)[0m

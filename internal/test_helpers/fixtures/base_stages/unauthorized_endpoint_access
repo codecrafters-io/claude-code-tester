@@ -1,7 +1,7 @@
 Debug = true
 
 [33m[tester::#YY2] [0m[94mRunning tests for Stage #YY2 (yy2)[0m
-[33m[tester::#YY2] [0m[94m$ ./your_program.sh -p 'What does 9*7 equal? Respond with only a number.'[0m
+[33m[tester::#YY2] [0m[94m$ ./your_program.sh -p 'Calculate 9 * 7. Respond with only a number.'[0m
 [33m[your_program] [0m[0m{'error': {'message': 'Endpoint not found: /api/v1/keys', 'code': 404}}[0m
 [33m[tester::#YY2] [0m[91mExpected "63", got "{'error': {'message': 'Endpoint not found: /api/v1/keys', 'code': 404}}"[0m
 [33m[tester::#YY2] [0m[91mTest failed[0m
