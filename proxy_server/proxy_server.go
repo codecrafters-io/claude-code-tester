@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"net"
 	"net/http"
 	"net/http/httputil"
@@ -38,6 +39,7 @@ func newProxyServer() *proxyServer {
 	}
 
 	// Disable "http: proxy error: context canceled" log
+	reverseProxy.ErrorLog = log.Default()
 	reverseProxy.ErrorHandler = func(w http.ResponseWriter, r *http.Request, err error) {
 		// Reference: https://github.com/golang/go/blob/acd65ebb13a11f1b070b63a66b35bb1b15934409/src/net/http/httputil/reverseproxy.go#L376
 		// Reference2: https://github.com/golang/go/issues/20071#issuecomment-926644055
