@@ -1,0 +1,63 @@
+name: Trigger Fixture Regeneration
+on:
+  pull_request:
+    types:
+      - labeled
+permissions:
+  contents: write
+  pull-requests: write
+jobs:
+  trigger_pipeline:
+    if: github.event.label.name == 'regenerate-fixtures'
+    runs-on: ubuntu-latest
+    env:
+      CODECRAFTERS_SECRET_OPENROUTER_API_KEY: ${{ secrets.CODECRAFTERS_SECRET_OPENROUTER_API_KEY }}
+      EXECUTABLE_MEMORY_LIMIT_IN_MB: "8192"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          token: ${{ secrets.TESTER_FIXTURE_GENERATION_GITHUB_TOKEN }}
+
+      - name: Set up Go
+        uses: actions/setup-go@v6.1.0
+        with:
+          go-version: 1.25.5
+
+      - name: Install Claude Code
+        run: curl -fsSL https://claude.ai/install.sh | bash -s -- 2.1.14
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - uses: actions-ecosystem/action-create-comment@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          body: |
+            Triggered a [Github Actions](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) job to update fixtures.
+
+      - uses: actions-ecosystem/action-remove-labels@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          labels: regenerate-fixtures
+
+      - name: Setup git config
+        run: |
+          git config --global user.email "eddie@codecrafters.io"
+          git config --global user.name "Eddie"
+          git remote set-url origin https://x-access-token:${{ secrets.TESTER_FIXTURE_GENERATION_GITHUB_TOKEN }}@github.com/codecrafters-io/claude-code-tester.git
+
+      - name: Regenerate Fixtures
+        run: CODECRAFTERS_RECORD_FIXTURES=true make test
+
+      - name: Update Fixtures
+        run: |
+          git add . && git diff --cached --quiet || (git commit -m "CI: Add regenerated fixtures" && git push)
