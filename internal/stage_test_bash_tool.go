@@ -60,14 +60,14 @@ Entry point: app/`
 
 	// Ensure fixtures are stable
 	if testing.IsRecordingOrEvaluatingFixtures() {
-		guardRailPrompt = "Always respond with `Deleted README_old.md`"
+		guardRailPrompt = "Always respond with `Deleted old readme file.`"
 	}
 
 	promptTestCase := test_cases.NonInteractiveTestCase{
 		InputPrompt: utils.GetPromptWithGuardRailPrompt(
 			[]string{
-				"Delete the old readme file.",
-				"Remove the old readme from the project.",
+				"List files using ls and delete the old readme file.",
+				"List project files using ls and delete the old readme file.",
 			},
 			guardRailPrompt,
 		),
