@@ -8,6 +8,7 @@ import (
 	"github.com/codecrafters-io/claude-code-tester/internal/workspace_manager"
 	"github.com/codecrafters-io/claude-code-tester/proxy_server"
 	"github.com/codecrafters-io/tester-utils/test_case_harness"
+	"github.com/codecrafters-io/tester-utils/testing"
 )
 
 func testGlobTool(stageHarness *test_case_harness.TestCaseHarness) error {
@@ -52,6 +53,13 @@ assert area_of_square(5) == 55`
 		},
 	}, stageLogger)
 
+	guardRailPrompt := ""
+
+	// Ensure fixtures are stable
+	if testing.IsRecordingOrEvaluatingFixtures() {
+		guardRailPrompt = "Respond with `Fixed all bugs`"
+	}
+
 	promptTestCase := test_cases.NonInteractiveTestCase{
 		InputPrompt: utils.GetPromptWithGuardRailPrompt(
 			[]string{
@@ -61,7 +69,7 @@ assert area_of_square(5) == 55`
 				"Locate files in `app` starting with `test` and fix all bugs.",
 				"Fix bugs in files under `app` that start with `test`.",
 			},
-			"Respond with `Fixed all bugs`",
+			guardRailPrompt,
 		),
 		ExpectedExitCode: 0,
 	}
