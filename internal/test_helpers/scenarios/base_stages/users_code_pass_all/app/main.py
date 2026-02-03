@@ -1,8 +1,9 @@
-import argparse, os, sys
+import argparse
 import json
-from openai import OpenAI
-import glob
+import os
 import subprocess
+
+from openai import OpenAI
 
 
 def read_file(path):
@@ -22,32 +23,24 @@ def write_file(path, content):
         return f"Error writing to file: {str(e)}"
 
 
-def glob_files(pattern):
-    files = glob.glob(pattern, recursive=True)
-    cwd = os.getcwd()
-    files = [os.path.relpath(p, cwd) for p in files]
-    return '\n'.join(files)
-
-
 def bash_command(command):
     try:
-        proc = subprocess.run(
-            command,
-            shell=True,
-            capture_output=True,
-            text=True
+        proc = subprocess.run(command, shell=True, capture_output=True, text=True)
+        return json.dumps(
+            {
+                "returncode": proc.returncode,
+                "stdout": proc.stdout,
+                "stderr": proc.stderr,
+            }
         )
-        return json.dumps({
-            "returncode": proc.returncode,
-            "stdout": proc.stdout,
-            "stderr": proc.stderr,
-        })
     except Exception as e:
-        return json.dumps({
-            "returncode": -1,
-            "stdout": "",
-            "stderr": str(e),
-        })
+        return json.dumps(
+            {
+                "returncode": -1,
+                "stdout": "",
+                "stderr": str(e),
+            }
+        )
 
 
 TOOLS = [
@@ -83,26 +76,9 @@ TOOLS = [
                     "content": {
                         "type": "string",
                         "description": "The content to write to the file",
-                    }
-                },
-            "required": ["path", "content"],
-            },
-        },
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "glob_files",
-            "description": "Find files based on glob patterns",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "pattern": {
-                        "type": "string",
-                        "description": "The glob pattern to match files against",
                     },
                 },
-                "required": ["pattern"],
+                "required": ["path", "content"],
             },
         },
     },
@@ -157,19 +133,19 @@ def run_agent(client, user_prompt):
                 result = read_file(args["path"])
             elif name == "write":
                 result = write_file(args["path"], args["content"])
-            elif name == "glob_files":
-                result = glob_files(args["pattern"])
             elif name == "bash_command":
                 result = bash_command(args["command"])
             else:
                 result = f"Unknown tool: {name}"
 
             # Feed tool result back to model
-            messages.append({
-                "role": "tool",
-                "tool_call_id": tool_call.id,
-                "content": result,
-            })
+            messages.append(
+                {
+                    "role": "tool",
+                    "tool_call_id": tool_call.id,
+                    "content": result,
+                }
+            )
 
 
 def main():
