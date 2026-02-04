@@ -67,3 +67,8 @@ copy_course_file:
 
 update_tester_utils:
 	go get -u github.com/codecrafters-io/tester-utils
+
+setup:
+	echo "Setting up claude-code-tester prerequisites for Linux"
+	curl -fsSL https://claude.ai/install.sh | bash -s -- 2.1.14
+	echo "Setup complete!"
