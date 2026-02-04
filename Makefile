@@ -77,7 +77,7 @@ setup:
 
 	echo "Installing uv"
 	curl -LsSf https://astral.sh/uv/install.sh | sh
-    echo "$HOME/.local/bin" >> $GITHUB_PATH
+	echo "$$HOME/.local/bin" >> $$GITHUB_PATH
 	echo "uv is now installed!"
 
 	echo "Setup complete!"
