@@ -36,11 +36,6 @@ var testerDefinition = tester_definition.TesterDefinition{
 			Timeout:  45 * time.Second,
 		},
 		{
-			Slug:     "bp2",
-			TestFunc: testGlobTool,
-			Timeout:  45 * time.Second,
-		},
-		{
 			Slug:     "oq5",
 			TestFunc: testBashTool,
 			Timeout:  45 * time.Second,

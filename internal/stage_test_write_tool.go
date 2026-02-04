@@ -11,6 +11,7 @@ import (
 	"github.com/codecrafters-io/claude-code-tester/proxy_server"
 	"github.com/codecrafters-io/tester-utils/random"
 	"github.com/codecrafters-io/tester-utils/test_case_harness"
+	"github.com/codecrafters-io/tester-utils/testing"
 )
 
 func testWriteTool(stageHarness *test_case_harness.TestCaseHarness) error {
@@ -38,6 +39,13 @@ This project should contain only one file: app/%s.`, mainFileName)
 		},
 	}, stageHarness.Logger)
 
+	guardRailPrompt := "File should have 1 line."
+
+	// Ensure fixtures are stable
+	if testing.IsRecordingOrEvaluatingFixtures() {
+		guardRailPrompt += " Always reply with `Created the file`."
+	}
+
 	promptTestCase := test_cases.NonInteractiveTestCase{
 		InputPrompt: utils.GetPromptWithGuardRailPrompt(
 			[]string{
@@ -46,7 +54,7 @@ This project should contain only one file: app/%s.`, mainFileName)
 				"Check README.md and create the file it specifies.",
 				"Use README.md to create the file needed.",
 			},
-			"File should have 1 line. Reply with `Created the file`",
+			guardRailPrompt,
 		),
 		ExpectedExitCode: 0,
 	}

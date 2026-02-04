@@ -94,8 +94,8 @@ func (w *WorkspaceManager) MustCreateFileWithLogger(file WorkspaceFile, logger *
 // MustCreateFile creates the specified files
 // If the parent directory of the file does not exist, it creates it
 func (w *WorkspaceManager) MustCreateFilesWithLogger(files []WorkspaceFile, logger *logger.Logger) {
-	logger.Infof("Creating workspace files")
 	for _, file := range files {
+		logger.Infof("Created %s:", file.RelativePath)
 		w.MustCreateFileWithLogger(file, logger)
 	}
 }

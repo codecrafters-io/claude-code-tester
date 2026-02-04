@@ -8,6 +8,7 @@ import (
 	"github.com/codecrafters-io/claude-code-tester/internal/workspace_manager"
 	"github.com/codecrafters-io/claude-code-tester/proxy_server"
 	"github.com/codecrafters-io/tester-utils/test_case_harness"
+	"github.com/codecrafters-io/tester-utils/testing"
 )
 
 func testBashTool(stageHarness *test_case_harness.TestCaseHarness) error {
@@ -55,13 +56,20 @@ Entry point: app/`
 		},
 	}, stageLogger)
 
+	guardRailPrompt := ""
+
+	// Ensure fixtures are stable
+	if testing.IsRecordingOrEvaluatingFixtures() {
+		guardRailPrompt = "Always respond with `Deleted old readme file.`"
+	}
+
 	promptTestCase := test_cases.NonInteractiveTestCase{
 		InputPrompt: utils.GetPromptWithGuardRailPrompt(
 			[]string{
-				"Delete the old readme file.",
-				"Remove the old readme from the project.",
+				"List files using ls and delete the old readme file.",
+				"List project files using ls and delete the old readme file.",
 			},
-			"Always respond with `Deleted README_old.md`",
+			guardRailPrompt,
 		),
 		ExpectedExitCode: 0,
 	}
