@@ -43,7 +43,7 @@ This project should contain only one file: app/%s.`, mainFileName)
 
 	// Ensure fixtures are stable
 	if testing.IsRecordingOrEvaluatingFixtures() {
-		guardRailPrompt += " Always reply with `Created the file`."
+		guardRailPrompt += " Always reply with `Created the file.`"
 	}
 
 	promptTestCase := test_cases.NonInteractiveTestCase{

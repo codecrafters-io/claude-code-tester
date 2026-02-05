@@ -46,8 +46,8 @@ Debug = true
 [33m[tester::#OZ7] [README.md] [0m[0mThis is a very simple python project.[0m
 [33m[tester::#OZ7] [README.md] [0m[0mThis should print "Hello world"[0m
 [33m[tester::#OZ7] [README.md] [0m[0mThis project should contain only one file: app/start.py.[0m
-[33m[tester::#OZ7] [0m[94m$ ./your_program.sh -p 'Use README.md to create the file needed. File should have 1 line. Always reply with `Created the file`.'[0m
-[33m[your_program] [0m[0mCreated the file[0m
+[33m[tester::#OZ7] [0m[94m$ ./your_program.sh -p 'Use README.md to create the file needed. File should have 1 line. Always reply with `Created the file.`'[0m
+[33m[your_program] [0m[0mCreated the file.[0m
 [33m[tester::#OZ7] [0m[94mChecking workspace contents[0m
 [33m[tester::#OZ7] [app/start.py] [0m[92mprint("Hello world")[0m
 [33m[tester::#OZ7] [0m[92mTest passed.[0m
