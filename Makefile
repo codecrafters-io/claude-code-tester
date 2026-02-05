@@ -67,3 +67,17 @@ copy_course_file:
 
 update_tester_utils:
 	go get -u github.com/codecrafters-io/tester-utils
+
+setup:
+	echo "Setting up claude-code-tester prerequisites for Linux"
+
+	echo "Installing Claude Code Version 2.1.14"
+	curl -fsSL https://claude.ai/install.sh | bash -s -- 2.1.14
+	echo "Claude Code is now installed"
+
+	echo "Installing uv"
+	curl -LsSf https://astral.sh/uv/install.sh | sh
+	echo "$$HOME/.local/bin" >> $$GITHUB_PATH
+	echo "uv is now installed!"
+
+	echo "Setup complete!"
