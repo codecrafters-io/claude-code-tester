@@ -57,11 +57,6 @@ Entry point: app/`
 
 	guardRailPrompt := ""
 
-	// Ensure fixtures are stable
-	// if testing.IsRecordingOrEvaluatingFixtures() {
-	// 	guardRailPrompt = "Always respond with `Deleted old readme file.`"
-	// }
-
 	promptTestCase := test_cases.NonInteractiveTestCase{
 		InputPrompt: utils.GetPromptWithGuardRailPrompt(
 			[]string{
