@@ -2,11 +2,8 @@ import argparse
 import json
 import os
 import subprocess
-import sys
 
 from openai import OpenAI
-
-
 
 def read_file(path):
     try:
