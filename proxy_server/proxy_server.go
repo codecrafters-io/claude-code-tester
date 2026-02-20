@@ -37,13 +37,12 @@ func newProxyServer() *proxyServer {
 
 	validator := &validationMiddleware{}
 
-	validator.setAllowedEndPoints([]string{
-		"/api/v1/messages",
-		"/api/v1/chat/completions",
+	validator.setEndPointsWithValidators(map[string][]ValidationFunc{
+		"/api/v1/chat/completions": {modelValidator},
+		"/api/v1/responses":        {modelValidator},
+		// For Claude Code
+		"/api/v1/messages": {modelValidator},
 	})
-
-	validator.registerEndPointValidator("/api/v1/messages", modelValidator)
-	validator.registerEndPointValidator("/api/v1/chat/completions", modelValidator)
 
 	return &proxyServer{
 		server: &http.Server{

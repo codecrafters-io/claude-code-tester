@@ -17,8 +17,7 @@ type validationError struct {
 }
 
 type validationMiddleware struct {
-	allowedEndPoints   map[string]bool
-	endpointValidators map[string][]ValidationFunc
+	endpointAndValidators map[string][]ValidationFunc
 }
 
 // WrapProxy wraps the reverse proxy with validator middleware
@@ -33,24 +32,23 @@ func (v *validationMiddleware) WrapProxy(proxy *httputil.ReverseProxy) http.Hand
 	})
 }
 
-func (v *validationMiddleware) setAllowedEndPoints(endpoints []string) {
-	v.allowedEndPoints = make(map[string]bool)
-	for _, endpoint := range endpoints {
-		v.allowedEndPoints[endpoint] = true
-	}
+// setEndPointsWithValidators sets allowed endpoints and their validators in one call.
+// Keys are endpoint paths; values are the validator to use, or nil to use emptyValidator.
+func (v *validationMiddleware) setEndPointsWithValidators(config map[string][]ValidationFunc) {
+	v.endpointAndValidators = config
 }
 
 func (v *validationMiddleware) validateRequest(r *http.Request) *validationError {
 	endpoint := r.URL.Path
 
-	if !v.allowedEndPoints[endpoint] {
+	validators, ok := v.endpointAndValidators[endpoint]
+
+	if !ok {
 		return &validationError{
 			StatusCode:   404,
 			errorMessage: fmt.Sprintf("Endpoint not found: %s", endpoint),
 		}
 	}
-
-	validators := v.endpointValidators[endpoint]
 
 	for _, validatorFunc := range validators {
 		ok, errorMessage := validatorFunc(r)
@@ -64,12 +62,4 @@ func (v *validationMiddleware) validateRequest(r *http.Request) *validationError
 	}
 
 	return nil
-}
-
-// registerEndPointValidator registers a validation function for a specific endpoint
-func (v *validationMiddleware) registerEndPointValidator(endpoint string, validator ValidationFunc) {
-	if v.endpointValidators == nil {
-		v.endpointValidators = make(map[string][]ValidationFunc)
-	}
-	v.endpointValidators[endpoint] = append(v.endpointValidators[endpoint], validator)
 }
