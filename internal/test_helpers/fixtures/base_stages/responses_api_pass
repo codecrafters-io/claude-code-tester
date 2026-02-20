@@ -1,0 +1,7 @@
+Debug = true
+
+[33m[tester::#YY2] [0m[94mRunning tests for Stage #YY2 (yy2)[0m
+[33m[tester::#YY2] [0m[94m$ ./your_program.sh -p 'Calculate 9 * 7. Respond with only a number.'[0m
+[33m[your_program] [0m[0m63[0m
+[33m[tester::#YY2] [0m[92m✔ Value is "63"[0m
+[33m[tester::#YY2] [0m[92mTest passed.[0m
