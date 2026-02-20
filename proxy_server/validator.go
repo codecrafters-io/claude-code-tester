@@ -17,7 +17,7 @@ type validationError struct {
 }
 
 type validationMiddleware struct {
-	endPointAndValidators map[string][]ValidationFunc
+	endpointAndValidators map[string][]ValidationFunc
 }
 
 // WrapProxy wraps the reverse proxy with validator middleware
@@ -35,13 +35,13 @@ func (v *validationMiddleware) WrapProxy(proxy *httputil.ReverseProxy) http.Hand
 // setEndPointsWithValidators sets allowed endpoints and their validators in one call.
 // Keys are endpoint paths; values are the validator to use, or nil to use emptyValidator.
 func (v *validationMiddleware) setEndPointsWithValidators(config map[string][]ValidationFunc) {
-	v.endPointAndValidators = config
+	v.endpointAndValidators = config
 }
 
 func (v *validationMiddleware) validateRequest(r *http.Request) *validationError {
 	endpoint := r.URL.Path
 
-	validators, ok := v.endPointAndValidators[endpoint]
+	validators, ok := v.endpointAndValidators[endpoint]
 
 	if !ok {
 		return &validationError{
