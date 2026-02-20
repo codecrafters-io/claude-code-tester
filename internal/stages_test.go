@@ -48,6 +48,13 @@ func TestStages(t *testing.T) {
 			StdoutFixturePath:   "./test_helpers/fixtures/base_stages/unauthorized_endpoint_access",
 			NormalizeOutputFunc: normalizeTesterOutput,
 		},
+		"base_stages_responses_api_pass": {
+			StageSlugs:          []string{"yy2"},
+			CodePath:            "./test_helpers/scenarios/base_stages/responses_api_pass",
+			ExpectedExitCode:    0,
+			StdoutFixturePath:   "./test_helpers/fixtures/base_stages/responses_api_pass",
+			NormalizeOutputFunc: normalizeTesterOutput,
+		},
 	}
 
 	tester_utils_testing.TestTesterOutput(t, testerDefinition, testCases)
