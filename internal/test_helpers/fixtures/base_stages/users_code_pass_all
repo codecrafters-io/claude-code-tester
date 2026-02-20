@@ -3,13 +3,11 @@ Debug = true
 [33m[tester::#YY2] [0m[94mRunning tests for Stage #YY2 (yy2)[0m
 [33m[tester::#YY2] [0m[94m$ ./your_program.sh -p 'Calculate 9 * 7. Respond with only a number.'[0m
 [33m[your_program] [0m[0m63[0m
-[33m[your_program] [0m[0m[LLM] final: '63'[0m
 [33m[tester::#YY2] [0m[92m✔ Value is "63"[0m
 [33m[tester::#YY2] [0m[92mTest passed.[0m
 
 [33m[tester::#AQ1] [0m[94mRunning tests for Stage #AQ1 (aq1)[0m
 [33m[tester::#AQ1] [0m[94m$ ./your_program.sh -p 'Count the number of tools available to you for this request. Respond with only a number.'[0m
-[33m[your_program] [0m[0m[LLM] final: '3'[0m
 [33m[your_program] [0m[0m3[0m
 [33m[tester::#AQ1] [0m[92m✔ Value is at least 1[0m
 [33m[tester::#AQ1] [0m[92mTest passed.[0m
@@ -18,9 +16,6 @@ Debug = true
 [33m[tester::#MD6] [0m[94mCreated mango.py:[0m
 [33m[tester::#MD6] [mango.py] [0m[0mprint('Hello, World!')[0m
 [33m[tester::#MD6] [0m[94m$ ./your_program.sh -p 'What does `mango.py` contain? Respond with only file contents, no surrounding text/backticks.'[0m
-[33m[your_program] [0m[0m[LLM] tool_call: read({"path": "mango.py"})[0m
-[33m[your_program] [0m[0m[LLM] tool_result: read -> "print('Hello, World!')"[0m
-[33m[your_program] [0m[0m[LLM] final: "print('Hello, World!')"[0m
 [33m[your_program] [0m[0mprint('Hello, World!')[0m
 [33m[tester::#MD6] [0m[92m✔ Value is "print('Hello, World!')"[0m
 [33m[tester::#MD6] [0m[92mTest passed.[0m
@@ -42,11 +37,6 @@ Debug = true
 [33m[tester::#FF2] [app/start.py] [0m[0m	main()[0m
 [33m[tester::#FF2] [app/start.py] [0m[0m[0m
 [33m[tester::#FF2] [0m[94m$ ./your_program.sh -p 'Find the chemical expiry period in months from README.md. Respond with only a number.'[0m
-[33m[your_program] [0m[0m[LLM] tool_call: read({"path": "README.md"})[0m
-[33m[your_program] [0m[0m[LLM] tool_result: read -> 'This is a simple python project.\n- The starting point of this project is app/start.py.\n- The file app/substance.py contains chemical properties.'[0m
-[33m[your_program] [0m[0m[LLM] tool_call: read({"path": "app/substance.py"})[0m
-[33m[your_program] [0m[0m[LLM] tool_result: read -> 'chemical_expiry_period = 9  # months'[0m
-[33m[your_program] [0m[0m[LLM] final: '9'[0m
 [33m[your_program] [0m[0m9[0m
 [33m[tester::#FF2] [0m[92m✔ Value is "9"[0m
 [33m[tester::#FF2] [0m[92mTest passed.[0m
@@ -57,11 +47,6 @@ Debug = true
 [33m[tester::#OZ7] [README.md] [0m[0mThis should print "Hello world"[0m
 [33m[tester::#OZ7] [README.md] [0m[0mThis project should contain only one file: app/start.py.[0m
 [33m[tester::#OZ7] [0m[94m$ ./your_program.sh -p 'Use README.md to create the file needed. File should have 1 line. Always reply with `Created the file.`'[0m
-[33m[your_program] [0m[0m[LLM] tool_call: read({"path": "README.md"})[0m
-[33m[your_program] [0m[0m[LLM] tool_result: read -> 'This is a very simple python project.\nThis should print "Hello world"\nThis project should contain only one file: app/start.py.'[0m
-[33m[your_program] [0m[0m[LLM] tool_call: write({"path": "app/start.py", "content": "print(\"Hello world\")"})[0m
-[33m[your_program] [0m[0m[LLM] tool_result: write -> 'OK'[0m
-[33m[your_program] [0m[0m[LLM] final: 'Created the file.'[0m
 [33m[your_program] [0m[0mCreated the file.[0m
 [33m[tester::#OZ7] [0m[94mChecking workspace contents[0m
 [33m[tester::#OZ7] [app/start.py] [0m[92mprint("Hello world")[0m
@@ -85,11 +70,6 @@ Debug = true
 [33m[tester::#OQ5] [README_old.md] [0m[0mUses javascript promise api to demonstrate web fetch.[0m
 [33m[tester::#OQ5] [README_old.md] [0m[0mEntry point: app/[0m
 [33m[tester::#OQ5] [0m[94m$ ./your_program.sh -p 'List project files with ls and remove the old readme file you find. Always respond with `Deleted old readme file.`'[0m
-[33m[your_program] [0m[0m[LLM] tool_call: bash_command({"command": "ls"})[0m
-[33m[your_program] [0m[0m[LLM] tool_result: bash_command -> '{"returncode": 0, "stdout": "README.md\\nREADME_old.md\\napp\\n", "stderr": ""}'[0m
-[33m[your_program] [0m[0m[LLM] tool_call: bash_command({"command": "rm README_old.md"})[0m
-[33m[your_program] [0m[0m[LLM] tool_result: bash_command -> '{"returncode": 0, "stdout": "", "stderr": ""}'[0m
-[33m[your_program] [0m[0m[LLM] final: 'Deleted old readme file.'[0m
 [33m[your_program] [0m[0mDeleted old readme file.[0m
 [33m[tester::#OQ5] [0m[94mChecking workspace contents[0m
 [33m[tester::#OQ5] [app/main.js] [0m[92masync function main() {[0m
