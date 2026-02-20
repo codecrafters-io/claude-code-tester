@@ -2,8 +2,13 @@ import argparse
 import json
 import os
 import subprocess
+import sys
 
 from openai import OpenAI
+
+
+def log_debug(msg: str) -> None:
+    print(msg, file=sys.stderr, flush=True)
 
 
 def read_file(path):
@@ -119,6 +124,8 @@ def run_agent(client, user_prompt):
 
         # If no tool calls → final answer
         if not msg.tool_calls:
+            if msg.content:
+                log_debug(f"[LLM] final: {msg.content[:500]!r}")
             return msg.content
 
         # Append assistant message that triggered tool calls
@@ -128,6 +135,7 @@ def run_agent(client, user_prompt):
         for tool_call in msg.tool_calls:
             name = tool_call.function.name
             args = json.loads(tool_call.function.arguments)
+            log_debug(f"[LLM] tool_call: {name}({json.dumps(args)})")
 
             if name == "read":
                 result = read_file(args["path"])
@@ -137,6 +145,9 @@ def run_agent(client, user_prompt):
                 result = bash_command(args["command"])
             else:
                 result = f"Unknown tool: {name}"
+
+            result_preview = result[:200] + "..." if len(result) > 200 else result
+            log_debug(f"[LLM] tool_result: {name} -> {result_preview!r}")
 
             # Feed tool result back to model
             messages.append(
