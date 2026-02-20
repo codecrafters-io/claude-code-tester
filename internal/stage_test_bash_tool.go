@@ -66,8 +66,8 @@ Entry point: app/`
 	promptTestCase := test_cases.NonInteractiveTestCase{
 		InputPrompt: utils.GetPromptWithGuardRailPrompt(
 			[]string{
-				"List files using ls and delete the old readme file.",
-				"List project files using ls and delete the old readme file.",
+				"List files using ls and delete the old readme file you find.",
+				"List project files with ls and remove the old readme file you find.",
 			},
 			guardRailPrompt,
 		),
