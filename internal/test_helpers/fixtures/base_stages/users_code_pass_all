@@ -69,7 +69,7 @@ Debug = true
 [33m[tester::#OQ5] [README_old.md] [0m[0m# My project[0m
 [33m[tester::#OQ5] [README_old.md] [0m[0mUses javascript promise api to demonstrate web fetch.[0m
 [33m[tester::#OQ5] [README_old.md] [0m[0mEntry point: app/[0m
-[33m[tester::#OQ5] [0m[94m$ ./your_program.sh -p 'List project files using ls and delete the old readme file. Always respond with `Deleted old readme file.`'[0m
+[33m[tester::#OQ5] [0m[94m$ ./your_program.sh -p 'List project files with ls and remove the old readme file you find. Always respond with `Deleted old readme file.`'[0m
 [33m[your_program] [0m[0mDeleted old readme file.[0m
 [33m[tester::#OQ5] [0m[94mChecking workspace contents[0m
 [33m[tester::#OQ5] [app/main.js] [0m[92masync function main() {[0m

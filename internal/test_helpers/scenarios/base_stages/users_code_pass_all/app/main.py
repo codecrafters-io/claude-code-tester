@@ -5,7 +5,6 @@ import subprocess
 
 from openai import OpenAI
 
-
 def read_file(path):
     try:
         with open(path, "r") as f:
