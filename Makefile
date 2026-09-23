@@ -41,6 +41,11 @@ define BASE_STAGES
 [{\"slug\":\"yy2\",\"tester_log_prefix\":\"stage-1\",\"title\":\"Stage #1: Communicate with LLM\"},{\"slug\":\"aq1\",\"tester_log_prefix\":\"stage-2\",\"title\":\"Stage #2: Advertise Read Tool\"},{\"slug\":\"md6\",\"tester_log_prefix\":\"stage-3\",\"title\":\"Stage #3: Execute Read Tool\"},{\"slug\":\"ff2\",\"tester_log_prefix\":\"stage-5\",\"title\":\"Stage #5: Agent Loop\"},{\"slug\":\"oz7\",\"tester_log_prefix\":\"stage-6\",\"title\":\"Stage #6: Write Tool\"},{\"slug\":\"oq5\",\"tester_log_prefix\":\"stage-8\",\"title\":\"Stage #8: Bash Tool\"}]
 endef
 
+# Skills extension test cases
+define SKILLS_STAGES
+[{\"slug\":\"vh1\",\"tester_log_prefix\":\"stage-1\",\"title\":\"Stage #1: Advertise skills to the LLM\"},{\"slug\":\"jd8\",\"tester_log_prefix\":\"stage-2\",\"title\":\"Stage #2: Invoke a skill by name\"},{\"slug\":\"wd2\",\"tester_log_prefix\":\"stage-3\",\"title\":\"Stage #3: Pass arguments to a skill\"},{\"slug\":\"sk5\",\"tester_log_prefix\":\"stage-4\",\"title\":\"Stage #4: Stack multiple skills\"},{\"slug\":\"tq1\",\"tester_log_prefix\":\"stage-5\",\"title\":\"Stage #5: Run a script bundled with a skill\"},{\"slug\":\"gq2\",\"tester_log_prefix\":\"stage-6\",\"title\":\"Stage #6: Let the model choose a skill\"},{\"slug\":\"mj2\",\"tester_log_prefix\":\"stage-7\",\"title\":\"Stage #7: Run a skill in a subagent\"}]
+endef
+
 # Reusable test runner
 define run_test
 	CODECRAFTERS_REPOSITORY_DIR=$(shell pwd)/$(1) \
@@ -55,8 +60,15 @@ test_base_with_claude_code: build
 test_base_with_users_code: build
 	$(call run_test,internal/test_helpers/scenarios/base_stages/users_code_pass_all,$(BASE_STAGES))
 
+test_skills_with_users_code: build
+	$(call run_test,internal/test_helpers/scenarios/skills_stages/users_code_pass_all,$(SKILLS_STAGES))
+
+test_skills_with_claude_code: build
+	$(call run_test,internal/test_helpers/pass_all,$(SKILLS_STAGES))
+
 test_all_with_claude_code: build
 	make test_base_with_claude_code || true
+	make test_skills_with_claude_code || true
 
 copy_course_file:
 	hub api \

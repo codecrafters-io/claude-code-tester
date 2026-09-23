@@ -40,5 +40,45 @@ var testerDefinition = tester_definition.TesterDefinition{
 			TestFunc: testBashTool,
 			Timeout:  45 * time.Second,
 		},
+
+		// Extension: Skills
+		//
+		// Stages that run the user's program twice get roughly double the
+		// executable timeout, plus headroom for workspace setup.
+		{
+			Slug:     "vh1",
+			TestFunc: testSkillsAdvertise,
+			Timeout:  75 * time.Second,
+		},
+		{
+			Slug:     "jd8",
+			TestFunc: testSkillsInvoke,
+			Timeout:  40 * time.Second,
+		},
+		{
+			Slug:     "wd2",
+			TestFunc: testSkillsArguments,
+			Timeout:  75 * time.Second,
+		},
+		{
+			Slug:     "sk5",
+			TestFunc: testSkillsStack,
+			Timeout:  45 * time.Second,
+		},
+		{
+			Slug:     "tq1",
+			TestFunc: testSkillsScript,
+			Timeout:  60 * time.Second,
+		},
+		{
+			Slug:     "gq2",
+			TestFunc: testSkillsModelInvoked,
+			Timeout:  60 * time.Second,
+		},
+		{
+			Slug:     "mj2",
+			TestFunc: testSkillsFork,
+			Timeout:  60 * time.Second,
+		},
 	},
 }
