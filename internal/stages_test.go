@@ -7,6 +7,8 @@ import (
 	tester_utils_testing "github.com/codecrafters-io/tester-utils/testing"
 )
 
+var skillsStageSlugs = []string{"vh1", "jd8", "wd2", "sk5", "tq1", "gq2", "mj2"}
+
 func TestStages(t *testing.T) {
 	os.Setenv("CODECRAFTERS_RANDOM_SEED", "1234567890")
 	os.Setenv("OPENROUTER_BASE_URL", "http://localhost:10000/api/v1")
@@ -53,6 +55,20 @@ func TestStages(t *testing.T) {
 			CodePath:            "./test_helpers/scenarios/base_stages/responses_api_pass",
 			ExpectedExitCode:    0,
 			StdoutFixturePath:   "./test_helpers/fixtures/base_stages/responses_api_pass",
+			NormalizeOutputFunc: normalizeTesterOutput,
+		},
+		"skills_stages_pass_all": {
+			StageSlugs:          skillsStageSlugs,
+			CodePath:            "./test_helpers/pass_all",
+			ExpectedExitCode:    0,
+			StdoutFixturePath:   "./test_helpers/fixtures/skills_stages/success",
+			NormalizeOutputFunc: normalizeTesterOutput,
+		},
+		"skills_stages_users_code_pass_all": {
+			StageSlugs:          skillsStageSlugs,
+			CodePath:            "./test_helpers/scenarios/skills_stages/users_code_pass_all",
+			ExpectedExitCode:    0,
+			StdoutFixturePath:   "./test_helpers/fixtures/skills_stages/users_code_pass_all",
 			NormalizeOutputFunc: normalizeTesterOutput,
 		},
 	}
