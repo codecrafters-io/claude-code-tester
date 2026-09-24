@@ -1,5 +1,9 @@
 .PHONY: release build test test_with_bash copy_course_file
 
+# Skill stacking needs 2.1.199 and the $0/$1 argument shorthand landed after
+# 2.1.14, so the skills stages fail against anything older.
+claude_code_version := 2.1.266
+
 current_version_number := $(shell git tag --list "v*" | sort -V | tail -n 1 | cut -c 2-)
 next_version_number := $(shell echo $$(($(current_version_number)+1)))
 
@@ -83,8 +87,8 @@ update_tester_utils:
 setup:
 	echo "Setting up claude-code-tester prerequisites for Linux"
 
-	echo "Installing Claude Code Version 2.1.14"
-	curl -fsSL https://claude.ai/install.sh | bash -s -- 2.1.14
+	echo "Installing Claude Code Version $(claude_code_version)"
+	curl -fsSL https://claude.ai/install.sh | bash -s -- $(claude_code_version)
 	echo "Claude Code is now installed"
 
 	echo "Installing uv"

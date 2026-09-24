@@ -9,6 +9,11 @@ import (
 
 var skillsStageSlugs = []string{"vh1", "jd8", "wd2", "sk5", "tq1", "gq2", "mj2"}
 
+// Claude Code expands a stack of skills only in an interactive session. Under
+// `-p` it expands the first skill and hands the rest of the line to it as
+// literal argument text, so sk5 can't run against the real CLI.
+var skillsStageSlugsRealClaudeCode = []string{"vh1", "jd8", "wd2", "tq1", "gq2", "mj2"}
+
 func TestStages(t *testing.T) {
 	os.Setenv("CODECRAFTERS_RANDOM_SEED", "1234567890")
 	os.Setenv("OPENROUTER_BASE_URL", "http://localhost:10000/api/v1")
@@ -58,7 +63,7 @@ func TestStages(t *testing.T) {
 			NormalizeOutputFunc: normalizeTesterOutput,
 		},
 		"skills_stages_pass_all": {
-			StageSlugs:          skillsStageSlugs,
+			StageSlugs:          skillsStageSlugsRealClaudeCode,
 			CodePath:            "./test_helpers/pass_all",
 			ExpectedExitCode:    0,
 			StdoutFixturePath:   "./test_helpers/fixtures/skills_stages/success",
