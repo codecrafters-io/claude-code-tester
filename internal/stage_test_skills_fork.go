@@ -1,7 +1,9 @@
 package internal
 
 import (
+	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/codecrafters-io/claude-code-tester/internal/assertions/request_assertion"
 	"github.com/codecrafters-io/claude-code-tester/internal/assertions/string_assertion"
@@ -66,11 +68,56 @@ func testSkillsFork(stageHarness *test_case_harness.TestCaseHarness) error {
 	recordedRequestBodies := requestRecorder.RequestBodies()
 	stageLogger.Debugf("User's program sent %d request(s) to the LLM", len(recordedRequestBodies))
 
+	// TEMPORARY: describe each recorded request so a CI run shows the shape the
+	// real CLI produces. Remove once the fork assertions are settled.
+	for i, requestBody := range recordedRequestBodies {
+		stageLogger.Infof("probe: request %d/%d — %s", i+1, len(recordedRequestBodies), describeRecordedRequest(requestBody, tokens[0], catalogOnlySkill.Name))
+	}
+
 	if err := subagentReceivedTheBodyAssertion.Run(recordedRequestBodies, stageLogger); err != nil {
 		return err
 	}
 
 	return mainConversationReceivedOnlyTheResultAssertion.Run(recordedRequestBodies, stageLogger)
+}
+
+// TEMPORARY: see the call site.
+func describeRecordedRequest(requestBody string, token string, catalogOnlySkillName string) string {
+	lowered := strings.ToLower(requestBody)
+
+	has := func(needle string) string {
+		if strings.Contains(lowered, strings.ToLower(needle)) {
+			return "yes"
+		}
+		return "no"
+	}
+
+	var parsed struct {
+		System   json.RawMessage `json:"system"`
+		Messages []struct {
+			Role    string          `json:"role"`
+			Content json.RawMessage `json:"content"`
+		} `json:"messages"`
+	}
+
+	roles := "unparsed"
+
+	if err := json.Unmarshal([]byte(requestBody), &parsed); err == nil {
+		descriptions := make([]string, len(parsed.Messages))
+		for i, message := range parsed.Messages {
+			content := string(message.Content)
+			if len(content) > 120 {
+				content = content[:120] + "…"
+			}
+			descriptions[i] = fmt.Sprintf("%s(%s)", message.Role, content)
+		}
+		roles = strings.Join(descriptions, " | ")
+	}
+
+	return fmt.Sprintf(
+		"%d bytes, system=%d bytes, body=%s, answer=%s, other-skill-name=%s, messages: %s",
+		len(requestBody), len(parsed.System), has(skills_manager.RespondWithTokenBodyMarker), has(token), has(catalogOnlySkillName), roles,
+	)
 }
 
 // forkAssertions returns the pair that separates a submission that ran the skill
