@@ -199,6 +199,17 @@ def render_invocation(skill, arguments):
     )
 
 
+def forked_skill_at(path, skills):
+    """The forked skill whose SKILL.md sits at `path`, if there is one."""
+    resolved = os.path.realpath(path)
+
+    for skill in skills:
+        if skill["forked"] and os.path.realpath(os.path.join(skill["dir"], "SKILL.md")) == resolved:
+            return skill
+
+    return None
+
+
 def expand_invocations(prompt, skills):
     """Expand the run of /name tokens at the start of the prompt.
 
@@ -245,10 +256,7 @@ def run_agent(client, user_prompt):
             messages.append({"role": "user", "content": invocation})
             continue
 
-        # A forked skill's body is the entire prompt of a conversation that
-        # starts empty, so none of the messages built above go with it. Only
-        # its answer comes back.
-        result = run_loop(client, [{"role": "user", "content": invocation}])
+        result = run_forked_skill(client, skill, skills, invocation)
 
         messages.append(
             {
@@ -257,10 +265,21 @@ def run_agent(client, user_prompt):
             }
         )
 
-    return run_loop(client, messages)
+    return run_loop(client, messages, skills)
 
 
-def run_loop(client, messages):
+def run_forked_skill(client, skill, skills, invocation):
+    """Run a skill's body as the entire prompt of a conversation that starts empty.
+
+    None of the caller's messages go with it, and only its answer comes back.
+    """
+    # Dropping the skill itself keeps a fork from reading its way back into one.
+    others = [other for other in skills if other is not skill]
+
+    return run_loop(client, [{"role": "user", "content": invocation}], others)
+
+
+def run_loop(client, messages, skills):
     """Drive one conversation until the model answers without calling a tool."""
     while True:
         resp = client.chat.completions.create(
@@ -287,7 +306,18 @@ def run_loop(client, messages):
             args = json.loads(tool_call.function.arguments)
 
             if name == "read":
-                result = read_file(args["path"])
+                forked_skill = forked_skill_at(args["path"], skills)
+
+                # Reading a forked skill hands back its answer, not its body:
+                # the body belongs to a conversation that starts empty. Without
+                # this, the model that asked for the file would have carried
+                # out the instructions itself.
+                if forked_skill is None:
+                    result = read_file(args["path"])
+                else:
+                    result = run_forked_skill(
+                        client, forked_skill, skills, render_invocation(forked_skill, [])
+                    )
             elif name == "write":
                 result = write_file(args["path"], args["content"])
             elif name == "bash_command":
