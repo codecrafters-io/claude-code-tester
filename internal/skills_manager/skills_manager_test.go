@@ -159,6 +159,29 @@ func TestChecksumScriptReferencesTheDataFile(t *testing.T) {
 	assert.Contains(t, ChecksumScriptContents, fmt.Sprintf("sha256sum %s | cut -c1-8", DataFileName))
 }
 
+func TestChecksumScriptResolvesTheDataFileFromItsOwnLocation(t *testing.T) {
+	// Without this the script only produces the right answer when the caller
+	// happens to be in the project root.
+	assert.Contains(t, ChecksumScriptContents, `cd "$(dirname "$0")/.."`)
+}
+
+func TestDataFileSitsOneLevelAboveTheScript(t *testing.T) {
+	// The `..` in the script is only correct if these two agree.
+	skill := Skill{Name: "apple"}
+
+	assert.Equal(t, ".claude/skills/apple/data.txt", skill.DataFilePath())
+	assert.Equal(t, ".claude/skills/apple/scripts/checksum.sh", skill.ScriptPath(ChecksumScriptFileName))
+}
+
+func TestRespondWithTokenBodyContainsTheMarkerButTheTokenDoesNot(t *testing.T) {
+	// The fork stage tells a body apart from a result using this marker, so the
+	// marker has to be in the body and absent from the answer it asks for.
+	body := RespondWithTokenBody("kumquat")
+
+	assert.Contains(t, body, RespondWithTokenBodyMarker)
+	assert.NotContains(t, RespondWithTokenBodyMarker, "kumquat")
+}
+
 func assertNoValueIsASubstringOfAnother(t *testing.T, values []string) {
 	t.Helper()
 

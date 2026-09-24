@@ -71,8 +71,13 @@ func RandomTokens(n int) []string {
 
 // RespondWithTokenBody returns a body that instructs the model to emit token verbatim.
 func RespondWithTokenBody(token string) string {
-	return fmt.Sprintf("Respond with exactly one word: %s\n\nDo not add any other text, punctuation, or formatting.", token)
+	return fmt.Sprintf("Respond with exactly one word: %s\n\n%s.", token, RespondWithTokenBodyMarker)
 }
+
+// RespondWithTokenBodyMarker is the part of RespondWithTokenBody that never
+// shows up in the answer, which is what lets the fork stage tell a request
+// carrying the body apart from one carrying only the result.
+const RespondWithTokenBodyMarker = "Do not add any other text, punctuation, or formatting"
 
 // StackedLine pairs a skill's token with the argument its invocation carried.
 //
@@ -102,6 +107,12 @@ func (s Skill) MarkdownPath() string {
 
 func (s Skill) ScriptPath(scriptFileName string) string {
 	return filepath.Join(s.DirPath(), "scripts", scriptFileName)
+}
+
+// DataFilePath is the skill's own folder, one level up from the script, which
+// is where the `..` in ChecksumScriptContents lands.
+func (s Skill) DataFilePath() string {
+	return filepath.Join(s.DirPath(), DataFileName)
 }
 
 // ScriptReference is how a skill body refers to one of its bundled scripts: a

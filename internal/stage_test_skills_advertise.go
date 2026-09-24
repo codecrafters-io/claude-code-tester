@@ -1,8 +1,6 @@
 package internal
 
 import (
-	"strconv"
-
 	"github.com/codecrafters-io/claude-code-tester/internal/assertions/string_assertion"
 	"github.com/codecrafters-io/claude-code-tester/internal/settings_manager"
 	"github.com/codecrafters-io/claude-code-tester/internal/skills_manager"
@@ -52,8 +50,10 @@ func testSkillsAdvertise(stageHarness *test_case_harness.TestCaseHarness) error 
 			"Respond with only a number.",
 		),
 		ExpectedExitCode: 0,
-		StdoutAssertion: string_assertion.ExactMatchAssertion{
-			ExpectedValue: strconv.Itoa(skillCount),
+		// A minimum, matching the tool-advertise stage: Claude Code ships its own
+		// built-in skills, so the real product answers with these plus a dozen more.
+		StdoutAssertion: string_assertion.MinimumValueAssertion{
+			ExpectedMinimumValue: skillCount,
 		},
 	}
 

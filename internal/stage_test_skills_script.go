@@ -2,6 +2,7 @@ package internal
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/codecrafters-io/claude-code-tester/internal/assertions/string_assertion"
 	"github.com/codecrafters-io/claude-code-tester/internal/settings_manager"
@@ -40,7 +41,7 @@ func testSkillsScript(stageHarness *test_case_harness.TestCaseHarness) error {
 	// user's program has to tell the model where that folder is before the
 	// model can turn the reference into a command that runs.
 	skill.Body = fmt.Sprintf(
-		"Run `%s` using the Bash tool.\n\nRespond with only the value it prints, and nothing else.",
+		"Run `%s` using the Bash tool. Run the script itself rather than reimplementing what it does.\n\nRespond with only the value it prints, and nothing else.",
 		skills_manager.ScriptReference(skills_manager.ChecksumScriptFileName),
 	)
 
@@ -48,7 +49,7 @@ func testSkillsScript(stageHarness *test_case_harness.TestCaseHarness) error {
 
 	workspaceManager.MustCreateFilesWithLogger([]workspace_manager.WorkspaceFile{
 		{
-			RelativePath: skills_manager.DataFileName,
+			RelativePath: skill.DataFilePath(),
 			Content:      dataFileContents,
 			FileMode:     0644,
 		},
@@ -70,5 +71,14 @@ func testSkillsScript(stageHarness *test_case_harness.TestCaseHarness) error {
 		},
 	}
 
-	return scriptTestCase.Run(stageHarness)
+	if err := scriptTestCase.Run(stageHarness); err != nil {
+		// The checksum of empty input reads as a real answer, so name it.
+		if emptyChecksum := skills_manager.ChecksumOf(""); strings.Contains(err.Error(), emptyChecksum) {
+			stageLogger.Infof("Note: %s is the checksum of empty input, so a command ran but read no data.", emptyChecksum)
+		}
+
+		return err
+	}
+
+	return nil
 }
