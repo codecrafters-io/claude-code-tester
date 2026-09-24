@@ -40,22 +40,27 @@ var descriptionTopics = []Topic{
 // invocationTopics are phrased as "use this skill when ...", which is what lets
 // the model pick a skill without the user naming it. Each Question matches
 // exactly one topic in this list.
+//
+// Every Question asks for a fact that isn't in the workspace. A question about
+// the files themselves, such as summarizing a changelog, invites the model to
+// go looking instead of reaching for the skill, and it answers that there's no
+// changelog there rather than invoking anything.
 var invocationTopics = []Topic{
-	{
-		Description: "Use this skill when the user asks for the database migration status.",
-		Question:    "What is the database migration status?",
-	},
-	{
-		Description: "Use this skill when the user asks to format source code.",
-		Question:    "Can you format the source code in this project?",
-	},
 	{
 		Description: "Use this skill when the user asks about the on-call rotation.",
 		Question:    "Who is on the on-call rotation right now?",
 	},
 	{
-		Description: "Use this skill when the user asks to summarize the changelog.",
-		Question:    "Can you summarize the changelog?",
+		Description: "Use this skill when the user asks which region the billing service runs in.",
+		Question:    "Which region does the billing service run in?",
+	},
+	{
+		Description: "Use this skill when the user asks who owns the payments dashboard.",
+		Question:    "Who owns the payments dashboard?",
+	},
+	{
+		Description: "Use this skill when the user asks for the support team's escalation contact.",
+		Question:    "Who is the escalation contact for the support team?",
 	},
 }
 
