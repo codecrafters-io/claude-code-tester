@@ -1,10 +1,6 @@
 package internal
 
 import (
-	"encoding/json"
-	"fmt"
-	"strings"
-
 	"github.com/codecrafters-io/claude-code-tester/internal/assertions/request_assertion"
 	"github.com/codecrafters-io/claude-code-tester/internal/assertions/string_assertion"
 	"github.com/codecrafters-io/claude-code-tester/internal/settings_manager"
@@ -30,7 +26,10 @@ func testSkillsFork(stageHarness *test_case_harness.TestCaseHarness) error {
 
 	names := skills_manager.RandomNames(seededSkillCount)
 	tokens := skills_manager.RandomTokens(seededSkillCount)
-	topics := skills_manager.RandomDescriptionTopics(seededSkillCount)
+	// The skill is matched by description rather than invoked by name. A named
+	// invocation is resolved without asking the model, so the main conversation
+	// never calls it and never receives the subagent's answer.
+	topics := skills_manager.RandomInvocationTopics(seededSkillCount)
 
 	forkedSkill := skills_manager.Skill{
 		Name:               names[0],
@@ -39,7 +38,7 @@ func testSkillsFork(stageHarness *test_case_harness.TestCaseHarness) error {
 		RunInForkedContext: true,
 	}
 
-	// Seeded but never invoked, so the catalog holds more than the skill under test.
+	// Seeded but never matched, so the catalog holds more than the skill under test.
 	catalogOnlySkill := skills_manager.Skill{
 		Name:        names[1],
 		Description: topics[1].Description,
@@ -48,11 +47,11 @@ func testSkillsFork(stageHarness *test_case_harness.TestCaseHarness) error {
 
 	skills_manager.Seed(workspaceManager, []skills_manager.Skill{forkedSkill, catalogOnlySkill}, stageLogger)
 
-	stageLogger.Debugf("Seeded %q alongside it, which stays in the catalog and is never invoked", catalogOnlySkill.Name)
-	stageLogger.Infof("Invoking /%s, expecting its body to be handled by a subagent", forkedSkill.Name)
+	stageLogger.Debugf("Seeded %q alongside it, which stays in the catalog and is never matched", catalogOnlySkill.Name)
+	stageLogger.Infof("Sending a request that matches %q, expecting its body to be handled by a subagent", forkedSkill.Name)
 
 	forkTestCase := test_cases.NonInteractiveTestCase{
-		InputPrompt:      fmt.Sprintf("/%s", forkedSkill.Name),
+		InputPrompt:      topics[0].Question,
 		ExpectedExitCode: 0,
 		StdoutAssertion: string_assertion.ContainsAllAssertion{
 			ExpectedValues: []string{tokens[0]},
@@ -68,62 +67,11 @@ func testSkillsFork(stageHarness *test_case_harness.TestCaseHarness) error {
 	recordedRequestBodies := requestRecorder.RequestBodies()
 	stageLogger.Debugf("User's program sent %d request(s) to the LLM", len(recordedRequestBodies))
 
-	// TEMPORARY: describe each recorded request so a CI run shows the shape the
-	// real CLI produces. Remove once the fork assertions are settled.
-	for i, requestBody := range recordedRequestBodies {
-		stageLogger.Infof("probe: request %d/%d — %s", i+1, len(recordedRequestBodies), describeRecordedRequest(requestBody, tokens[0], catalogOnlySkill.Name))
-	}
-
 	if err := subagentReceivedTheBodyAssertion.Run(recordedRequestBodies, stageLogger); err != nil {
 		return err
 	}
 
 	return mainConversationReceivedOnlyTheResultAssertion.Run(recordedRequestBodies, stageLogger)
-}
-
-// TEMPORARY: see the call site.
-func describeRecordedRequest(requestBody string, token string, catalogOnlySkillName string) string {
-	lowered := strings.ToLower(requestBody)
-
-	has := func(needle string) string {
-		if strings.Contains(lowered, strings.ToLower(needle)) {
-			return "yes"
-		}
-		return "no"
-	}
-
-	var parsed struct {
-		System   json.RawMessage `json:"system"`
-		Messages []struct {
-			Role    string          `json:"role"`
-			Content json.RawMessage `json:"content"`
-		} `json:"messages"`
-	}
-
-	roles := "unparsed"
-
-	if err := json.Unmarshal([]byte(requestBody), &parsed); err == nil {
-		descriptions := make([]string, len(parsed.Messages))
-		for i, message := range parsed.Messages {
-			descriptions[i] = fmt.Sprintf("\n    [%s] %s", message.Role, truncateForProbe(string(message.Content), 2500))
-		}
-		roles = strings.Join(descriptions, "")
-	}
-
-	return fmt.Sprintf(
-		"%d bytes, body=%s, answer=%s, other-skill-name=%s\n    [SYSTEM] %s%s",
-		len(requestBody), has(skills_manager.RespondWithTokenBodyMarker), has(token), has(catalogOnlySkillName),
-		truncateForProbe(string(parsed.System), 2500), roles,
-	)
-}
-
-// TEMPORARY: see the call site.
-func truncateForProbe(text string, limit int) string {
-	if len(text) <= limit {
-		return text
-	}
-
-	return text[:limit] + "…"
 }
 
 // forkAssertions returns the pair that separates a submission that ran the skill
