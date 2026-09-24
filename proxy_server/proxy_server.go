@@ -16,17 +16,22 @@ import (
 
 // StartProxyServer spawns a proxy that listens at localhost:10000
 // the server is automatically shutdown as a part of stageHarness' teardown function
-func StartProxyServer(stageHarness *test_case_harness.TestCaseHarness) {
-	proxyServer := newProxyServer()
+//
+// The returned recorder holds every request the user's program sent. Stages
+// that assert only on stdout can ignore it.
+func StartProxyServer(stageHarness *test_case_harness.TestCaseHarness) *RequestRecorder {
+	proxyServer, requestRecorder := newProxyServer()
 	proxyServer.Start()
 	proxyServer.registerTeardown(stageHarness)
+
+	return requestRecorder
 }
 
 type proxyServer struct {
 	server *http.Server
 }
 
-func newProxyServer() *proxyServer {
+func newProxyServer() (*proxyServer, *RequestRecorder) {
 	targetUrl, _ := url.Parse("https://openrouter.ai")
 	apiKey := mustGetOpenrouterApiKey()
 
@@ -59,12 +64,16 @@ func newProxyServer() *proxyServer {
 		"/api/v1/messages": {modelValidator},
 	})
 
+	requestRecorder := &RequestRecorder{}
+
+	// Recording sits outside validation, so a request is captured as the user's
+	// program sent it whether or not the proxy goes on to reject it.
 	return &proxyServer{
 		server: &http.Server{
 			Addr:    "localhost:" + proxyListeningPort,
-			Handler: validator.WrapProxy(reverseProxy),
+			Handler: requestRecorder.WrapHandler(validator.WrapProxy(reverseProxy)),
 		},
-	}
+	}, requestRecorder
 }
 
 func (s *proxyServer) Start() {
