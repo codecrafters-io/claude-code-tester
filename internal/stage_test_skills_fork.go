@@ -105,19 +105,25 @@ func describeRecordedRequest(requestBody string, token string, catalogOnlySkillN
 	if err := json.Unmarshal([]byte(requestBody), &parsed); err == nil {
 		descriptions := make([]string, len(parsed.Messages))
 		for i, message := range parsed.Messages {
-			content := string(message.Content)
-			if len(content) > 120 {
-				content = content[:120] + "…"
-			}
-			descriptions[i] = fmt.Sprintf("%s(%s)", message.Role, content)
+			descriptions[i] = fmt.Sprintf("\n    [%s] %s", message.Role, truncateForProbe(string(message.Content), 2500))
 		}
-		roles = strings.Join(descriptions, " | ")
+		roles = strings.Join(descriptions, "")
 	}
 
 	return fmt.Sprintf(
-		"%d bytes, system=%d bytes, body=%s, answer=%s, other-skill-name=%s, messages: %s",
-		len(requestBody), len(parsed.System), has(skills_manager.RespondWithTokenBodyMarker), has(token), has(catalogOnlySkillName), roles,
+		"%d bytes, body=%s, answer=%s, other-skill-name=%s\n    [SYSTEM] %s%s",
+		len(requestBody), has(skills_manager.RespondWithTokenBodyMarker), has(token), has(catalogOnlySkillName),
+		truncateForProbe(string(parsed.System), 2500), roles,
 	)
+}
+
+// TEMPORARY: see the call site.
+func truncateForProbe(text string, limit int) string {
+	if len(text) <= limit {
+		return text
+	}
+
+	return text[:limit] + "…"
 }
 
 // forkAssertions returns the pair that separates a submission that ran the skill
