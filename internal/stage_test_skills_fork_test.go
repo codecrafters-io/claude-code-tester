@@ -9,52 +9,53 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// The stage's whole verdict rests on these two assertions, so pin the line they
-// draw using the request shapes each kind of submission produces.
-func TestForkAssertionsSeparateForkingFromInlineSubmissions(t *testing.T) {
+// The stage's whole verdict rests on this assertion, so pin the line it draws
+// using the request shapes each kind of submission produces.
+func TestForkAssertionSeparatesForkingFromInlineSubmissions(t *testing.T) {
 	const token = "blueberry"
+	const question = "What is the database migration status?"
 
 	catalog := `"role":"system","content":"You have access to the following skills:\n\n- apple: ...\n- grape: ..."`
+	asked := fmt.Sprintf(`"role":"user","content":"%s"`, question)
 	body := fmt.Sprintf(`"role":"user","content":"Respond with exactly one word: %s\n\n%s."`, token, skills_manager.RespondWithTokenBodyMarker)
-	invocation := `"role":"user","content":"/apple"`
-	result := fmt.Sprintf(`"role":"user","content":"The /apple skill ran in a subagent and returned:\n\n%s"`, token)
 
 	testCases := map[string]struct {
 		requestBodies []string
 		shouldPass    bool
 	}{
-		"forks, and brings the result back": {
+		"forks, so the subagent never sees the question": {
 			requestBodies: []string{
+				"{" + catalog + "," + asked + "}",
 				"{" + body + "}",
-				"{" + catalog + "," + result + "}",
 			},
 			shouldPass: true,
 		},
-		// Claude Code shows the subagent the catalog too. The body is still
-		// absent from the main conversation, which is what the pair keys on.
+		// Claude Code shows the subagent the catalog too. The question is still
+		// absent from it, which is what the assertion keys on.
 		"forks, and the subagent also sees the catalog": {
 			requestBodies: []string{
+				"{" + catalog + "," + asked + "}",
 				"{" + catalog + "," + body + "}",
-				"{" + catalog + "," + result + "}",
 			},
 			shouldPass: true,
 		},
-		"ignores the field and runs the body inline": {
+		"ignores the field and continues the main conversation": {
 			requestBodies: []string{
-				"{" + catalog + "," + body + "}",
+				"{" + catalog + "," + asked + "}",
+				"{" + catalog + "," + asked + "," + body + "}",
 			},
 			shouldPass: false,
 		},
-		"forks but never tells the main conversation": {
+		"starts a second conversation but copies the question into it": {
 			requestBodies: []string{
-				"{" + body + "}",
-				"{" + catalog + "," + invocation + "}",
+				"{" + catalog + "," + asked + "}",
+				"{" + asked + "," + body + "}",
 			},
 			shouldPass: false,
 		},
 		"never runs the skill at all": {
 			requestBodies: []string{
-				"{" + catalog + "," + invocation + "}",
+				"{" + catalog + "," + asked + "}",
 			},
 			shouldPass: false,
 		},
@@ -62,13 +63,7 @@ func TestForkAssertionsSeparateForkingFromInlineSubmissions(t *testing.T) {
 
 	for name, testCase := range testCases {
 		t.Run(name, func(t *testing.T) {
-			bodyAssertion, resultAssertion := forkAssertions(token)
-			quietLogger := logger.GetQuietLogger("")
-
-			err := bodyAssertion.Run(testCase.requestBodies, quietLogger)
-			if err == nil {
-				err = resultAssertion.Run(testCase.requestBodies, quietLogger)
-			}
+			err := forkAssertion(question).Run(testCase.requestBodies, logger.GetQuietLogger(""))
 
 			if testCase.shouldPass {
 				assert.NoError(t, err)

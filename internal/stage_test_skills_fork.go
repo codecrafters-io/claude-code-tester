@@ -62,29 +62,23 @@ func testSkillsFork(stageHarness *test_case_harness.TestCaseHarness) error {
 		return err
 	}
 
-	subagentReceivedTheBodyAssertion, mainConversationReceivedOnlyTheResultAssertion := forkAssertions(tokens[0])
-
 	recordedRequestBodies := requestRecorder.RequestBodies()
 	stageLogger.Debugf("User's program sent %d request(s) to the LLM", len(recordedRequestBodies))
 
-	if err := subagentReceivedTheBodyAssertion.Run(recordedRequestBodies, stageLogger); err != nil {
-		return err
-	}
-
-	return mainConversationReceivedOnlyTheResultAssertion.Run(recordedRequestBodies, stageLogger)
+	return forkAssertion(topics[0].Question).Run(recordedRequestBodies, stageLogger)
 }
 
-// forkAssertions returns the pair that separates a submission that ran the skill
-// in a subagent from one that ran it inline: some conversation was handed the
-// body, and some conversation was handed the answer without the body.
+// forkAssertion separates a submission that ran the skill in a subagent from one
+// that ran it inline: some conversation was handed the skill's instructions
+// without the user's question, which only happens if that conversation started
+// fresh rather than continuing the one the question was asked in.
 //
-// The marker is the body rather than another skill's name because a forked
-// subagent is still shown the full skill catalog.
-func forkAssertions(token string) (request_assertion.SomeRequestAssertion, request_assertion.SomeRequestAssertion) {
+// Neither half can be the skill's name or the answer. A forked subagent is shown
+// the full catalog, and the answer never travels in a request at all — Claude
+// Code relays the subagent's reply to the user instead of back to the model.
+func forkAssertion(question string) request_assertion.SomeRequestAssertion {
 	return request_assertion.SomeRequestAssertion{
-		ExpectedValues: []string{skills_manager.RespondWithTokenBodyMarker},
-	}, request_assertion.SomeRequestAssertion{
-		ExpectedValues:   []string{token},
-		UnexpectedValues: []string{skills_manager.RespondWithTokenBodyMarker},
+		ExpectedValues:   []string{skills_manager.RespondWithTokenBodyMarker},
+		UnexpectedValues: []string{question},
 	}
 }
