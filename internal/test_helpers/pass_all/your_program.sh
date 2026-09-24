@@ -1,13 +1,26 @@
 #!/bin/sh
 
+# Claude Code writes a warning to stderr for every query it sends under a model
+# id it doesn't recognise, and the OpenRouter ids used here are all unrecognised.
+# The tester logs stderr alongside stdout, so the warnings would otherwise end up
+# in the recorded fixtures.
 run_claude() {
+  stderr_file="$(mktemp)"
+
   ANTHROPIC_DEFAULT_SONNET_MODEL="anthropic/claude-haiku-4.5" \
   ANTHROPIC_DEFAULT_OPUS_MODEL="anthropic/claude-haiku-4.5" \
   ANTHROPIC_DEFAULT_HAIKU_MODEL="anthropic/claude-haiku-4.5" \
   ANTHROPIC_BASE_URL="http://localhost:10000/api" \
   ANTHROPIC_AUTH_TOKEN="dummy-api-key" \
   ANTHROPIC_API_KEY="" \
-  claude "$@"
+  claude "$@" 2>"$stderr_file"
+
+  exit_code=$?
+
+  grep -v 'claude-code:unrecognized_model' "$stderr_file" >&2
+  rm -f "$stderr_file"
+
+  return $exit_code
 }
 
 should_intercept_output=false
