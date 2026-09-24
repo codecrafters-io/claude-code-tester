@@ -2,6 +2,7 @@ package internal
 
 import (
 	"os"
+	"regexp"
 	"testing"
 
 	tester_utils_testing "github.com/codecrafters-io/tester-utils/testing"
@@ -81,6 +82,15 @@ func TestStages(t *testing.T) {
 	tester_utils_testing.TestTesterOutput(t, testerDefinition, testCases)
 }
 
+// A line the user's program printed, with any colour codes that precede it.
+var userProgramLinePattern = regexp.MustCompile(`(?m)^(?:\x1b\[[0-9;]*m)*\[your_program\] .*\n?`)
+
+// normalizeTesterOutput drops what the user's program printed and keeps what the
+// tester printed around it. Every scenario here drives a live model, so the
+// program's wording differs from one recording to the next even when it does the
+// same thing, and a fixture that pinned it would report a failure whenever the
+// model chose different words. What the program printed is already covered by the
+// stage assertions, whose verdicts stay in the fixture.
 func normalizeTesterOutput(testerOutput []byte) []byte {
-	return testerOutput
+	return userProgramLinePattern.ReplaceAll(testerOutput, nil)
 }
