@@ -25,154 +25,152 @@ Debug = true
 [33m[tester::#VH1] [.claude/skills/harbor/SKILL.md] [0m[0m[0m
 [33m[tester::#VH1] [.claude/skills/harbor/SKILL.md] [0m[0mFollow the project's conventions and report what you did.[0m
 [33m[tester::#VH1] [.claude/skills/harbor/SKILL.md] [0m[0m[0m
-[33m[tester::#VH1] [0m[94mChecking that the model can count the advertised skills[0m
-[33m[tester::#VH1] [0m[94m$ ./your_program.sh -p 'What is the count of skills available to you? Respond with only a number.'[0m
-[33m[your_program] [0m[0m15[0m
-[33m[tester::#VH1] [0m[92m✔ Value is at least 3[0m
 [33m[tester::#VH1] [0m[94mChecking that the model can match a task to "harbor" using its description[0m
 [33m[tester::#VH1] [0m[94m$ ./your_program.sh -p 'Which skill would help me deploy the billing service? Respond with only the skill name.'[0m
 [33m[your_program] [0m[0mharbor[0m
 [33m[tester::#VH1] [0m[92m✔ Value is "harbor"[0m
+[33m[tester::#VH1] [0m[94mChecking that all 3 skills reached the request[0m
+[33m[tester::#VH1] [0m[92m✔ Found a request containing "onyx" and "Summarizes recent incidents for the payments team." and "kestrel" and "Generates release notes for the analytics project." and "harbor" and "Deploys the billing service to production."[0m
 [33m[tester::#VH1] [0m[92mTest passed.[0m
 
 [33m[tester::#JD8] [0m[94mRunning tests for Stage #JD8 (jd8)[0m
-[33m[tester::#JD8] [0m[94mCreated .claude/skills/falcon/SKILL.md:[0m
-[33m[tester::#JD8] [.claude/skills/falcon/SKILL.md] [0m[0m---[0m
-[33m[tester::#JD8] [.claude/skills/falcon/SKILL.md] [0m[0mname: falcon[0m
-[33m[tester::#JD8] [.claude/skills/falcon/SKILL.md] [0m[0mdescription: Deploys the billing service to production.[0m
-[33m[tester::#JD8] [.claude/skills/falcon/SKILL.md] [0m[0m---[0m
-[33m[tester::#JD8] [.claude/skills/falcon/SKILL.md] [0m[0m[0m
-[33m[tester::#JD8] [.claude/skills/falcon/SKILL.md] [0m[0mRespond with exactly one word: jujube[0m
-[33m[tester::#JD8] [.claude/skills/falcon/SKILL.md] [0m[0m[0m
-[33m[tester::#JD8] [.claude/skills/falcon/SKILL.md] [0m[0mDo not add any other text, punctuation, or formatting.[0m
-[33m[tester::#JD8] [.claude/skills/falcon/SKILL.md] [0m[0m[0m
-[33m[tester::#JD8] [0m[94mCreated .claude/skills/cinder/SKILL.md:[0m
-[33m[tester::#JD8] [.claude/skills/cinder/SKILL.md] [0m[0m---[0m
-[33m[tester::#JD8] [.claude/skills/cinder/SKILL.md] [0m[0mname: cinder[0m
-[33m[tester::#JD8] [.claude/skills/cinder/SKILL.md] [0m[0mdescription: Generates release notes for the analytics project.[0m
-[33m[tester::#JD8] [.claude/skills/cinder/SKILL.md] [0m[0m---[0m
-[33m[tester::#JD8] [.claude/skills/cinder/SKILL.md] [0m[0m[0m
-[33m[tester::#JD8] [.claude/skills/cinder/SKILL.md] [0m[0mRespond with exactly one word: clementine[0m
-[33m[tester::#JD8] [.claude/skills/cinder/SKILL.md] [0m[0m[0m
-[33m[tester::#JD8] [.claude/skills/cinder/SKILL.md] [0m[0mDo not add any other text, punctuation, or formatting.[0m
-[33m[tester::#JD8] [.claude/skills/cinder/SKILL.md] [0m[0m[0m
-[33m[tester::#JD8] [0m[94mInvoking /falcon, expecting only its body to be loaded[0m
-[33m[tester::#JD8] [0m[94m$ ./your_program.sh -p /falcon[0m
-[33m[your_program] [0m[0mjujube[0m
-[33m[tester::#JD8] [0m[92m✔ Value is "jujube"[0m
+[33m[tester::#JD8] [0m[94mCreated .claude/skills/beacon/SKILL.md:[0m
+[33m[tester::#JD8] [.claude/skills/beacon/SKILL.md] [0m[0m---[0m
+[33m[tester::#JD8] [.claude/skills/beacon/SKILL.md] [0m[0mname: beacon[0m
+[33m[tester::#JD8] [.claude/skills/beacon/SKILL.md] [0m[0mdescription: Rotates credentials for the notification database.[0m
+[33m[tester::#JD8] [.claude/skills/beacon/SKILL.md] [0m[0m---[0m
+[33m[tester::#JD8] [.claude/skills/beacon/SKILL.md] [0m[0m[0m
+[33m[tester::#JD8] [.claude/skills/beacon/SKILL.md] [0m[0mRespond with exactly one word: damson[0m
+[33m[tester::#JD8] [.claude/skills/beacon/SKILL.md] [0m[0m[0m
+[33m[tester::#JD8] [.claude/skills/beacon/SKILL.md] [0m[0mDo not add any other text, punctuation, or formatting.[0m
+[33m[tester::#JD8] [.claude/skills/beacon/SKILL.md] [0m[0m[0m
+[33m[tester::#JD8] [0m[94mCreated .claude/skills/quartz/SKILL.md:[0m
+[33m[tester::#JD8] [.claude/skills/quartz/SKILL.md] [0m[0m---[0m
+[33m[tester::#JD8] [.claude/skills/quartz/SKILL.md] [0m[0mname: quartz[0m
+[33m[tester::#JD8] [.claude/skills/quartz/SKILL.md] [0m[0mdescription: Deploys the billing service to production.[0m
+[33m[tester::#JD8] [.claude/skills/quartz/SKILL.md] [0m[0m---[0m
+[33m[tester::#JD8] [.claude/skills/quartz/SKILL.md] [0m[0m[0m
+[33m[tester::#JD8] [.claude/skills/quartz/SKILL.md] [0m[0mRespond with exactly one word: jujube[0m
+[33m[tester::#JD8] [.claude/skills/quartz/SKILL.md] [0m[0m[0m
+[33m[tester::#JD8] [.claude/skills/quartz/SKILL.md] [0m[0mDo not add any other text, punctuation, or formatting.[0m
+[33m[tester::#JD8] [.claude/skills/quartz/SKILL.md] [0m[0m[0m
+[33m[tester::#JD8] [0m[94mInvoking /beacon, expecting only its body to be loaded[0m
+[33m[tester::#JD8] [0m[94m$ ./your_program.sh -p /beacon[0m
+[33m[your_program] [0m[0mdamson[0m
+[33m[tester::#JD8] [0m[92m✔ Value is "damson"[0m
 [33m[tester::#JD8] [0m[92mTest passed.[0m
 
 [33m[tester::#WD2] [0m[94mRunning tests for Stage #WD2 (wd2)[0m
-[33m[tester::#WD2] [0m[94mCreated .claude/skills/nimbus/SKILL.md:[0m
-[33m[tester::#WD2] [.claude/skills/nimbus/SKILL.md] [0m[0m---[0m
-[33m[tester::#WD2] [.claude/skills/nimbus/SKILL.md] [0m[0mname: nimbus[0m
-[33m[tester::#WD2] [.claude/skills/nimbus/SKILL.md] [0m[0mdescription: Rotates credentials for the notification database.[0m
-[33m[tester::#WD2] [.claude/skills/nimbus/SKILL.md] [0m[0m---[0m
-[33m[tester::#WD2] [.claude/skills/nimbus/SKILL.md] [0m[0m[0m
-[33m[tester::#WD2] [.claude/skills/nimbus/SKILL.md] [0m[0mRespond with exactly: $ARGUMENTS[0m
-[33m[tester::#WD2] [.claude/skills/nimbus/SKILL.md] [0m[0m[0m
-[33m[tester::#WD2] [.claude/skills/nimbus/SKILL.md] [0m[0mDo not add any other text, punctuation, or formatting.[0m
-[33m[tester::#WD2] [.claude/skills/nimbus/SKILL.md] [0m[0m[0m
-[33m[tester::#WD2] [0m[94mCreated .claude/skills/zephyr/SKILL.md:[0m
-[33m[tester::#WD2] [.claude/skills/zephyr/SKILL.md] [0m[0m---[0m
-[33m[tester::#WD2] [.claude/skills/zephyr/SKILL.md] [0m[0mname: zephyr[0m
-[33m[tester::#WD2] [.claude/skills/zephyr/SKILL.md] [0m[0mdescription: Deploys the billing service to production.[0m
-[33m[tester::#WD2] [.claude/skills/zephyr/SKILL.md] [0m[0m---[0m
-[33m[tester::#WD2] [.claude/skills/zephyr/SKILL.md] [0m[0m[0m
-[33m[tester::#WD2] [.claude/skills/zephyr/SKILL.md] [0m[0mRespond with exactly: $1 $0[0m
-[33m[tester::#WD2] [.claude/skills/zephyr/SKILL.md] [0m[0m[0m
-[33m[tester::#WD2] [.claude/skills/zephyr/SKILL.md] [0m[0mDo not add any other text, punctuation, or formatting.[0m
-[33m[tester::#WD2] [.claude/skills/zephyr/SKILL.md] [0m[0m[0m
+[33m[tester::#WD2] [0m[94mCreated .claude/skills/beacon/SKILL.md:[0m
+[33m[tester::#WD2] [.claude/skills/beacon/SKILL.md] [0m[0m---[0m
+[33m[tester::#WD2] [.claude/skills/beacon/SKILL.md] [0m[0mname: beacon[0m
+[33m[tester::#WD2] [.claude/skills/beacon/SKILL.md] [0m[0mdescription: Deploys the billing service to production.[0m
+[33m[tester::#WD2] [.claude/skills/beacon/SKILL.md] [0m[0m---[0m
+[33m[tester::#WD2] [.claude/skills/beacon/SKILL.md] [0m[0m[0m
+[33m[tester::#WD2] [.claude/skills/beacon/SKILL.md] [0m[0mRespond with exactly: $ARGUMENTS[0m
+[33m[tester::#WD2] [.claude/skills/beacon/SKILL.md] [0m[0m[0m
+[33m[tester::#WD2] [.claude/skills/beacon/SKILL.md] [0m[0mDo not add any other text, punctuation, or formatting.[0m
+[33m[tester::#WD2] [.claude/skills/beacon/SKILL.md] [0m[0m[0m
+[33m[tester::#WD2] [0m[94mCreated .claude/skills/kestrel/SKILL.md:[0m
+[33m[tester::#WD2] [.claude/skills/kestrel/SKILL.md] [0m[0m---[0m
+[33m[tester::#WD2] [.claude/skills/kestrel/SKILL.md] [0m[0mname: kestrel[0m
+[33m[tester::#WD2] [.claude/skills/kestrel/SKILL.md] [0m[0mdescription: Rotates credentials for the notification database.[0m
+[33m[tester::#WD2] [.claude/skills/kestrel/SKILL.md] [0m[0m---[0m
+[33m[tester::#WD2] [.claude/skills/kestrel/SKILL.md] [0m[0m[0m
+[33m[tester::#WD2] [.claude/skills/kestrel/SKILL.md] [0m[0mRespond with exactly: $1 $0[0m
+[33m[tester::#WD2] [.claude/skills/kestrel/SKILL.md] [0m[0m[0m
+[33m[tester::#WD2] [.claude/skills/kestrel/SKILL.md] [0m[0mDo not add any other text, punctuation, or formatting.[0m
+[33m[tester::#WD2] [.claude/skills/kestrel/SKILL.md] [0m[0m[0m
 [33m[tester::#WD2] [0m[94mChecking that $ARGUMENTS is substituted[0m
-[33m[tester::#WD2] [0m[94m$ ./your_program.sh -p '/nimbus 7320'[0m
-[33m[your_program] [0m[0m7320[0m
-[33m[tester::#WD2] [0m[92m✔ Value is "7320"[0m
+[33m[tester::#WD2] [0m[94m$ ./your_program.sh -p '/beacon 2242'[0m
+[33m[your_program] [0m[0m2242[0m
+[33m[tester::#WD2] [0m[92m✔ Value is "2242"[0m
 [33m[tester::#WD2] [0m[94mChecking that $0 and $1 are substituted positionally[0m
-[33m[tester::#WD2] [0m[94m$ ./your_program.sh -p '/zephyr tangerine soursop'[0m
-[33m[your_program] [0m[0msoursop tangerine[0m
-[33m[tester::#WD2] [0m[92m✔ Value is "soursop tangerine"[0m
+[33m[tester::#WD2] [0m[94m$ ./your_program.sh -p '/kestrel clementine jujube'[0m
+[33m[your_program] [0m[0mjujube clementine[0m
+[33m[tester::#WD2] [0m[92m✔ Value is "jujube clementine"[0m
 [33m[tester::#WD2] [0m[92mTest passed.[0m
 
 [33m[tester::#TQ1] [0m[94mRunning tests for Stage #TQ1 (tq1)[0m
-[33m[tester::#TQ1] [0m[94mCreated .claude/skills/harbor/SKILL.md:[0m
-[33m[tester::#TQ1] [.claude/skills/harbor/SKILL.md] [0m[0m---[0m
-[33m[tester::#TQ1] [.claude/skills/harbor/SKILL.md] [0m[0mname: harbor[0m
-[33m[tester::#TQ1] [.claude/skills/harbor/SKILL.md] [0m[0mdescription: Deploys the billing service to production.[0m
-[33m[tester::#TQ1] [.claude/skills/harbor/SKILL.md] [0m[0m---[0m
-[33m[tester::#TQ1] [.claude/skills/harbor/SKILL.md] [0m[0m[0m
-[33m[tester::#TQ1] [.claude/skills/harbor/SKILL.md] [0m[0mRun `scripts/checksum.sh` using the Bash tool. Run the script itself rather than reimplementing what it does.[0m
-[33m[tester::#TQ1] [.claude/skills/harbor/SKILL.md] [0m[0m[0m
-[33m[tester::#TQ1] [.claude/skills/harbor/SKILL.md] [0m[0mRespond with only the value it prints, and nothing else.[0m
-[33m[tester::#TQ1] [.claude/skills/harbor/SKILL.md] [0m[0m[0m
-[33m[tester::#TQ1] [0m[94mCreated .claude/skills/harbor/data.txt:[0m
-[33m[tester::#TQ1] [.claude/skills/harbor/data.txt] [0m[0mstrawberry pear raspberry banana apple pineapple[0m
-[33m[tester::#TQ1] [0m[94mCreated .claude/skills/harbor/scripts/checksum.sh:[0m
-[33m[tester::#TQ1] [.claude/skills/harbor/scripts/checksum.sh] [0m[0m#!/usr/bin/env bash[0m
-[33m[tester::#TQ1] [.claude/skills/harbor/scripts/checksum.sh] [0m[0mcd "$(dirname "$0")/.." && sha256sum data.txt | cut -c1-8[0m
-[33m[tester::#TQ1] [.claude/skills/harbor/scripts/checksum.sh] [0m[0m[0m
-[33m[tester::#TQ1] [0m[36mExpected checksum of data.txt is 99ed4d18[0m
-[33m[tester::#TQ1] [0m[94mInvoking /harbor, expecting it to run its bundled script[0m
-[33m[tester::#TQ1] [0m[94m$ ./your_program.sh -p /harbor[0m
-[33m[your_program] [0m[0m99ed4d18[0m
-[33m[tester::#TQ1] [0m[92m✔ Value is "99ed4d18"[0m
+[33m[tester::#TQ1] [0m[94mCreated .claude/skills/cinder/SKILL.md:[0m
+[33m[tester::#TQ1] [.claude/skills/cinder/SKILL.md] [0m[0m---[0m
+[33m[tester::#TQ1] [.claude/skills/cinder/SKILL.md] [0m[0mname: cinder[0m
+[33m[tester::#TQ1] [.claude/skills/cinder/SKILL.md] [0m[0mdescription: Runs the search test suite and reports failures.[0m
+[33m[tester::#TQ1] [.claude/skills/cinder/SKILL.md] [0m[0m---[0m
+[33m[tester::#TQ1] [.claude/skills/cinder/SKILL.md] [0m[0m[0m
+[33m[tester::#TQ1] [.claude/skills/cinder/SKILL.md] [0m[0mRun `scripts/checksum.sh` using the Bash tool. Run the script itself rather than reimplementing what it does.[0m
+[33m[tester::#TQ1] [.claude/skills/cinder/SKILL.md] [0m[0m[0m
+[33m[tester::#TQ1] [.claude/skills/cinder/SKILL.md] [0m[0mRespond with only the value it prints, and nothing else.[0m
+[33m[tester::#TQ1] [.claude/skills/cinder/SKILL.md] [0m[0m[0m
+[33m[tester::#TQ1] [0m[94mCreated .claude/skills/cinder/data.txt:[0m
+[33m[tester::#TQ1] [.claude/skills/cinder/data.txt] [0m[0mgrape pear raspberry banana blueberry orange[0m
+[33m[tester::#TQ1] [0m[94mCreated .claude/skills/cinder/scripts/checksum.sh:[0m
+[33m[tester::#TQ1] [.claude/skills/cinder/scripts/checksum.sh] [0m[0m#!/usr/bin/env bash[0m
+[33m[tester::#TQ1] [.claude/skills/cinder/scripts/checksum.sh] [0m[0mcd "$(dirname "$0")/.." && sha256sum data.txt | cut -c1-8[0m
+[33m[tester::#TQ1] [.claude/skills/cinder/scripts/checksum.sh] [0m[0m[0m
+[33m[tester::#TQ1] [0m[36mExpected checksum of data.txt is eabbc8ef[0m
+[33m[tester::#TQ1] [0m[94mInvoking /cinder, expecting it to run its bundled script[0m
+[33m[tester::#TQ1] [0m[94m$ ./your_program.sh -p /cinder[0m
+[33m[your_program] [0m[0meabbc8ef[0m
+[33m[tester::#TQ1] [0m[92m✔ Value is "eabbc8ef"[0m
 [33m[tester::#TQ1] [0m[92mTest passed.[0m
 
 [33m[tester::#GQ2] [0m[94mRunning tests for Stage #GQ2 (gq2)[0m
 [33m[tester::#GQ2] [0m[94mCreated .claude/skills/beacon/SKILL.md:[0m
 [33m[tester::#GQ2] [.claude/skills/beacon/SKILL.md] [0m[0m---[0m
 [33m[tester::#GQ2] [.claude/skills/beacon/SKILL.md] [0m[0mname: beacon[0m
-[33m[tester::#GQ2] [.claude/skills/beacon/SKILL.md] [0m[0mdescription: Use this skill when the user asks who owns the payments dashboard.[0m
+[33m[tester::#GQ2] [.claude/skills/beacon/SKILL.md] [0m[0mdescription: Use this skill when the user asks about the on-call rotation.[0m
 [33m[tester::#GQ2] [.claude/skills/beacon/SKILL.md] [0m[0m---[0m
 [33m[tester::#GQ2] [.claude/skills/beacon/SKILL.md] [0m[0m[0m
-[33m[tester::#GQ2] [.claude/skills/beacon/SKILL.md] [0m[0mRespond with exactly one word: soursop[0m
+[33m[tester::#GQ2] [.claude/skills/beacon/SKILL.md] [0m[0mRespond with exactly one word: physalis[0m
 [33m[tester::#GQ2] [.claude/skills/beacon/SKILL.md] [0m[0m[0m
 [33m[tester::#GQ2] [.claude/skills/beacon/SKILL.md] [0m[0mDo not add any other text, punctuation, or formatting.[0m
 [33m[tester::#GQ2] [.claude/skills/beacon/SKILL.md] [0m[0m[0m
-[33m[tester::#GQ2] [0m[94mCreated .claude/skills/quartz/SKILL.md:[0m
-[33m[tester::#GQ2] [.claude/skills/quartz/SKILL.md] [0m[0m---[0m
-[33m[tester::#GQ2] [.claude/skills/quartz/SKILL.md] [0m[0mname: quartz[0m
-[33m[tester::#GQ2] [.claude/skills/quartz/SKILL.md] [0m[0mdescription: Use this skill when the user asks about the on-call rotation.[0m
-[33m[tester::#GQ2] [.claude/skills/quartz/SKILL.md] [0m[0m---[0m
-[33m[tester::#GQ2] [.claude/skills/quartz/SKILL.md] [0m[0m[0m
-[33m[tester::#GQ2] [.claude/skills/quartz/SKILL.md] [0m[0mRespond with exactly one word: nectarine[0m
-[33m[tester::#GQ2] [.claude/skills/quartz/SKILL.md] [0m[0m[0m
-[33m[tester::#GQ2] [.claude/skills/quartz/SKILL.md] [0m[0mDo not add any other text, punctuation, or formatting.[0m
-[33m[tester::#GQ2] [.claude/skills/quartz/SKILL.md] [0m[0m[0m
+[33m[tester::#GQ2] [0m[94mCreated .claude/skills/nimbus/SKILL.md:[0m
+[33m[tester::#GQ2] [.claude/skills/nimbus/SKILL.md] [0m[0m---[0m
+[33m[tester::#GQ2] [.claude/skills/nimbus/SKILL.md] [0m[0mname: nimbus[0m
+[33m[tester::#GQ2] [.claude/skills/nimbus/SKILL.md] [0m[0mdescription: Use this skill when the user asks who owns the payments dashboard.[0m
+[33m[tester::#GQ2] [.claude/skills/nimbus/SKILL.md] [0m[0m---[0m
+[33m[tester::#GQ2] [.claude/skills/nimbus/SKILL.md] [0m[0m[0m
+[33m[tester::#GQ2] [.claude/skills/nimbus/SKILL.md] [0m[0mRespond with exactly one word: kumquat[0m
+[33m[tester::#GQ2] [.claude/skills/nimbus/SKILL.md] [0m[0m[0m
+[33m[tester::#GQ2] [.claude/skills/nimbus/SKILL.md] [0m[0mDo not add any other text, punctuation, or formatting.[0m
+[33m[tester::#GQ2] [.claude/skills/nimbus/SKILL.md] [0m[0m[0m
 [33m[tester::#GQ2] [0m[94mSending a request that matches "beacon" without naming it[0m
-[33m[tester::#GQ2] [0m[36mDecoy skill "quartz" must not be loaded[0m
-[33m[tester::#GQ2] [0m[94m$ ./your_program.sh -p 'Who owns the payments dashboard?'[0m
-[33m[your_program] [0m[0msoursop[0m
-[33m[tester::#GQ2] [0m[92m✔ Value contains "soursop"[0m
-[33m[tester::#GQ2] [0m[92m✔ Value does not contain "nectarine"[0m
+[33m[tester::#GQ2] [0m[36mDecoy skill "nimbus" must not be loaded[0m
+[33m[tester::#GQ2] [0m[94m$ ./your_program.sh -p 'Who is on the on-call rotation right now?'[0m
+[33m[your_program] [0m[0mphysalis[0m
+[33m[tester::#GQ2] [0m[92m✔ Value contains "physalis"[0m
+[33m[tester::#GQ2] [0m[92m✔ Value does not contain "kumquat"[0m
 [33m[tester::#GQ2] [0m[92mTest passed.[0m
 
 [33m[tester::#MJ2] [0m[94mRunning tests for Stage #MJ2 (mj2)[0m
-[33m[tester::#MJ2] [0m[94mCreated .claude/skills/falcon/SKILL.md:[0m
-[33m[tester::#MJ2] [.claude/skills/falcon/SKILL.md] [0m[0m---[0m
-[33m[tester::#MJ2] [.claude/skills/falcon/SKILL.md] [0m[0mname: falcon[0m
-[33m[tester::#MJ2] [.claude/skills/falcon/SKILL.md] [0m[0mdescription: Use this skill when the user asks for the support team's escalation contact.[0m
-[33m[tester::#MJ2] [.claude/skills/falcon/SKILL.md] [0m[0mcontext: fork[0m
-[33m[tester::#MJ2] [.claude/skills/falcon/SKILL.md] [0m[0m---[0m
-[33m[tester::#MJ2] [.claude/skills/falcon/SKILL.md] [0m[0m[0m
-[33m[tester::#MJ2] [.claude/skills/falcon/SKILL.md] [0m[0mRespond with exactly one word: soursop[0m
-[33m[tester::#MJ2] [.claude/skills/falcon/SKILL.md] [0m[0m[0m
-[33m[tester::#MJ2] [.claude/skills/falcon/SKILL.md] [0m[0mDo not add any other text, punctuation, or formatting.[0m
-[33m[tester::#MJ2] [.claude/skills/falcon/SKILL.md] [0m[0m[0m
-[33m[tester::#MJ2] [0m[94mCreated .claude/skills/kestrel/SKILL.md:[0m
-[33m[tester::#MJ2] [.claude/skills/kestrel/SKILL.md] [0m[0m---[0m
-[33m[tester::#MJ2] [.claude/skills/kestrel/SKILL.md] [0m[0mname: kestrel[0m
-[33m[tester::#MJ2] [.claude/skills/kestrel/SKILL.md] [0m[0mdescription: Use this skill when the user asks who owns the payments dashboard.[0m
-[33m[tester::#MJ2] [.claude/skills/kestrel/SKILL.md] [0m[0m---[0m
-[33m[tester::#MJ2] [.claude/skills/kestrel/SKILL.md] [0m[0m[0m
-[33m[tester::#MJ2] [.claude/skills/kestrel/SKILL.md] [0m[0mRespond with exactly one word: jujube[0m
-[33m[tester::#MJ2] [.claude/skills/kestrel/SKILL.md] [0m[0m[0m
-[33m[tester::#MJ2] [.claude/skills/kestrel/SKILL.md] [0m[0mDo not add any other text, punctuation, or formatting.[0m
-[33m[tester::#MJ2] [.claude/skills/kestrel/SKILL.md] [0m[0m[0m
-[33m[tester::#MJ2] [0m[36mSeeded "kestrel" alongside it, which stays in the catalog and is never matched[0m
-[33m[tester::#MJ2] [0m[94mSending a request that matches "falcon", expecting its body to be handled by a subagent[0m
-[33m[tester::#MJ2] [0m[94m$ ./your_program.sh -p 'Who is the escalation contact for the support team?'[0m
-[33m[your_program] [0m[0mThe escalation contact for the support team is **soursop**.[0m
-[33m[tester::#MJ2] [0m[92m✔ Value contains "soursop"[0m
+[33m[tester::#MJ2] [0m[94mCreated .claude/skills/beacon/SKILL.md:[0m
+[33m[tester::#MJ2] [.claude/skills/beacon/SKILL.md] [0m[0m---[0m
+[33m[tester::#MJ2] [.claude/skills/beacon/SKILL.md] [0m[0mname: beacon[0m
+[33m[tester::#MJ2] [.claude/skills/beacon/SKILL.md] [0m[0mdescription: Use this skill when the user asks which region the billing service runs in.[0m
+[33m[tester::#MJ2] [.claude/skills/beacon/SKILL.md] [0m[0mcontext: fork[0m
+[33m[tester::#MJ2] [.claude/skills/beacon/SKILL.md] [0m[0m---[0m
+[33m[tester::#MJ2] [.claude/skills/beacon/SKILL.md] [0m[0m[0m
+[33m[tester::#MJ2] [.claude/skills/beacon/SKILL.md] [0m[0mRespond with exactly one word: damson[0m
+[33m[tester::#MJ2] [.claude/skills/beacon/SKILL.md] [0m[0m[0m
+[33m[tester::#MJ2] [.claude/skills/beacon/SKILL.md] [0m[0mDo not add any other text, punctuation, or formatting.[0m
+[33m[tester::#MJ2] [.claude/skills/beacon/SKILL.md] [0m[0m[0m
+[33m[tester::#MJ2] [0m[94mCreated .claude/skills/cinder/SKILL.md:[0m
+[33m[tester::#MJ2] [.claude/skills/cinder/SKILL.md] [0m[0m---[0m
+[33m[tester::#MJ2] [.claude/skills/cinder/SKILL.md] [0m[0mname: cinder[0m
+[33m[tester::#MJ2] [.claude/skills/cinder/SKILL.md] [0m[0mdescription: Use this skill when the user asks who owns the payments dashboard.[0m
+[33m[tester::#MJ2] [.claude/skills/cinder/SKILL.md] [0m[0m---[0m
+[33m[tester::#MJ2] [.claude/skills/cinder/SKILL.md] [0m[0m[0m
+[33m[tester::#MJ2] [.claude/skills/cinder/SKILL.md] [0m[0mRespond with exactly one word: persimmon[0m
+[33m[tester::#MJ2] [.claude/skills/cinder/SKILL.md] [0m[0m[0m
+[33m[tester::#MJ2] [.claude/skills/cinder/SKILL.md] [0m[0mDo not add any other text, punctuation, or formatting.[0m
+[33m[tester::#MJ2] [.claude/skills/cinder/SKILL.md] [0m[0m[0m
+[33m[tester::#MJ2] [0m[36mSeeded "cinder" alongside it, which stays in the catalog and is never matched[0m
+[33m[tester::#MJ2] [0m[94mSending a request that matches "beacon", expecting its body to be handled by a subagent[0m
+[33m[tester::#MJ2] [0m[94m$ ./your_program.sh -p 'Which region does the billing service run in?'[0m
+[33m[your_program] [0m[0mThe billing service runs in the **damson** region.[0m
+[33m[tester::#MJ2] [0m[92m✔ Value contains "damson"[0m
 [33m[tester::#MJ2] [0m[36mUser's program sent 5 request(s) to the LLM[0m
-[33m[tester::#MJ2] [0m[92m✔ Found a request containing "Do not add any other text, punctuation, or formatting" but not "Who is the escalation contact for the support team?"[0m
+[33m[tester::#MJ2] [0m[92m✔ Found a request containing "Do not add any other text, punctuation, or formatting" but not "Which region does the billing service run in?"[0m
 [33m[tester::#MJ2] [0m[92mTest passed.[0m
