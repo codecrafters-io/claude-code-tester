@@ -142,7 +142,8 @@ Debug = true
 [33m[tester::#GQ2] [0m[36mDecoy skill "quartz" must not be loaded[0m
 [33m[tester::#GQ2] [0m[94m$ ./your_program.sh -p 'Who owns the payments dashboard?'[0m
 [33m[your_program] [0m[0msoursop[0m
-[33m[tester::#GQ2] [0m[92m✔ Value is "soursop"[0m
+[33m[tester::#GQ2] [0m[92m✔ Value contains "soursop"[0m
+[33m[tester::#GQ2] [0m[92m✔ Value does not contain "nectarine"[0m
 [33m[tester::#GQ2] [0m[92mTest passed.[0m
 
 [33m[tester::#MJ2] [0m[94mRunning tests for Stage #MJ2 (mj2)[0m

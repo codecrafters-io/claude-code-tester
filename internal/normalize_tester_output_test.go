@@ -31,6 +31,10 @@ func TestNormalizeTesterOutputDropsOnlyTheUserProgramsLines(t *testing.T) {
 			testerOutput:   "[your_program] 3\n",
 			expectedOutput: "",
 		},
+		"the tally of requests, whatever it came to": {
+			testerOutput:   "[tester::#MJ2] User's program sent 7 request(s) to the LLM\n",
+			expectedOutput: "[tester::#MJ2] User's program sent N request(s) to the LLM\n",
+		},
 	}
 
 	for name, testCase := range testCases {
@@ -42,11 +46,11 @@ func TestNormalizeTesterOutputDropsOnlyTheUserProgramsLines(t *testing.T) {
 
 func TestNormalizeTesterOutputKeepsWhatTheTesterPrinted(t *testing.T) {
 	testCases := map[string]string{
-		"a stage's verdict":                        "\x1b[33m[tester::#VH1] \x1b[0m\x1b[32mTest passed\x1b[0m\n",
-		"a failure message quoting the program":    "[tester::#VH1] Expected integer value, got \"[your_program] 3\"\n",
-		"a line that only mentions the program":    "[tester::#SK5] The your_program output was empty\n",
-		"a line the program printed mid-sentence":  "[tester::#SK5] Ran [your_program] twice\n",
-		"a debug line about the program's request": "[tester::#MJ2] User's program sent 2 request(s) to the LLM\n",
+		"a stage's verdict":                       "\x1b[33m[tester::#VH1] \x1b[0m\x1b[32mTest passed\x1b[0m\n",
+		"a failure message quoting the program":   "[tester::#VH1] Expected integer value, got \"[your_program] 3\"\n",
+		"a line that only mentions the program":   "[tester::#SK5] The your_program output was empty\n",
+		"a line the program printed mid-sentence": "[tester::#SK5] Ran [your_program] twice\n",
+		"a count that isn't the request tally":    "[tester::#SK5] Seeded 2 skills alongside the invoked one\n",
 	}
 
 	for name, testerOutput := range testCases {

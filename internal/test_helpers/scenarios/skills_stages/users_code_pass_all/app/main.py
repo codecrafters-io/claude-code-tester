@@ -101,6 +101,37 @@ TOOLS = [
 ]
 
 
+SKILL_TOOL = {
+    "type": "function",
+    "function": {
+        "name": "skill",
+        "description": "Load a skill's instructions and follow them",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "The name of the skill to use",
+                },
+                "arguments": {
+                    "type": "string",
+                    "description": "Arguments for the skill, if it takes any",
+                },
+            },
+            "required": ["name"],
+        },
+    },
+}
+
+
+def build_tools(skills):
+    """The skill tool is only worth offering when there's a skill to name."""
+    if not skills:
+        return TOOLS
+
+    return TOOLS + [SKILL_TOOL]
+
+
 SKILLS_DIR = os.path.join(".claude", "skills")
 
 
@@ -166,8 +197,8 @@ def build_system_prompt(skills):
 
     lines.append("")
     lines.append(
-        "To use a skill, read its instructions from "
-        ".claude/skills/<name>/SKILL.md using the read tool."
+        "If a skill matches the user's request, call the skill tool with its "
+        "name and follow the instructions it returns."
     )
 
     return "\n".join(lines)
@@ -199,15 +230,24 @@ def render_invocation(skill, arguments):
     )
 
 
-def forked_skill_at(path, skills):
-    """The forked skill whose SKILL.md sits at `path`, if there is one."""
-    resolved = os.path.realpath(path)
+def run_skill_tool(client, arguments, skills):
+    """Answer a skill tool call with the skill's instructions, or with its result.
 
-    for skill in skills:
-        if skill["forked"] and os.path.realpath(os.path.join(skill["dir"], "SKILL.md")) == resolved:
-            return skill
+    An ordinary skill hands its body to the conversation that asked for it. A
+    forked one doesn't: its body belongs to a conversation that starts empty, so
+    what comes back here is that conversation's answer.
+    """
+    skill = next((candidate for candidate in skills if candidate["name"] == arguments["name"]), None)
 
-    return None
+    if skill is None:
+        return f"Unknown skill: {arguments['name']}"
+
+    invocation = render_invocation(skill, arguments.get("arguments", "").split())
+
+    if not skill["forked"]:
+        return invocation
+
+    return run_forked_skill(client, skill, skills, invocation)
 
 
 def expand_invocations(prompt, skills):
@@ -273,7 +313,7 @@ def run_forked_skill(client, skill, skills, invocation):
 
     None of the caller's messages go with it, and only its answer comes back.
     """
-    # Dropping the skill itself keeps a fork from reading its way back into one.
+    # Dropping the skill itself keeps a fork from invoking its way back into one.
     others = [other for other in skills if other is not skill]
 
     return run_loop(client, [{"role": "user", "content": invocation}], others)
@@ -285,7 +325,7 @@ def run_loop(client, messages, skills):
         resp = client.chat.completions.create(
             model="anthropic/claude-haiku-4.5",
             messages=messages,
-            tools=TOOLS,
+            tools=build_tools(skills),
         )
 
         if not resp.choices:
@@ -305,19 +345,10 @@ def run_loop(client, messages, skills):
             name = tool_call.function.name
             args = json.loads(tool_call.function.arguments)
 
-            if name == "read":
-                forked_skill = forked_skill_at(args["path"], skills)
-
-                # Reading a forked skill hands back its answer, not its body:
-                # the body belongs to a conversation that starts empty. Without
-                # this, the model that asked for the file would have carried
-                # out the instructions itself.
-                if forked_skill is None:
-                    result = read_file(args["path"])
-                else:
-                    result = run_forked_skill(
-                        client, forked_skill, skills, render_invocation(forked_skill, [])
-                    )
+            if name == "skill":
+                result = run_skill_tool(client, args, skills)
+            elif name == "read":
+                result = read_file(args["path"])
             elif name == "write":
                 result = write_file(args["path"], args["content"])
             elif name == "bash_command":
