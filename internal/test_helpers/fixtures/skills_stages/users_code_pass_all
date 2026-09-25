@@ -127,9 +127,7 @@ Debug = true
 [33m[tester::#SK5] [0m[36mSeeded "onyx" alongside the invoked skills, expecting its body to stay unloaded[0m
 [33m[tester::#SK5] [0m[94mInvoking /nimbus and /kestrel in one prompt, with 7442 as the shared argument[0m
 [33m[tester::#SK5] [0m[94m$ ./your_program.sh -p '/nimbus /kestrel 7442'[0m
-[33m[your_program] [0m[0mI see. The skill instructions indicate I should add specific lines with a placeholder `$ARGUMENTS`. In your request, you've specified that the arguments should be `7442` for both skills.[0m
-[33m[your_program] [0m[0m[0m
-[33m[your_program] [0m[0mHere are the exact lines as requested:[0m
+[33m[your_program] [0m[0mBased on the skill instructions I've loaded:[0m
 [33m[your_program] [0m[0m[0m
 [33m[your_program] [0m[0mpersimmon-7442[0m
 [33m[your_program] [0m[0m[0m
@@ -187,8 +185,9 @@ Debug = true
 [33m[tester::#GQ2] [0m[94mSending a request that matches "falcon" without naming it[0m
 [33m[tester::#GQ2] [0m[36mDecoy skill "atlas" must not be loaded[0m
 [33m[tester::#GQ2] [0m[94m$ ./your_program.sh -p 'Who owns the payments dashboard?'[0m
-[33m[your_program] [0m[0mmedlar[0m
-[33m[tester::#GQ2] [0m[92m✔ Value is "medlar"[0m
+[33m[your_program] [0m[0mThe payments dashboard is owned by **medlar**.[0m
+[33m[tester::#GQ2] [0m[92m✔ Value contains "medlar"[0m
+[33m[tester::#GQ2] [0m[92m✔ Value does not contain "clementine"[0m
 [33m[tester::#GQ2] [0m[92mTest passed.[0m
 
 [33m[tester::#MJ2] [0m[94mRunning tests for Stage #MJ2 (mj2)[0m
@@ -216,8 +215,8 @@ Debug = true
 [33m[tester::#MJ2] [0m[36mSeeded "falcon" alongside it, which stays in the catalog and is never matched[0m
 [33m[tester::#MJ2] [0m[94mSending a request that matches "lumen", expecting its body to be handled by a subagent[0m
 [33m[tester::#MJ2] [0m[94m$ ./your_program.sh -p 'Who is on the on-call rotation right now?'[0m
-[33m[your_program] [0m[0mBased on the lumen skill, **kumquat** is currently on the on-call rotation.[0m
+[33m[your_program] [0m[0mAccording to the on-call rotation, **kumquat** is currently on-call.[0m
 [33m[tester::#MJ2] [0m[92m✔ Value contains "kumquat"[0m
-[33m[tester::#MJ2] [0m[36mUser's program sent 3 request(s) to the LLM[0m
+[33m[tester::#MJ2] [0m[36mUser's program sent 7 request(s) to the LLM[0m
 [33m[tester::#MJ2] [0m[92m✔ Found a request containing "Do not add any other text, punctuation, or formatting" but not "Who is on the on-call rotation right now?"[0m
 [33m[tester::#MJ2] [0m[92mTest passed.[0m
