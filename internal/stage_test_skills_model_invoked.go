@@ -42,11 +42,17 @@ func testSkillsModelInvoked(stageHarness *test_case_harness.TestCaseHarness) err
 	stageLogger.Infof("Sending a request that matches %q without naming it", targetSkill.Name)
 	stageLogger.Debugf("Decoy skill %q must not be loaded", decoySkill.Name)
 
+	// The question reads as a question, so the model often answers it in a
+	// sentence rather than emitting the token alone. Which skill was loaded is
+	// what this stage is about, and that shows in which token appears.
 	modelInvokedTestCase := test_cases.NonInteractiveTestCase{
 		InputPrompt:      topics[0].Question,
 		ExpectedExitCode: 0,
-		StdoutAssertion: string_assertion.ExactMatchAssertion{
-			ExpectedValue: tokens[0],
+		StdoutAssertion: string_assertion.AllOfAssertion{
+			Assertions: []string_assertion.StringAssertion{
+				string_assertion.ContainsAllAssertion{ExpectedValues: []string{tokens[0]}},
+				string_assertion.DoesNotContainAssertion{UnexpectedValue: tokens[1]},
+			},
 		},
 	}
 
