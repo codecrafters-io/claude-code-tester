@@ -85,12 +85,18 @@ func TestStages(t *testing.T) {
 // A line the user's program printed, with any colour codes that precede it.
 var userProgramLinePattern = regexp.MustCompile(`(?m)^(?:\x1b\[[0-9;]*m)*\[your_program\] .*\n?`)
 
-// normalizeTesterOutput drops what the user's program printed and keeps what the
-// tester printed around it. Every scenario here drives a live model, so the
-// program's wording differs from one recording to the next even when it does the
-// same thing, and a fixture that pinned it would report a failure whenever the
-// model chose different words. What the program printed is already covered by the
-// stage assertions, whose verdicts stay in the fixture.
+// The request tally the fork stage logs, whose value is however many tool calls
+// the model decided to make on the way to its answer.
+var requestCountPattern = regexp.MustCompile(`sent \d+ request\(s\)`)
+
+// normalizeTesterOutput removes what a live model decided and keeps what the
+// tester did about it. Every scenario here drives a real model, so the program's
+// wording and the number of calls it takes differ from one recording to the next
+// even when it behaves identically, and a fixture pinning either would report a
+// failure over the model's choices. What the program printed is already covered
+// by the stage assertions, whose verdicts stay in the fixture.
 func normalizeTesterOutput(testerOutput []byte) []byte {
-	return userProgramLinePattern.ReplaceAll(testerOutput, nil)
+	normalized := userProgramLinePattern.ReplaceAll(testerOutput, nil)
+
+	return requestCountPattern.ReplaceAll(normalized, []byte("sent N request(s)"))
 }
