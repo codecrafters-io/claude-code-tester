@@ -48,11 +48,14 @@ func testSkillsArguments(stageHarness *test_case_harness.TestCaseHarness) error 
 	argumentValue := random.RandomInt(1000, 10000)
 	stageLogger.Infof("Checking that $ARGUMENTS is substituted")
 
+	// Substituted or not is what separates a passing submission from a failing
+	// one, and that shows in whether the value appears at all. Insisting the
+	// output is nothing but the value fails submissions over the model's prose.
 	argumentsTestCase := test_cases.NonInteractiveTestCase{
 		InputPrompt:      fmt.Sprintf("/%s %d", argumentsSkill.Name, argumentValue),
 		ExpectedExitCode: 0,
-		StdoutAssertion: string_assertion.ExactMatchAssertion{
-			ExpectedValue: fmt.Sprintf("%d", argumentValue),
+		StdoutAssertion: string_assertion.ContainsAllAssertion{
+			ExpectedValues: []string{fmt.Sprintf("%d", argumentValue)},
 		},
 	}
 
@@ -64,11 +67,13 @@ func testSkillsArguments(stageHarness *test_case_harness.TestCaseHarness) error 
 	positionalArguments := skills_manager.RandomTokens(2)
 	stageLogger.Infof("Checking that $0 and $1 are substituted positionally")
 
+	// The pair in the order the body asks for, which a submission that
+	// substitutes by arrival rather than by index never produces.
 	positionalTestCase := test_cases.NonInteractiveTestCase{
 		InputPrompt:      fmt.Sprintf("/%s %s %s", positionalSkill.Name, positionalArguments[0], positionalArguments[1]),
 		ExpectedExitCode: 0,
-		StdoutAssertion: string_assertion.ExactMatchAssertion{
-			ExpectedValue: fmt.Sprintf("%s %s", positionalArguments[1], positionalArguments[0]),
+		StdoutAssertion: string_assertion.ContainsAllAssertion{
+			ExpectedValues: []string{fmt.Sprintf("%s %s", positionalArguments[1], positionalArguments[0])},
 		},
 	}
 
