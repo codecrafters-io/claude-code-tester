@@ -84,11 +84,11 @@ Debug = true
 [33m[tester::#WD2] [0m[94mChecking that $ARGUMENTS is substituted[0m
 [33m[tester::#WD2] [0m[94m$ ./your_program.sh -p '/beacon 2242'[0m
 [33m[your_program] [0m[0m2242[0m
-[33m[tester::#WD2] [0m[92m✔ Value is "2242"[0m
+[33m[tester::#WD2] [0m[92m✔ Value contains "2242"[0m
 [33m[tester::#WD2] [0m[94mChecking that $0 and $1 are substituted positionally[0m
 [33m[tester::#WD2] [0m[94m$ ./your_program.sh -p '/kestrel clementine jujube'[0m
 [33m[your_program] [0m[0mjujube clementine[0m
-[33m[tester::#WD2] [0m[92m✔ Value is "jujube clementine"[0m
+[33m[tester::#WD2] [0m[92m✔ Value contains "jujube clementine"[0m
 [33m[tester::#WD2] [0m[92mTest passed.[0m
 
 [33m[tester::#TQ1] [0m[94mRunning tests for Stage #TQ1 (tq1)[0m
