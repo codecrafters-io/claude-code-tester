@@ -84,11 +84,11 @@ Debug = true
 [33m[tester::#WD2] [0m[94mChecking that $ARGUMENTS is substituted[0m
 [33m[tester::#WD2] [0m[94m$ ./your_program.sh -p '/beacon 2242'[0m
 [33m[your_program] [0m[0m2242[0m
-[33m[tester::#WD2] [0m[92m✔ Value is "2242"[0m
+[33m[tester::#WD2] [0m[92m✔ Value contains "2242"[0m
 [33m[tester::#WD2] [0m[94mChecking that $0 and $1 are substituted positionally[0m
 [33m[tester::#WD2] [0m[94m$ ./your_program.sh -p '/kestrel clementine jujube'[0m
 [33m[your_program] [0m[0mjujube clementine[0m
-[33m[tester::#WD2] [0m[92m✔ Value is "jujube clementine"[0m
+[33m[tester::#WD2] [0m[92m✔ Value contains "jujube clementine"[0m
 [33m[tester::#WD2] [0m[92mTest passed.[0m
 
 [33m[tester::#SK5] [0m[94mRunning tests for Stage #SK5 (sk5)[0m
@@ -125,7 +125,7 @@ Debug = true
 [33m[tester::#SK5] [0m[36mSeeded "jasper" alongside the invoked skills, expecting its body to stay unloaded[0m
 [33m[tester::#SK5] [0m[94mInvoking /quartz and /lumen in one prompt, with 1797 as the shared argument[0m
 [33m[tester::#SK5] [0m[94m$ ./your_program.sh -p '/quartz /lumen 1797'[0m
-[33m[your_program] [0m[0mBased on the skill instructions I've loaded:[0m
+[33m[your_program] [0m[0mBased on the skill instructions:[0m
 [33m[your_program] [0m[0m[0m
 [33m[your_program] [0m[0msoursop-1797[0m
 [33m[your_program] [0m[0m[0m
@@ -183,6 +183,8 @@ Debug = true
 [33m[tester::#GQ2] [0m[94mSending a request that matches "beacon" without naming it[0m
 [33m[tester::#GQ2] [0m[36mDecoy skill "cinder" must not be loaded[0m
 [33m[tester::#GQ2] [0m[94m$ ./your_program.sh -p 'Who is the escalation contact for the support team?'[0m
+[33m[your_program] [0m[0mI need to follow the beacon skill's instructions exactly. Here's the answer:[0m
+[33m[your_program] [0m[0m[0m
 [33m[your_program] [0m[0mkumquat[0m
 [33m[tester::#GQ2] [0m[92m✔ Value contains "kumquat"[0m
 [33m[tester::#GQ2] [0m[92m✔ Value does not contain "tangerine"[0m
@@ -215,6 +217,6 @@ Debug = true
 [33m[tester::#MJ2] [0m[94m$ ./your_program.sh -p 'Who is the escalation contact for the support team?'[0m
 [33m[your_program] [0m[0mThe escalation contact for the support team is **Clementine**.[0m
 [33m[tester::#MJ2] [0m[92m✔ Value contains "clementine"[0m
-[33m[tester::#MJ2] [0m[36mUser's program sent 7 request(s) to the LLM[0m
+[33m[tester::#MJ2] [0m[36mUser's program sent 6 request(s) to the LLM[0m
 [33m[tester::#MJ2] [0m[92m✔ Found a request containing "Do not add any other text, punctuation, or formatting" but not "Who is the escalation contact for the support team?"[0m
 [33m[tester::#MJ2] [0m[92mTest passed.[0m
