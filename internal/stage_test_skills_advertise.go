@@ -46,12 +46,22 @@ func testSkillsAdvertise(stageHarness *test_case_harness.TestCaseHarness) error 
 
 	stageLogger.Infof("Checking that the model can match a task to %q using its description", targetSkill.Name)
 
+	// No name is a substring of another, so the right name appearing and every
+	// other name staying out is the verdict, whatever the model wraps around it.
+	nameAssertions := []string_assertion.StringAssertion{
+		string_assertion.ContainsAllAssertion{ExpectedValues: []string{targetSkill.Name}},
+	}
+
+	for i, skill := range skills {
+		if i != targetIndex {
+			nameAssertions = append(nameAssertions, string_assertion.DoesNotContainAssertion{UnexpectedValue: skill.Name})
+		}
+	}
+
 	matchTestCase := test_cases.NonInteractiveTestCase{
 		InputPrompt:      topics[targetIndex].Question,
 		ExpectedExitCode: 0,
-		StdoutAssertion: string_assertion.ExactMatchAssertion{
-			ExpectedValue: targetSkill.Name,
-		},
+		StdoutAssertion:  string_assertion.AllOfAssertion{Assertions: nameAssertions},
 	}
 
 	if err := matchTestCase.Run(stageHarness); err != nil {

@@ -26,7 +26,7 @@ func testSkillsModelInvoked(stageHarness *test_case_harness.TestCaseHarness) err
 	targetSkill := skills_manager.Skill{
 		Name:        names[0],
 		Description: topics[0].Description,
-		Body:        skills_manager.RespondWithTokenBody(tokens[0]),
+		Body:        skills_manager.AnswerBody(topics[0], tokens[0]),
 	}
 
 	// Without a decoy, this stage would pass for a program that loads whatever
@@ -34,7 +34,7 @@ func testSkillsModelInvoked(stageHarness *test_case_harness.TestCaseHarness) err
 	decoySkill := skills_manager.Skill{
 		Name:        names[1],
 		Description: topics[1].Description,
-		Body:        skills_manager.RespondWithTokenBody(tokens[1]),
+		Body:        skills_manager.AnswerBody(topics[1], tokens[1]),
 	}
 
 	skills_manager.Seed(workspaceManager, []skills_manager.Skill{targetSkill, decoySkill}, stageLogger)

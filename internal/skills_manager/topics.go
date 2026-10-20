@@ -10,6 +10,10 @@ import "github.com/codecrafters-io/tester-utils/random"
 type Topic struct {
 	Description string
 	Question    string
+
+	// AnswerFormat is a %s template for a body that answers Question, used by
+	// the stages whose question is matched to a skill rather than naming it.
+	AnswerFormat string
 }
 
 // descriptionTopics describe what a skill does. Used where the tester asks the
@@ -45,22 +49,31 @@ var descriptionTopics = []Topic{
 // the files themselves, such as summarizing a changelog, invites the model to
 // go looking instead of reaching for the skill, and it answers that there's no
 // changelog there rather than invoking anything.
+//
+// Each AnswerFormat states the fact the Question asks for. A body that answers
+// something else, like "respond with exactly one word: X", reads to the model as
+// a skill that doesn't fit the question, so it sets the body aside and goes
+// searching the workspace instead.
 var invocationTopics = []Topic{
 	{
-		Description: "Use this skill when the user asks about the on-call rotation.",
-		Question:    "Who is on the on-call rotation right now?",
+		Description:  "Use this skill when the user asks about the on-call rotation.",
+		Question:     "Who is on the on-call rotation right now?",
+		AnswerFormat: "The engineer on the on-call rotation right now is %s.",
 	},
 	{
-		Description: "Use this skill when the user asks which region the billing service runs in.",
-		Question:    "Which region does the billing service run in?",
+		Description:  "Use this skill when the user asks which region the billing service runs in.",
+		Question:     "Which region does the billing service run in?",
+		AnswerFormat: "The billing service runs in the %s region.",
 	},
 	{
-		Description: "Use this skill when the user asks who owns the payments dashboard.",
-		Question:    "Who owns the payments dashboard?",
+		Description:  "Use this skill when the user asks who owns the payments dashboard.",
+		Question:     "Who owns the payments dashboard?",
+		AnswerFormat: "The payments dashboard is owned by %s.",
 	},
 	{
-		Description: "Use this skill when the user asks for the support team's escalation contact.",
-		Question:    "Who is the escalation contact for the support team?",
+		Description:  "Use this skill when the user asks for the support team's escalation contact.",
+		Question:     "Who is the escalation contact for the support team?",
+		AnswerFormat: "The escalation contact for the support team is %s.",
 	},
 }
 
