@@ -182,6 +182,25 @@ func TestRespondWithTokenBodyContainsTheMarkerButTheTokenDoesNot(t *testing.T) {
 	assert.NotContains(t, RespondWithTokenBodyMarker, "kumquat")
 }
 
+func TestAnswerBodyContainsTheMarkerButTheTokenDoesNot(t *testing.T) {
+	// Same reasoning as above, for the body the fork stage actually seeds.
+	for _, topic := range invocationTopics {
+		body := AnswerBody(topic, "kumquat")
+
+		assert.Contains(t, body, AnswerBodyMarker)
+		assert.Contains(t, body, "kumquat")
+		assert.NotContains(t, AnswerBodyMarker, "kumquat")
+	}
+}
+
+func TestEveryInvocationTopicHasAnAnswer(t *testing.T) {
+	// A topic without a %s would seed a body that never carries the token, and
+	// both stages that use these topics assert on the token.
+	for _, topic := range invocationTopics {
+		assert.Equal(t, 1, strings.Count(topic.AnswerFormat, "%s"), "%q", topic.Question)
+	}
+}
+
 func assertNoValueIsASubstringOfAnother(t *testing.T, values []string) {
 	t.Helper()
 

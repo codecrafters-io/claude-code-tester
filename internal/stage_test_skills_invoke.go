@@ -46,8 +46,13 @@ func testSkillsInvoke(stageHarness *test_case_harness.TestCaseHarness) error {
 	invokeTestCase := test_cases.NonInteractiveTestCase{
 		InputPrompt:      fmt.Sprintf("/%s", targetSkill.Name),
 		ExpectedExitCode: 0,
-		StdoutAssertion: string_assertion.ExactMatchAssertion{
-			ExpectedValue: tokens[0],
+		// Which body was loaded is what this stage is about, and that shows in
+		// which token appears, not in whether the model added a word of its own.
+		StdoutAssertion: string_assertion.AllOfAssertion{
+			Assertions: []string_assertion.StringAssertion{
+				string_assertion.ContainsAllAssertion{ExpectedValues: []string{tokens[0]}},
+				string_assertion.DoesNotContainAssertion{UnexpectedValue: tokens[1]},
+			},
 		},
 	}
 
