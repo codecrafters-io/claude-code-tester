@@ -9,7 +9,6 @@ import subprocess
 import sys
 import threading
 import urllib.request
-from urllib.parse import unquote, urlparse
 
 
 class LanguageServer:
@@ -20,11 +19,12 @@ class LanguageServer:
             stdout=subprocess.PIPE,
             stderr=None,
         )
-        self.language = configuration["languageId"]
+        self.language = configuration["extensionToLanguage"][".py"]
         self.incoming = queue.Queue()
         self.next_id = 0
         self.documents = {}
         self.diagnostics = {}
+        self.diagnostic_ticks = {}
         self.responses = {}
         self.ready = False
         threading.Thread(target=self._read_messages, daemon=True).start()
@@ -77,11 +77,13 @@ class LanguageServer:
         elif message.get("method") == "textDocument/publishDiagnostics":
             diagnostic = message["params"]
             uri = diagnostic["uri"]
-            # Unversioned publications cannot prove freshness for this exercise.
-            if "version" not in diagnostic:
+            version = diagnostic.get("version")
+            if version is not None and version < self.documents.get(uri, 0):
                 return
-            if diagnostic["version"] >= self.diagnostics.get(uri, {}).get("version", -1):
+            previous = self.diagnostics.get(uri, {}).get("version")
+            if version is None or previous is None or version >= previous:
                 self.diagnostics[uri] = diagnostic
+                self.diagnostic_ticks[uri] = self.diagnostic_ticks.get(uri, 0) + 1
 
     def request(self, method, params=None):
         request_id = self.send(method, params, request=True)
@@ -112,63 +114,37 @@ class LanguageServer:
             }})
         return uri
 
-    def current_diagnostics(self, path):
+    def current_diagnostics(self, path, after=0):
         uri = self.open(path)
         version = self.documents[uri]
-        while self.diagnostics.get(uri, {}).get("version") != version:
+        while self.diagnostic_ticks.get(uri, 0) <= after or self.diagnostics.get(uri, {}).get("version", version) != version:
             self.receive()
-        return self.diagnostics[uri]
+        return {"uri": uri, "diagnostics": self.diagnostics[uri]["diagnostics"]}
 
     def write(self, path, content):
         path = Path(path).resolve()
-        path.write_text(content, encoding="utf-8")
         uri = path.as_uri()
+        before = self.diagnostic_ticks.get(uri, 0)
+        path.write_text(content, encoding="utf-8")
         if uri in self.documents:
             self.documents[uri] += 1
             self.send("textDocument/didChange", {
                 "textDocument": {"uri": uri, "version": self.documents[uri]},
                 "contentChanges": [{"text": content}],
             })
-        return {"written": str(path), **self.current_diagnostics(path)}
-
-    @staticmethod
-    def offset(text, position):
-        lines = text.splitlines(keepends=True)
-        line = position["line"]
-        if line == len(lines) and position["character"] == 0:
-            return len(text)
-        prefix = lines[line].encode("utf-16-le")[:position["character"] * 2]
-        return sum(len(part) for part in lines[:line]) + len(prefix.decode("utf-16-le"))
+        return {"written": str(path), **self.current_diagnostics(path, after=before)}
 
     def tool(self, arguments):
         operation = arguments["operation"]
-        path = arguments["file_path"]
-        if operation == "diagnostics":
-            return self.current_diagnostics(path)
-        uri = self.open(path)
-        methods = {"hover": "hover", "definition": "definition", "references": "references", "rename": "rename"}
+        uri = self.open(arguments["filePath"])
+        methods = {"hover": "hover", "goToDefinition": "definition", "findReferences": "references"}
         params = {"textDocument": {"uri": uri}, "position": {
-            "line": arguments["line"], "character": arguments["character"],
+            "line": arguments["line"] - 1, "character": arguments["character"] - 1,
         }}
-        if operation == "references":
-            params["context"] = {"includeDeclaration": arguments["include_declaration"]}
-        if operation == "rename":
-            params["newName"] = arguments["new_name"]
+        if operation == "findReferences":
+            params["context"] = {"includeDeclaration": True}
         result = self.request("textDocument/" + methods[operation], params)
-        if operation != "rename" or result is None:
-            return result
-        prepared = {}
-        for target_uri, edits in result["changes"].items():
-            target = Path(unquote(urlparse(target_uri).path))
-            text = target.read_text(encoding="utf-8")
-            replacements = [(self.offset(text, edit["range"]["start"]),
-                             self.offset(text, edit["range"]["end"]), edit["newText"])
-                            for edit in edits]
-            for start, end, replacement in sorted(replacements, reverse=True):
-                text = text[:start] + replacement + text[end:]
-            prepared[target] = text
-        diagnostics = [self.write(target, text) for target, text in prepared.items()]
-        return {"changed": [str(path) for path in prepared], "diagnostics": diagnostics}
+        return result
 
     def close(self):
         try:
@@ -189,10 +165,9 @@ class LanguageServer:
 TOOLS = [
     {"type": "function", "function": {"name": "LSP", "description": "Returns language-server results", "parameters": {
         "type": "object", "properties": {
-            "operation": {"type": "string", "enum": ["hover", "definition", "references", "diagnostics", "rename"]},
-            "file_path": {"type": "string"}, "line": {"type": "integer"}, "character": {"type": "integer"},
-            "include_declaration": {"type": "boolean"}, "new_name": {"type": "string"},
-        }, "required": ["operation", "file_path"],
+            "operation": {"type": "string", "enum": ["hover", "goToDefinition", "findReferences"]},
+            "filePath": {"type": "string"}, "line": {"type": "integer", "minimum": 1}, "character": {"type": "integer", "minimum": 1},
+        }, "required": ["operation", "filePath", "line", "character"],
     }}},
     {"type": "function", "function": {"name": "Read", "description": "Returns file contents", "parameters": {
         "type": "object", "properties": {"file_path": {"type": "string"}}, "required": ["file_path"],
@@ -208,7 +183,7 @@ TOOLS = [
 
 
 def run_agent(prompt, server):
-    messages = [{"role": "system", "content": "Use the LSP tool for code queries and rename. Tool positions are zero-based UTF-16. Use Write for edits."},
+    messages = [{"role": "system", "content": "Use the LSP tool for code navigation. Tool positions are one-based UTF-16. Use Write for edits."},
                 {"role": "user", "content": prompt}]
     for _ in range(50):
         payload = {"model": "anthropic/claude-haiku-4.5", "messages": messages, "tools": TOOLS}
@@ -217,8 +192,12 @@ def run_agent(prompt, server):
             data=json.dumps(payload).encode("utf-8"),
             headers={"Content-Type": "application/json", "Authorization": "Bearer " + os.environ["OPENROUTER_API_KEY"]},
         )
-        with urllib.request.urlopen(request, timeout=30) as response:
-            message = json.load(response)["choices"][0]["message"]
+        try:
+            with urllib.request.urlopen(request, timeout=30) as response:
+                message = json.load(response)["choices"][0]["message"]
+        except urllib.error.HTTPError as error:
+            detail = error.read().decode("utf-8", errors="replace").strip()
+            raise RuntimeError(f"Model request failed ({error.code}): {detail}") from error
         messages.append(message)
         if not message.get("tool_calls"):
             return message.get("content", "")
@@ -250,7 +229,8 @@ def main():
     server = None
     try:
         if Path(".lsp.json").exists():
-            server = LanguageServer(json.loads(Path(".lsp.json").read_text()))
+            configuration = json.loads(Path(".lsp.json").read_text())
+            server = LanguageServer(next(iter(configuration.values())))
             server.initialize()
         print(run_agent(arguments.p, server))
     finally:

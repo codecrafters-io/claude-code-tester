@@ -12,32 +12,33 @@ import (
 )
 
 type Action struct {
-	Operation          string
-	File               string
-	Line               int
-	Character          int
-	IncludeDeclaration bool
-	NewName            string
-	Content            string
+	Operation       string
+	File            string
+	Line            int
+	Character       int
+	Content         string
+	AfterDiagnostic bool
 }
 
 func (a Action) arguments() map[string]any {
-	arguments := map[string]any{"file_path": a.File}
 	if a.Operation == "write" {
-		arguments["content"] = a.Content
-		return arguments
+		return map[string]any{"file_path": a.File, "content": a.Content}
 	}
-	arguments["operation"] = a.Operation
-	if a.Operation != "diagnostics" {
-		arguments["line"], arguments["character"] = a.Line, a.Character
+	if a.Operation == "read" {
+		return map[string]any{"file_path": a.File}
 	}
-	if a.Operation == "references" {
-		arguments["include_declaration"] = a.IncludeDeclaration
+	return map[string]any{"operation": a.Operation, "filePath": a.File, "line": a.Line + 1, "character": a.Character + 1}
+}
+
+func protocolMethod(operation string) string {
+	switch operation {
+	case "goToDefinition":
+		return "textDocument/definition"
+	case "findReferences":
+		return "textDocument/references"
+	default:
+		return "textDocument/" + operation
 	}
-	if a.Operation == "rename" {
-		arguments["new_name"] = a.NewName
-	}
-	return arguments
 }
 
 // ScriptedModel emits tool calls, not tool results. The submitted agent still
@@ -46,7 +47,9 @@ func ScriptedModel(actions []Action) http.Handler {
 	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		var body struct {
 			Messages []struct {
-				Role string `json:"role"`
+				Role    string          `json:"role"`
+				ID      string          `json:"tool_call_id"`
+				Content json.RawMessage `json:"content"`
 			} `json:"messages"`
 			Tools []struct {
 				Function struct {
@@ -71,10 +74,27 @@ func ScriptedModel(actions []Action) http.Handler {
 		finish := "stop"
 		if step < len(actions) {
 			action := actions[step]
+			if action.AfterDiagnostic {
+				hasDiagnostic := false
+				for _, message := range body.Messages {
+					if message.Role != "tool" || message.ID != fmt.Sprintf("lsp_call_%d", step-1) {
+						continue
+					}
+					var content string
+					if json.Unmarshal(message.Content, &content) != nil {
+						content = string(message.Content)
+					}
+					hasDiagnostic = ContainsJSON(content, map[string]any{"severity": 1})
+				}
+				if !hasDiagnostic {
+					http.Error(writer, "Return an error diagnostic from the preceding Write before the model can choose a repair. After synchronizing the file, keep reading publishDiagnostics notifications and return the new list in that Write result. A timeout is a feedback error, not an empty diagnostics list.", http.StatusBadRequest)
+					return
+				}
+			}
 			name := ""
 			for _, tool := range body.Tools {
 				properties := tool.Function.Parameters.Properties
-				if action.Operation == "write" && properties["content"] != nil || action.Operation != "write" && properties["operation"] != nil {
+				if action.Operation == "write" && properties["content"] != nil || action.Operation == "read" && properties["file_path"] != nil && properties["content"] == nil || action.Operation != "write" && action.Operation != "read" && properties["operation"] != nil {
 					name = tool.Function.Name
 					break
 				}

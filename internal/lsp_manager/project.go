@@ -10,15 +10,12 @@ import (
 )
 
 // The fixture analyzes only this documented project shape. It is not a Python server.
-func Project(unicodePrefix bool, shortCheckout bool) map[string]string {
+func Project(shortCheckout bool) map[string]string {
 	checkout := "from pricing import total as invoice_total\n\n\ndef checkout_total() -> int:\n    return invoice_total(\"250\", 2)\n"
 	if shortCheckout {
 		checkout = "from pricing import total as invoice_total\n\namount = invoice_total(250, 2)\n"
 	}
 	reports := "from pricing import total\n\n\ndef report_total() -> int:\n    return total(250, 2) + total(100, 1)\n"
-	if unicodePrefix {
-		reports = "from pricing import total\n\n\ndef report_total() -> int:\n    label = \"\U0001f680\"; return total(250, 2) + total(100, 1)\n"
-	}
 	return map[string]string{
 		"pricing.py":  "def total(price: int, quantity: int) -> int:\n    return price * quantity\n",
 		"checkout.py": checkout,
@@ -68,7 +65,7 @@ func (p *projectState) signature() []string {
 	return signaturePattern.FindStringSubmatch(p.text("pricing.py"))
 }
 
-func (p *projectState) references(includeDeclaration, rename bool) []Location {
+func (p *projectState) references(includeDeclaration bool) []Location {
 	signature := p.signature()
 	result := []Location{}
 	if len(signature) == 0 {
@@ -82,7 +79,7 @@ func (p *projectState) references(includeDeclaration, rename bool) []Location {
 			if file == "pricing.py" && (!includeDeclaration || word != name) {
 				continue
 			}
-			if file != "pricing.py" && word != name && !(file == "checkout.py" && word == "invoice_total" && !rename) {
+			if file != "pricing.py" && word != name && !(file == "checkout.py" && word == "invoice_total") {
 				continue
 			}
 			lineStart := strings.LastIndex(text[:match[0]], "\n") + 1
@@ -90,7 +87,7 @@ func (p *projectState) references(includeDeclaration, rename bool) []Location {
 			if strings.Contains(line, "#") {
 				continue
 			}
-			// The local alias declaration is not another use or a rename target.
+			// The local alias declaration is not another reference.
 			if word == "invoice_total" && strings.HasPrefix(line, "from ") {
 				continue
 			}
@@ -109,6 +106,8 @@ func (p *projectState) definition() any {
 	return Location{URI: URI(filepath.Join(p.Root, "pricing.py")), Range: textRange(text, match[2], match[3])}
 }
 
+const ArgumentTypeDiagnostic = "Argument of type str cannot be assigned to parameter price of type int"
+
 func (p *projectState) diagnostics(document Document) []map[string]any {
 	result := []map[string]any{}
 	if filepath.Base(mustPath(document.URI)) != "checkout.py" {
@@ -117,18 +116,9 @@ func (p *projectState) diagnostics(document Document) []map[string]any {
 	signature := p.signature()
 	match := argumentPattern.FindStringSubmatchIndex(document.Text)
 	if len(signature) > 0 && signature[2] == "int" && len(match) > 0 && document.Text[match[2]] == '"' {
-		result = append(result, map[string]any{"range": textRange(document.Text, match[2], match[3]), "severity": 1, "message": "Argument of type str cannot be assigned to parameter price of type int"})
+		result = append(result, map[string]any{"range": textRange(document.Text, match[2], match[3]), "severity": 1, "message": ArgumentTypeDiagnostic})
 	}
 	return result
-}
-
-func (p *projectState) rename(newName string) map[string][]Edit {
-	changes := map[string][]Edit{}
-	for _, location := range p.references(true, true) {
-		changes[location.URI] = append(changes[location.URI], Edit{Range: location.Range, NewText: newName})
-	}
-	// Deliberately leave each list in source order. Applying it forward is wrong.
-	return changes
 }
 
 func mustPath(uri string) string { path, _ := Path(uri); return path }

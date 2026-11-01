@@ -43,7 +43,7 @@ func testLSP(stageHarness *test_case_harness.TestCaseHarness, slug string) error
 		stageHarness.Executable.WorkingDir = project
 		files := testCase.Files
 		if files == nil {
-			files = lsp_manager.Project(false, false)
+			files = lsp_manager.Project(false)
 		}
 		names := make([]string, 0, len(files))
 		for name := range files {
@@ -85,7 +85,7 @@ func testLSP(stageHarness *test_case_harness.TestCaseHarness, slug string) error
 			if fixture := os.Getenv("CODECRAFTERS_LSP_FIXTURE_BINARY"); fixture != "" {
 				binary = fixture
 			}
-			configuration, _ := json.Marshal(map[string]any{"command": binary, "args": []string{"--lsp-fixture", configPath}, "languageId": "python"})
+			configuration, _ := json.Marshal(map[string]any{"python": map[string]any{"command": binary, "args": []string{"--lsp-fixture", configPath}, "extensionToLanguage": map[string]string{".py": "python"}}})
 			if err := os.WriteFile(filepath.Join(project, ".lsp.json"), configuration, 0644); err != nil {
 				return err
 			}
@@ -125,8 +125,12 @@ func testLSP(stageHarness *test_case_harness.TestCaseHarness, slug string) error
 		} else if result.ExitCode != 0 {
 			return fmt.Errorf("%s: program exited %d; stdout %q; stderr %q", testCase.Name, result.ExitCode, result.Stdout, result.Stderr)
 		}
-		if err := lsp_manager.Check(testCase, slug, config, recorder.RequestBodies(), recorder.FirstRequestAt()); err != nil {
+		if err := lsp_manager.Check(testCase, slug, config, recorder.RequestBodies()); err != nil {
 			return fmt.Errorf("%s: %w", testCase.Name, err)
+		}
+		if len(testCase.WantDiagnosticVersions) > 0 {
+			stageHarness.Logger.Successf("Edit feedback for checkout.py: %s", lsp_manager.ArgumentTypeDiagnostic)
+			stageHarness.Logger.Successf("Repair feedback for checkout.py: diagnostics []")
 		}
 		stageHarness.Logger.Successf("Case %s passed protocol, tool-result and file checks", testCase.Name)
 	}

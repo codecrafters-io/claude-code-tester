@@ -96,7 +96,7 @@ func TestEmptyReferencesIsAnArray(t *testing.T) {
 	// Arrange
 	state := projectState{Root: t.TempDir(), Documents: map[string]Document{}}
 	// Act
-	encoded, err := json.Marshal(state.references(false, false))
+	encoded, err := json.Marshal(state.references(false))
 	// Assert
 	require.NoError(t, err)
 	require.Equal(t, "[]", string(encoded))

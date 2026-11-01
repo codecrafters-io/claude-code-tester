@@ -107,7 +107,7 @@ setup:
 
 # LSP extension test cases
 define LSP_STAGES
-[{\"slug\":\"ls1\",\"tester_log_prefix\":\"stage-1\",\"title\":\"Stage #1: Send the initialization request\"},{\"slug\":\"ir2\",\"tester_log_prefix\":\"stage-2\",\"title\":\"Stage #2: Read the initialization response\"},{\"slug\":\"hv2\",\"tester_log_prefix\":\"stage-3\",\"title\":\"Stage #3: Look up a symbol's type\"},{\"slug\":\"df3\",\"tester_log_prefix\":\"stage-4\",\"title\":\"Stage #4: Go to a definition\"},{\"slug\":\"rf4\",\"tester_log_prefix\":\"stage-5\",\"title\":\"Stage #5: Find a symbol's references\"},{\"slug\":\"sy5\",\"tester_log_prefix\":\"stage-6\",\"title\":\"Stage #6: Keep the server up to date\"},{\"slug\":\"dg6\",\"tester_log_prefix\":\"stage-7\",\"title\":\"Stage #7: Read diagnostics after an edit\"},{\"slug\":\"rn7\",\"tester_log_prefix\":\"stage-8\",\"title\":\"Stage #8: Rename a symbol across files\"}]
+[{\"slug\":\"ls1\",\"tester_log_prefix\":\"stage-1\",\"title\":\"Stage #1: Send the initialization request\"},{\"slug\":\"ir2\",\"tester_log_prefix\":\"stage-2\",\"title\":\"Stage #2: Read the initialization response\"},{\"slug\":\"hv2\",\"tester_log_prefix\":\"stage-3\",\"title\":\"Stage #3: Look up a symbol's type\"},{\"slug\":\"df3\",\"tester_log_prefix\":\"stage-4\",\"title\":\"Stage #4: Go to a definition\"},{\"slug\":\"rf4\",\"tester_log_prefix\":\"stage-5\",\"title\":\"Stage #5: Find a symbol's references\"},{\"slug\":\"sy5\",\"tester_log_prefix\":\"stage-6\",\"title\":\"Stage #6: Keep the server up to date\"},{\"slug\":\"dg6\",\"tester_log_prefix\":\"stage-7\",\"title\":\"Stage #7: Feed diagnostics back after edits\"}]
 endef
 
 .PHONY: test_lsp_offline test_lsp_with_users_code record_lsp_fixtures
@@ -136,3 +136,9 @@ test_lsp:
 PYRIGHT_LANGSERVER ?= pyright-langserver
 test_lsp_with_pyright:
 	python3 internal/test_helpers/scenarios/lsp_stages/pyright_smoke.py --server "$(PYRIGHT_LANGSERVER)"
+
+# Independent product check, with a scripted local Anthropic endpoint and Pyright.
+CLAUDE_CODE_BINARY ?= claude
+.PHONY: test_lsp_with_claude_code
+test_lsp_with_claude_code:
+	python3 internal/test_helpers/scenarios/lsp_stages/claude_code_smoke.py --claude "$(CLAUDE_CODE_BINARY)" --server "$(PYRIGHT_LANGSERVER)"

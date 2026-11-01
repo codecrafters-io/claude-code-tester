@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"reflect"
 	"strings"
-	"time"
 )
 
 type call struct {
@@ -145,7 +144,7 @@ func resultReachedModel(method, content string, raw json.RawMessage) bool {
 	return json.Unmarshal(raw, &hover) == nil && hover.Contents.Value != "" && strings.Contains(content, hover.Contents.Value)
 }
 
-func Check(c Case, slug string, config Config, requests []string, firstRequest time.Time) error {
+func Check(c Case, slug string, config Config, requests []string) error {
 	if c.NoConfig {
 		if len(requests) == 0 {
 			return fmt.Errorf("the base prompt never reached the LLM")
@@ -158,7 +157,6 @@ func Check(c Case, slug string, config Config, requests []string, firstRequest t
 	}
 	var received []Message
 	responses := map[string]Message{}
-	var initReplyAt int64
 	ended := false
 	serverPID := 0
 	for _, event := range events {
@@ -178,9 +176,6 @@ func Check(c Case, slug string, config Config, requests []string, firstRequest t
 		}
 		if event.Direction == "sent" && len(event.Message.ID) > 0 {
 			responses[string(event.Message.ID)] = event.Message
-			if initReplyAt == 0 {
-				initReplyAt = event.Time
-			}
 		}
 	}
 	if len(received) == 0 || received[0].Method != "initialize" {
@@ -195,9 +190,6 @@ func Check(c Case, slug string, config Config, requests []string, firstRequest t
 				return fmt.Errorf("initialized was sent after a failed initialization")
 			}
 		}
-		if len(requests) > 0 {
-			return fmt.Errorf("the LLM was called after initialization failed")
-		}
 		return nil
 	}
 	if len(requests) == 0 {
@@ -209,11 +201,8 @@ func Check(c Case, slug string, config Config, requests []string, firstRequest t
 	if slug == "ls1" {
 		return nil
 	}
-	if initReplyAt == 0 || firstRequest.IsZero() || initReplyAt > firstRequest.UnixNano() {
-		return fmt.Errorf("read initialization before calling the LLM (initialize reply: %d, first model request: %d)", initReplyAt, firstRequest.UnixNano())
-	}
-	if len(received) < 4 || received[1].Method != "initialized" || received[len(received)-2].Method != "shutdown" || received[len(received)-1].Method != "exit" {
-		return fmt.Errorf("expected initialize, initialized, document operations, shutdown, exit in that order")
+	if len(received) < 2 || received[1].Method != "initialized" {
+		return fmt.Errorf("send initialized after the successful initialization response")
 	}
 	ids := map[string]bool{}
 	for _, message := range received {
@@ -239,7 +228,7 @@ func Check(c Case, slug string, config Config, requests []string, firstRequest t
 	}
 	var expectedQueries []Action
 	for _, action := range c.Actions {
-		if action.Operation != "write" && action.Operation != "diagnostics" {
+		if action.Operation != "write" && action.Operation != "read" {
 			expectedQueries = append(expectedQueries, action)
 		}
 	}
@@ -249,7 +238,7 @@ func Check(c Case, slug string, config Config, requests []string, firstRequest t
 	queryCalls := []call{}
 	allCalls := calls(requests)
 	for _, tool := range allCalls {
-		if operation, ok := tool.Arguments["operation"].(string); ok && operation != "diagnostics" {
+		if operation, ok := tool.Arguments["operation"].(string); ok && operation != "" {
 			queryCalls = append(queryCalls, tool)
 		}
 	}
@@ -260,7 +249,7 @@ func Check(c Case, slug string, config Config, requests []string, firstRequest t
 	for index, message := range queryMessages {
 		tool := queryCalls[index]
 		operation, _ := tool.Arguments["operation"].(string)
-		file, _ := tool.Arguments["file_path"].(string)
+		file, _ := tool.Arguments["filePath"].(string)
 		if file == "" {
 			file, _ = tool.Arguments["path"].(string)
 		}
@@ -269,15 +258,12 @@ func Check(c Case, slug string, config Config, requests []string, firstRequest t
 		}
 		line, _ := tool.Arguments["line"].(float64)
 		character, _ := tool.Arguments["character"].(float64)
-		declaration, _ := tool.Arguments["include_declaration"].(bool)
-		newName, _ := tool.Arguments["new_name"].(string)
-		action := Action{Operation: operation, File: file, Line: int(line), Character: int(character), IncludeDeclaration: declaration, NewName: newName}
+		action := Action{Operation: operation, File: file, Line: int(line) - 1, Character: int(character) - 1}
 		if len(matchedQueries) < len(expectedQueries) {
 			expected := expectedQueries[len(matchedQueries)]
 			samePosition := action.Operation == expected.Operation && filepath.Clean(file) == filepath.Join(config.Root, expected.File) && action.Line == expected.Line && action.Character == expected.Character
-			sameOptions := action.IncludeDeclaration == expected.IncludeDeclaration && action.NewName == expected.NewName
 			currentType := len(c.WantTypes) == 0 || strings.Contains(tool.Result, "price: "+c.WantTypes[len(matchedQueries)])
-			if samePosition && sameOptions && currentType {
+			if samePosition && currentType {
 				matchedQueries = append(matchedQueries, tool)
 			}
 		}
@@ -287,27 +273,17 @@ func Check(c Case, slug string, config Config, requests []string, firstRequest t
 			Context      struct {
 				IncludeDeclaration bool `json:"includeDeclaration"`
 			} `json:"context"`
-			NewName string `json:"newName"`
 		}
 		json.Unmarshal(message.Params, &params)
-		if message.Method != "textDocument/"+action.Operation || params.TextDocument.URI != URI(action.File) || params.Position != (Position{Line: action.Line, Character: action.Character}) {
+		if message.Method != protocolMethod(action.Operation) || params.TextDocument.URI != URI(action.File) || params.Position != (Position{Line: action.Line, Character: action.Character}) {
 			return fmt.Errorf("expected %s for %s at %d:%d, got %s %s", action.Operation, action.File, action.Line, action.Character, message.Method, message.Params)
 		}
-		if action.Operation == "references" && params.Context.IncludeDeclaration != action.IncludeDeclaration {
-			return fmt.Errorf("includeDeclaration was not forwarded")
-		}
-		if action.Operation == "rename" && params.NewName != action.NewName {
-			return fmt.Errorf("newName was not forwarded")
+		if action.Operation == "findReferences" && !params.Context.IncludeDeclaration {
+			return fmt.Errorf("findReferences must request includeDeclaration: true, as Claude Code does")
 		}
 		response, ok := responses[string(message.ID)]
 		if !ok {
 			return fmt.Errorf("missing response for request %s", message.ID)
-		}
-		if action.Operation == "rename" && c.Rename {
-			if tool.Result == "" {
-				return fmt.Errorf("rename did not return a tool result")
-			}
-			continue
 		}
 		if len(response.Error) > 0 {
 			var failure struct {
@@ -326,7 +302,6 @@ func Check(c Case, slug string, config Config, requests []string, firstRequest t
 	// Every open document must reflect the final contents on disk. Restarting or
 	// omitting synchronization cannot turn an old server view into a pass.
 	latest := map[string]Document{}
-	open := map[string]bool{}
 	for _, message := range received {
 		if message.Method == "textDocument/didOpen" {
 			var p struct {
@@ -334,14 +309,6 @@ func Check(c Case, slug string, config Config, requests []string, firstRequest t
 			}
 			json.Unmarshal(message.Params, &p)
 			latest[p.Document.URI] = p.Document
-			open[p.Document.URI] = true
-		}
-		if message.Method == "textDocument/didClose" {
-			var p struct {
-				Document Document `json:"textDocument"`
-			}
-			json.Unmarshal(message.Params, &p)
-			delete(open, p.Document.URI)
 		}
 		if message.Method == "textDocument/didChange" {
 			var p struct {
@@ -357,14 +324,11 @@ func Check(c Case, slug string, config Config, requests []string, firstRequest t
 			}
 		}
 	}
-	if len(open) > 0 {
-		return fmt.Errorf("send didClose for every open document before shutdown")
-	}
 	for uri, document := range latest {
 		path, _ := Path(uri)
 		text, err := os.ReadFile(path)
 		if err != nil || string(text) != document.Text {
-			return fmt.Errorf("server still has stale text for %s", filepath.Base(path))
+			return fmt.Errorf("server still has stale text for %s; after a successful Write, send didChange for an open file or didOpen with its new contents", filepath.Base(path))
 		}
 	}
 	if len(matchedQueries) != len(expectedQueries) {
@@ -380,14 +344,14 @@ func Check(c Case, slug string, config Config, requests []string, firstRequest t
 	if len(c.WantDiagnosticVersions) > 0 {
 		diagnosticCalls := []call{}
 		for _, tool := range allCalls {
-			if tool.Arguments["operation"] == "diagnostics" || tool.Arguments["content"] != nil {
+			if tool.Arguments["content"] != nil {
 				diagnosticCalls = append(diagnosticCalls, tool)
 			}
 		}
 		requiredCalls := []call{}
 		next := 0
 		for _, action := range c.Actions {
-			if action.Operation != "diagnostics" && action.Operation != "write" {
+			if action.Operation != "write" {
 				continue
 			}
 			found := false
@@ -402,13 +366,16 @@ func Check(c Case, slug string, config Config, requests []string, firstRequest t
 					file = filepath.Join(config.Root, file)
 				}
 				write := tool.Arguments["content"] != nil
-				if filepath.Clean(file) == filepath.Join(config.Root, action.File) && ((action.Operation == "write" && write) || (action.Operation == "diagnostics" && !write)) {
+				if filepath.Clean(file) == filepath.Join(config.Root, action.File) && (action.Operation == "write" && write) {
 					requiredCalls = append(requiredCalls, tool)
 					found = true
 					break
 				}
 			}
 			if !found {
+				if action.AfterDiagnostic {
+					return fmt.Errorf("missing repair Write for %s; return the preceding Write's error diagnostic to the model so it can choose a repair", action.File)
+				}
 				return fmt.Errorf("missing %s tool result for %s", action.Operation, action.File)
 			}
 		}
@@ -416,66 +383,42 @@ func Check(c Case, slug string, config Config, requests []string, firstRequest t
 
 		for index, version := range c.WantDiagnosticVersions {
 			var want any
+			currentVersion := map[string]int{}
 			for _, event := range events {
+				if event.Direction == "received" && (event.Message.Method == "textDocument/didOpen" || event.Message.Method == "textDocument/didChange") {
+					var params struct {
+						Document Document `json:"textDocument"`
+					}
+					json.Unmarshal(event.Message.Params, &params)
+					currentVersion[params.Document.URI] = params.Document.Version
+				}
 				if event.Direction == "sent" && event.Message.Method == "textDocument/publishDiagnostics" {
-					var p map[string]any
-					json.Unmarshal(event.Message.Params, &p)
-					if p["version"] == float64(version) && p["uri"] == URI(filepath.Join(config.Root, "checkout.py")) {
-						want = map[string]any{"version": p["version"], "diagnostics": p["diagnostics"]}
+					var params map[string]any
+					json.Unmarshal(event.Message.Params, &params)
+					uri, _ := params["uri"].(string)
+					publicationVersion := currentVersion[uri]
+					if value, ok := params["version"].(float64); ok {
+						publicationVersion = int(value)
+					}
+					if publicationVersion == version && uri == URI(filepath.Join(config.Root, "checkout.py")) {
+						want = map[string]any{"diagnostics": params["diagnostics"]}
 						break
 					}
 				}
 			}
-			if want == nil || !ContainsJSON(diagnosticCalls[index].Result, want) {
-				return fmt.Errorf("tool result %s must carry version %d's diagnostics, got %s", diagnosticCalls[index].ID, version, diagnosticCalls[index].Result)
+			if want == nil {
+				return fmt.Errorf("no diagnostic publication recorded for checkout.py version %d; synchronize the edit and keep reading publishDiagnostics notifications for that URI", version)
+			}
+			if !ContainsJSON(diagnosticCalls[index].Result, want) {
+				expected, _ := json.Marshal(want)
+				return fmt.Errorf("Write feedback for checkout.py version %d is missing or stale: expected %s, got %q; return the new publication in tool result %s, rather than reusing cached diagnostics", version, expected, diagnosticCalls[index].Result, diagnosticCalls[index].ID)
 			}
 		}
+
 	}
 	if config.MissingDiagnostics {
 		if !containsResult(ToolResults(requests), "error") {
-			return fmt.Errorf("missing diagnostics must be an error, not an empty success list")
-		}
-	}
-	files := c.Files
-	if files == nil {
-		files = Project(false, false)
-	}
-	if c.Rename || slug == "rn7" {
-		for name, original := range files {
-			expected := original
-			if c.Rename && name != "preview.py" {
-				expected = wordPattern.ReplaceAllStringFunc(original, func(word string) string {
-					if word == "total" {
-						return "total_cents"
-					}
-					return word
-				})
-			}
-			if c.Rename && expected != original {
-				uri := URI(filepath.Join(config.Root, name))
-				document, ok := latest[uri]
-				if !ok || document.Text != expected {
-					return fmt.Errorf("rename was not synchronized for %s", name)
-				}
-				var publication any
-				for _, event := range events {
-					if event.Direction == "sent" && event.Message.Method == "textDocument/publishDiagnostics" {
-						var params map[string]any
-						json.Unmarshal(event.Message.Params, &params)
-						if params["uri"] == uri && params["version"] == float64(document.Version) {
-							publication = map[string]any{"version": params["version"], "diagnostics": params["diagnostics"]}
-						}
-					}
-				}
-				result := matchedQueries[0].Result
-				if publication == nil || !ContainsJSON(result, publication) || !strings.Contains(result, name) {
-					return fmt.Errorf("rename must return the changed path and current diagnostics for %s", name)
-				}
-			}
-			actual, err := os.ReadFile(filepath.Join(config.Root, name))
-			if err != nil || string(actual) != expected {
-				return fmt.Errorf("incorrect rename in %s\nexpected: %q\nactual: %q", name, expected, string(actual))
-			}
+			return fmt.Errorf("missing diagnostics must be an error, not an empty success list; wait for a new publication for checkout.py and return a feedback error if the bounded wait expires")
 		}
 	}
 	return nil

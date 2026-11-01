@@ -17,62 +17,87 @@ Code" challenge.
 
 ## LSP extension
 
-Requires Go 1.25.5 and Python 3.10 or newer. The reference agent uses the Python
-standard library. The tester starts its stdio language-server fixture from the
-same compiled binary, so no Python language server is required for grading.
+The seven graded stages stay within Claude Code's built-in LSP capabilities.
+The finale lets the agent catch its own mistake: a bad Write returns a type
+error, the model uses that feedback to choose a repair, and the next Write
+clears the error. The scripted model refuses to select the repair without an
+error diagnostic from the preceding Write. Rename is outside this extension.
+Official allocation of current stage IDs is deferred at the course author's
+request.
 
-Run the tests, including recorded stage output and deliberately broken clients:
+The reference agent uses Python's standard library. The controlled stdio fixture
+runs from the tester binary, so grading does not require installing Pyright.
 
 ```sh
 make test_lsp
-```
-
-Run all eight stages against the reference agent, with a deterministic local
-model that emits tool calls:
-
-```sh
 make test_lsp_offline
 ```
 
-The agent still performs its real HTTP/tool loop and talks to the stdio server.
-These checks cover 26 cases: initialization, partial frames, null/error results,
-aliases, document versions, diagnostics, and multi-file UTF-16 rename edits.
-They include a sending-only stage-one client and six rejected broken clients.
-Each LSP case starts its own model endpoint on an OS-assigned loopback port. The
-submission receives that endpoint through `OPENROUTER_BASE_URL`, keeping
-requests from earlier tests out of the current recording.
+These commands cover 23 stage cases and eight deliberately broken clients:
+missing initialization, wrong coordinate conversion, omitted declarations,
+discarded hover results, unsynchronized writes, discarded unversioned reports,
+reused cached unversioned reports, and false empty diagnostics after a timeout. Stage output is recorded in the
+existing fixture format. Each case gets a private loopback model endpoint via
+OPENROUTER_BASE_URL, keeping unrelated traffic out of its recording.
 
-To run the same stages with the course's live model, set
-`CODECRAFTERS_SECRET_OPENROUTER_API_KEY` and run:
+The LSP tool uses Claude Code's hover, goToDefinition and findReferences names,
+filePath, and one-based editor coordinates. JSON-RPC positions remain zero-based.
+The project configuration uses the product's named server map with command,
+args and extensionToLanguage. Plugin installation and discovery are outside the
+course. Diagnostic feedback uses the base course's Write tool-result channel;
+Claude Code can deliver it as a separate conversation attachment.
+
+To regenerate recorded stage output:
+
+```sh
+make record_lsp_fixtures
+```
+
+For live-model trials, configure CODECRAFTERS_SECRET_OPENROUTER_API_KEY and run:
 
 ```sh
 make test_lsp_with_users_code
 ```
 
-`make test` includes this live reference scenario alongside the existing base
-and Skills scenarios. All three use the existing model proxy. LSP output is
-compared to the same fixture as the offline run, with model wording and
-temporary configuration paths removed. To regenerate it, run
-`make record_lsp_fixtures`. Live-model trials have not been verified locally
-because no API key is configured.
+The earlier CI credential received HTTP 401. No valid key is configured locally.
+Live-model reliability, 100-run live flakiness checks and model-backed prose lint
+remain unverified. Offline or scripted checks do not establish those results.
 
-For a separate real-server smoke check, install a pinned Pyright outside the
-repo:
+### Independent implementation checks
+
+Install the pinned Python language server outside the repository:
 
 ```sh
 npm install --prefix /tmp/lsp-pyright --ignore-scripts pyright@1.1.414
 make test_lsp_with_pyright PYRIGHT_LANGSERVER=/tmp/lsp-pyright/node_modules/.bin/pyright-langserver
 ```
 
-This checks initialization, hover, imported-alias definition, references, rename
-responses, and shutdown. It does not run the graded diagnostics or apply rename
-edits. Pyright may omit diagnostic versions and treats an alias call as a use of
-the local alias. Its rename response can use `documentChanges`, beyond the
-course client's `changes` subset. The controlled fixture intentionally supplies
-versioned publications after each open/change and includes that call in its
-reference set. The reference client ignores unversioned publications and reports
-a bounded error when current-version diagnostics are unavailable. This smoke
-check does not claim the course subset supports every language server.
+This runs the reference client against Pyright through initialization, hover,
+alias definition, references, a bad write, diagnostic feedback, repair, clearing
+and shutdown. It enables basic type checking in the temporary project. The
+client accepts unversioned publications instead of rejecting Pyright's reports.
+An unversioned publication cannot identify which edit was analyzed; the course
+fixture supplies one response per open/change for deterministic grading.
+
+The second check runs the actual CI-pinned Claude Code 2.1.266 against Pyright,
+using a temporary plugin and a local scripted Anthropic endpoint:
+
+```sh
+make test_lsp_with_claude_code CLAUDE_CODE_BINARY=/path/to/claude-2.1.266 PYRIGHT_LANGSERVER=/tmp/lsp-pyright/node_modules/.bin/pyright-langserver
+```
+
+It verifies protocol traffic, one-based-to-zero-based coordinate conversion,
+includeDeclaration true, file synchronization, type-error delivery to the model,
+and a completed repair. It makes no paid model calls and uses a temporary config
+directory. The stage runner prints the verified edit error and diagnostic
+clearing after a successful repair, so the payoff is visible in learner logs.
+Bash remains available, matching the completed base course: the pinned
+CLI suppresses diagnostic attachments when both Bash and PowerShell are absent.
+The scripted model only calls navigation and file tools.
+
+This native check compares the features against an independent implementation;
+it does not claim that Claude Code's formatted output passes the learner
+fixture's structured JSON assertions. The two checks run in a dedicated CI job.
 
 ## CI and repository conventions
 

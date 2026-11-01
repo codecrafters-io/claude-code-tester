@@ -51,3 +51,25 @@ jobs:
 
       - name: Run live-model tests
         run: make test_live
+
+  lsp_compatibility:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned compatibility tools
+        run: |
+          curl -fsSL https://claude.ai/install.sh | bash -s -- 2.1.266
+          npm install --prefix "$RUNNER_TEMP/lsp-pyright" --ignore-scripts pyright@1.1.414
+      - name: Check the reference client against Pyright
+        run: make test_lsp_with_pyright PYRIGHT_LANGSERVER="$RUNNER_TEMP/lsp-pyright/node_modules/.bin/pyright-langserver"
+      - name: Check Claude Code against Pyright
+        run: make test_lsp_with_claude_code PYRIGHT_LANGSERVER="$RUNNER_TEMP/lsp-pyright/node_modules/.bin/pyright-langserver"

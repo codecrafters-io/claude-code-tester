@@ -5,7 +5,6 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 )
@@ -18,7 +17,7 @@ func TestCheckRejectsInvalidInitialize(t *testing.T) {
 	require.NoError(t, appendEvent(config.Log, "sent", Message{JSONRPC: "2.0", ID: json.RawMessage(`1`), Error: json.RawMessage(`{"code":-32602,"message":"wrong processId"}`)}, ""))
 	require.NoError(t, appendEvent(config.Log, "ended", Message{}, ""))
 	// Act
-	err := Check(Case{}, "ls1", config, []string{`{"messages":[]}`}, time.Now())
+	err := Check(Case{}, "ls1", config, []string{`{"messages":[]}`})
 	// Assert
 	require.ErrorContains(t, err, "invalid initialization request")
 }
@@ -40,34 +39,21 @@ func TestCheckRejectsRestartedServer(t *testing.T) {
 	second, _ := json.Marshal(Event{Direction: "received", PID: 2, Message: Message{Method: "initialize"}})
 	require.NoError(t, os.WriteFile(config.Log, append(append(first, '\n'), second...), 0600))
 	// Act
-	err := Check(Case{}, "sy5", config, []string{"{}"}, time.Now())
+	err := Check(Case{}, "sy5", config, []string{"{}"})
 	// Assert
 	require.ErrorContains(t, err, "one language-server process")
 }
 
-// A successful invocation closes every document before shutting down its server.
-func TestCheckRejectsUnclosedDocuments(t *testing.T) {
+// Response reading does not require implementing a separate shutdown handshake.
+func TestCheckAcceptsEOFClosingAfterInitialization(t *testing.T) {
 	// Arrange
 	config := Config{Root: t.TempDir(), Log: filepath.Join(t.TempDir(), "events.jsonl")}
-	params, _ := json.Marshal(map[string]any{"textDocument": Document{URI: URI(filepath.Join(config.Root, "pricing.py")), Version: 1, Text: "text"}})
-	messages := []Message{
-		{Method: "initialize", ID: json.RawMessage(`1`)},
-		{ID: json.RawMessage(`1`), Result: json.RawMessage(`{"capabilities":{}}`)},
-		{Method: "initialized"},
-		{Method: "textDocument/didOpen", Params: params},
-		{Method: "shutdown", ID: json.RawMessage(`2`)},
-		{Method: "exit"},
-	}
-	for index, message := range messages {
-		direction := "received"
-		if index == 1 {
-			direction = "sent"
-		}
-		require.NoError(t, appendEvent(config.Log, direction, message, ""))
-	}
+	require.NoError(t, appendEvent(config.Log, "received", Message{Method: "initialize", ID: json.RawMessage(`1`)}, ""))
+	require.NoError(t, appendEvent(config.Log, "sent", Message{ID: json.RawMessage(`1`), Result: json.RawMessage(`{"capabilities":{}}`)}, ""))
+	require.NoError(t, appendEvent(config.Log, "received", Message{Method: "initialized"}, ""))
 	require.NoError(t, appendEvent(config.Log, "ended", Message{}, ""))
 	// Act
-	err := Check(Case{}, "ir2", config, []string{"{}"}, time.Now())
+	err := Check(Case{}, "ir2", config, []string{`{"messages":[]}`})
 	// Assert
-	require.ErrorContains(t, err, "didClose")
+	require.NoError(t, err)
 }

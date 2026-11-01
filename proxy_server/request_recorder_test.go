@@ -47,17 +47,3 @@ func TestRequestRecorderReturnsACopy(t *testing.T) {
 func TestRequestRecorderStartsEmpty(t *testing.T) {
 	assert.Empty(t, (&RequestRecorder{}).RequestBodies())
 }
-
-// The first request timestamp stays fixed when more model requests arrive.
-func TestRequestRecorderKeepsFirstRequestTime(t *testing.T) {
-	// Arrange
-	recorder := &RequestRecorder{}
-	assert.True(t, recorder.FirstRequestAt().IsZero())
-	// Act
-	recorder.appendRequestBody("first")
-	first := recorder.FirstRequestAt()
-	recorder.appendRequestBody("second")
-	// Assert
-	assert.False(t, first.IsZero())
-	assert.Equal(t, first, recorder.FirstRequestAt())
-}

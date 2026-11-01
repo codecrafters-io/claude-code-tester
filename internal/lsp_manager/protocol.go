@@ -92,10 +92,6 @@ type Location struct {
 	URI   string `json:"uri"`
 	Range Range  `json:"range"`
 }
-type Edit struct {
-	Range   Range  `json:"range"`
-	NewText string `json:"newText"`
-}
 
 func position(text string, offset int) Position {
 	prefix := text[:offset]

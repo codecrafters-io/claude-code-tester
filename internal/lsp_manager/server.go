@@ -7,24 +7,23 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"time"
 )
 
 type Config struct {
-	Stage              string `json:"stage"`
-	Root               string `json:"root"`
-	Log                string `json:"log"`
-	Token              string `json:"token"`
-	Fragmented         bool   `json:"fragmented"`
-	Fault              string `json:"fault,omitempty"`
-	Hover              string `json:"hover,omitempty"`
-	Definition         string `json:"definition,omitempty"`
-	EmptyReferences    bool   `json:"emptyReferences,omitempty"`
-	StaleDiagnostics   bool   `json:"staleDiagnostics,omitempty"`
-	MissingDiagnostics bool   `json:"missingDiagnostics,omitempty"`
-	ReverseEdits       bool   `json:"reverseEdits,omitempty"`
+	Stage                  string `json:"stage"`
+	Root                   string `json:"root"`
+	Log                    string `json:"log"`
+	Token                  string `json:"token"`
+	Fragmented             bool   `json:"fragmented"`
+	Fault                  string `json:"fault,omitempty"`
+	Hover                  string `json:"hover,omitempty"`
+	Definition             string `json:"definition,omitempty"`
+	EmptyReferences        bool   `json:"emptyReferences,omitempty"`
+	StaleDiagnostics       bool   `json:"staleDiagnostics,omitempty"`
+	MissingDiagnostics     bool   `json:"missingDiagnostics,omitempty"`
+	UnversionedDiagnostics bool   `json:"unversionedDiagnostics,omitempty"`
 }
 
 type Event struct {
@@ -66,6 +65,7 @@ func Events(path string) ([]Event, error) {
 func Serve(config Config, input io.Reader, output io.Writer) error {
 	state := projectState{Root: config.Root, Documents: map[string]Document{}}
 	initialized, ready, shutdown := false, false, false
+	clientVersionSupport := false
 	defer appendEvent(config.Log, "ended", Message{}, "")
 	send := func(value any) error {
 		body, _ := json.Marshal(value)
@@ -110,7 +110,6 @@ func Serve(config Config, input io.Reader, output io.Writer) error {
 			ContentChanges []struct {
 				Text string `json:"text"`
 			} `json:"contentChanges"`
-			NewName string `json:"newName"`
 		}
 		json.Unmarshal(message.Params, &params)
 		result := any(nil)
@@ -120,12 +119,11 @@ func Serve(config Config, input io.Reader, output io.Writer) error {
 			cwd, _ := os.Getwd()
 			if initialized || params.RootURI != URI(config.Root) || params.ProcessID == nil || *params.ProcessID != os.Getppid() || filepath.Clean(cwd) != filepath.Clean(config.Root) {
 				protocolError = map[string]any{"code": -32602, "message": "initialize must identify the client process and project directory"}
-			} else if (config.Stage == "dg6" || config.Stage == "rn7") && !params.Capabilities.TextDocument.PublishDiagnostics.VersionSupport {
-				protocolError = map[string]any{"code": -32602, "message": "advertise publishDiagnostics.versionSupport before requesting diagnostics"}
 			} else if config.Fault == "initialize-error" {
 				protocolError = map[string]any{"code": -32603, "message": "Initialization failed"}
 			} else {
 				initialized = true
+				clientVersionSupport = params.Capabilities.TextDocument.PublishDiagnostics.VersionSupport
 				if config.Fault == "incomplete" {
 					_, err := io.WriteString(output, "Content-Length: 100\r\n\r\n{\"jsonrpc\":")
 					return err
@@ -135,7 +133,7 @@ func Serve(config Config, input io.Reader, output io.Writer) error {
 						return err
 					}
 				}
-				result = map[string]any{"capabilities": map[string]any{"textDocumentSync": map[string]any{"openClose": true, "change": 1}, "hoverProvider": true, "definitionProvider": true, "referencesProvider": true, "renameProvider": true}}
+				result = map[string]any{"capabilities": map[string]any{"textDocumentSync": map[string]any{"openClose": true, "change": 1}, "hoverProvider": true, "definitionProvider": true, "referencesProvider": true}}
 			}
 		case "initialized":
 			ready = initialized
@@ -185,7 +183,7 @@ func Serve(config Config, input io.Reader, output io.Writer) error {
 				state.Documents[uri] = old
 			case "textDocument/didClose":
 				delete(state.Documents, uri)
-			case "textDocument/hover", "textDocument/definition", "textDocument/references", "textDocument/rename":
+			case "textDocument/hover", "textDocument/definition", "textDocument/references":
 				if _, exists := state.Documents[uri]; !exists {
 					return fmt.Errorf("open %s before querying it", relative)
 				}
@@ -208,7 +206,7 @@ func Serve(config Config, input io.Reader, output io.Writer) error {
 					if config.EmptyReferences {
 						result = []Location{}
 					} else {
-						locations := state.references(params.Context.IncludeDeclaration, false)
+						locations := state.references(params.Context.IncludeDeclaration)
 						if params.Context.IncludeDeclaration {
 							for i, j := 0, len(locations)-1; i < j; i, j = i+1, j-1 {
 								locations[i], locations[j] = locations[j], locations[i]
@@ -216,32 +214,20 @@ func Serve(config Config, input io.Reader, output io.Writer) error {
 						}
 						result = locations
 					}
-				case "textDocument/rename":
-					if len(signature) > 0 && params.NewName != signature[1] {
-						if !regexp.MustCompile(`^[A-Za-z_][A-Za-z_0-9]*$`).MatchString(params.NewName) {
-							return fmt.Errorf("invalid newName")
-						}
-						changes := state.rename(params.NewName)
-						if config.ReverseEdits {
-							for uri, edits := range changes {
-								for i, j := 0, len(edits)-1; i < j; i, j = i+1, j-1 {
-									edits[i], edits[j] = edits[j], edits[i]
-								}
-								changes[uri] = edits
-							}
-						}
-						result = map[string]any{"changes": changes}
-					}
 				}
 			default:
 				protocolError = map[string]any{"code": -32601, "message": "Method not found"}
 			}
 			if (message.Method == "textDocument/didOpen" || message.Method == "textDocument/didChange") && !config.MissingDiagnostics {
 				document := state.Documents[uri]
-				if err := notify("textDocument/publishDiagnostics", map[string]any{"uri": uri, "version": document.Version, "diagnostics": state.diagnostics(document)}); err != nil {
+				publication := map[string]any{"uri": uri, "diagnostics": state.diagnostics(document)}
+				if !config.UnversionedDiagnostics && clientVersionSupport {
+					publication["version"] = document.Version
+				}
+				if err := notify("textDocument/publishDiagnostics", publication); err != nil {
 					return err
 				}
-				if config.StaleDiagnostics && document.Version > 1 {
+				if config.StaleDiagnostics && clientVersionSupport && document.Version > 1 {
 					if err := notify("textDocument/publishDiagnostics", map[string]any{"uri": uri, "version": document.Version - 1, "diagnostics": []map[string]any{{"message": "Stale diagnostic must be ignored"}}}); err != nil {
 						return err
 					}

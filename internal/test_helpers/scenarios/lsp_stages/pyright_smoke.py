@@ -26,23 +26,25 @@ def main():
             os.chdir(folder)
             Path("pricing.py").write_text("def total(price: int, quantity: int) -> int:\n    return price * quantity\n")
             Path("checkout.py").write_text("from pricing import total as invoice_total\n\namount = invoice_total(250, 2)\n")
-            server = reference.LanguageServer({"command": command, "args": ["--stdio"], "languageId": "python"})
+            Path("pyrightconfig.json").write_text(json.dumps({"typeCheckingMode": "basic"}))
+            server = reference.LanguageServer({"command": command, "args": ["--stdio"], "extensionToLanguage": {".py": "python"}})
             try:
                 server.initialize()
-                hover = server.tool({"operation": "hover", "file_path": "pricing.py", "line": 0, "character": 4})
+                hover = server.tool({"operation": "hover", "filePath": "pricing.py", "line": 1, "character": 5})
                 assert "price: int" in json.dumps(hover), hover
-                definition = server.tool({"operation": "definition", "file_path": "checkout.py", "line": 2, "character": 9})
+                definition = server.tool({"operation": "goToDefinition", "filePath": "checkout.py", "line": 3, "character": 10})
                 assert "pricing.py" in json.dumps(definition), definition
-                references = server.tool({"operation": "references", "file_path": "pricing.py", "line": 0, "character": 4, "include_declaration": True})
+                references = server.tool({"operation": "findReferences", "filePath": "pricing.py", "line": 1, "character": 5})
                 assert len(references) >= 2, references
-                rename = server.request("textDocument/rename", {
-                    "textDocument": {"uri": Path("pricing.py").resolve().as_uri()},
-                    "position": {"line": 0, "character": 4}, "newName": "total_cents",
-                })
-                assert rename and ("changes" in rename or "documentChanges" in rename), rename
+                assert server.current_diagnostics("checkout.py")["diagnostics"] == []
+                good = Path("checkout.py").read_text()
+                bad = good.replace("(250,", '("250",')
+                errors = server.write("checkout.py", bad)["diagnostics"]
+                assert any("cannot be assigned" in issue["message"] for issue in errors), errors
+                assert server.write("checkout.py", good)["diagnostics"] == []
             finally:
                 server.close()
-            print("Pyright: initialize, hover, alias definition, references, rename response and shutdown passed")
+            print("Pyright: initialize, hover, alias definition, references, write synchronization, diagnostic feedback, repair and shutdown passed")
         finally:
             os.chdir(original_directory)
 

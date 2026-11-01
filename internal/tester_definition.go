@@ -116,10 +116,5 @@ var testerDefinition = tester_definition.TesterDefinition{
 			TestFunc: testLSPDiagnostics,
 			Timeout:  190 * time.Second,
 		},
-		{
-			Slug:     "rn7",
-			TestFunc: testLSPRename,
-			Timeout:  145 * time.Second,
-		},
 	},
 }

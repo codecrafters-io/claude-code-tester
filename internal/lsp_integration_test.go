@@ -45,7 +45,7 @@ from pathlib import Path
 parser=argparse.ArgumentParser();parser.add_argument('-p');parser.parse_args()
 server=None
 if Path('.lsp.json').exists():
-    config=json.loads(Path('.lsp.json').read_text())
+    config=next(iter(json.loads(Path('.lsp.json').read_text()).values()))
     server=subprocess.Popen([config['command'],*config['args']],stdin=subprocess.PIPE,stdout=subprocess.PIPE)
     body=json.dumps({'jsonrpc':'2.0','id':1,'method':'initialize','params':{'processId':os.getpid(),'rootUri':Path.cwd().as_uri(),'capabilities':{}}}).encode()
     server.stdin.write(f'Content-Length: {len(body)}\r\n\r\n'.encode()+body);server.stdin.flush()
@@ -71,17 +71,21 @@ func TestLSPRejectsBrokenClients(t *testing.T) {
 	reference, err := os.ReadFile("test_helpers/scenarios/lsp_stages/users_code_pass_all/app/main.py")
 	require.NoError(t, err)
 	cases := []struct{ name, slug, from, to, want string }{
-		{"model-before-initialize", "ir2", "server.initialize()", "run_agent(arguments.p, None)\n            server.initialize()", "read initialization before calling the LLM"},
-		{"discarded-hover", "hv2", "return result\n        prepared", "return None\n        prepared", "server result did not reach"},
+		{"missing-initialized", "ir2", `self.send("initialized", {})`, "pass", "send initialized"},
+		{"tool-coordinates-not-converted", "hv2", `"line": arguments["line"] - 1`, `"line": arguments["line"]`, "expected hover"},
+		{"references-declaration-omitted", "rf4", `{"includeDeclaration": True}`, `{"includeDeclaration": False}`, "includeDeclaration: true"},
+		{"unversioned-diagnostics-discarded", "dg6", `version = diagnostic.get("version")`, `version = diagnostic.get("version")
+            if version is None:
+                return`, "Return an error diagnostic from the preceding Write before the model can choose a repair"},
+		{"cached-unversioned-diagnostics", "dg6", `before = self.diagnostic_ticks.get(uri, 0)`, `before = -1`, "Return an error diagnostic from the preceding Write before the model can choose a repair"},
+		{"discarded-hover", "hv2", "        return result\n\n    def close", "        return None\n\n    def close", "server result did not reach"},
 		{"unsynchronized-write", "sy5", `self.send("textDocument/didChange", {`, `self.send("textDocument/didNotChange", {`, "stale text"},
-		{"forward-rename-edits", "rn7", "sorted(replacements, reverse=True)", "sorted(replacements)", "rename"},
-		{"codepoint-rename-columns", "rn7", `len(prefix.decode("utf-16-le"))`, `position["character"]`, "rename"},
 		{"timeout-as-empty-diagnostics", "dg6", `            self.receive()
-        return self.diagnostics[uri]`, `            try:
+        return {"uri": uri, "diagnostics": self.diagnostics[uri]["diagnostics"]}`, `            try:
                 self.receive()
             except TimeoutError:
-                return {"uri": uri, "version": version, "diagnostics": []}
-        return self.diagnostics[uri]`, "missing diagnostics must be an error"},
+                return {"uri": uri, "diagnostics": []}
+        return {"uri": uri, "diagnostics": self.diagnostics[uri]["diagnostics"]}`, "missing diagnostics must be an error"},
 	}
 	for _, testCase := range cases {
 		t.Run(testCase.name, func(t *testing.T) {
