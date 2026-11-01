@@ -80,5 +80,14 @@ var testerDefinition = tester_definition.TesterDefinition{
 			TestFunc: testSkillsFork,
 			Timeout:  60 * time.Second,
 		},
+		// Extension: LSP. Each case gets 45 seconds plus setup headroom.
+		{Slug: "ls1", TestFunc: testLSPInitialize, Timeout: 100 * time.Second},
+		{Slug: "ir2", TestFunc: testLSPInitializeResponse, Timeout: 145 * time.Second},
+		{Slug: "hv2", TestFunc: testLSPHover, Timeout: 190 * time.Second},
+		{Slug: "df3", TestFunc: testLSPDefinition, Timeout: 145 * time.Second},
+		{Slug: "rf4", TestFunc: testLSPReferences, Timeout: 145 * time.Second},
+		{Slug: "sy5", TestFunc: testLSPSynchronize, Timeout: 190 * time.Second},
+		{Slug: "dg6", TestFunc: testLSPDiagnostics, Timeout: 190 * time.Second},
+		{Slug: "rn7", TestFunc: testLSPRename, Timeout: 145 * time.Second},
 	},
 }

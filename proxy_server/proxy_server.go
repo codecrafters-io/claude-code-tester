@@ -20,11 +20,17 @@ import (
 // The returned recorder holds every request the user's program sent. Stages
 // that assert only on stdout can ignore it.
 func StartProxyServer(stageHarness *test_case_harness.TestCaseHarness) *RequestRecorder {
+	recorder, _ := StartProxyServerWithCleanup(stageHarness)
+	return recorder
+}
+
+// StartProxyServerWithCleanup lets multi-run stages release the port between runs.
+func StartProxyServerWithCleanup(stageHarness *test_case_harness.TestCaseHarness) (*RequestRecorder, func()) {
 	proxyServer, requestRecorder := newProxyServer()
 	proxyServer.Start()
 	proxyServer.registerTeardown(stageHarness)
 
-	return requestRecorder
+	return requestRecorder, func() { _ = proxyServer.server.Close() }
 }
 
 type proxyServer struct {

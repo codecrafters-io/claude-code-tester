@@ -6,12 +6,21 @@ import (
 	"net/http"
 	"slices"
 	"sync"
+	"time"
 )
 
 // RequestRecorder keeps a copy of every request body that reaches the proxy.
 type RequestRecorder struct {
-	mutex         sync.Mutex
-	requestBodies []string
+	mutex          sync.Mutex
+	requestBodies  []string
+	firstRequestAt time.Time
+}
+
+// FirstRequestAt lets lifecycle tests compare initialization with the first API call.
+func (r *RequestRecorder) FirstRequestAt() time.Time {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+	return r.firstRequestAt
 }
 
 // WrapHandler copies each request body before passing the request on. The body
@@ -42,5 +51,8 @@ func (r *RequestRecorder) appendRequestBody(requestBody string) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 
+	if r.firstRequestAt.IsZero() {
+		r.firstRequestAt = time.Now()
+	}
 	r.requestBodies = append(r.requestBodies, requestBody)
 }

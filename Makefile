@@ -97,3 +97,35 @@ setup:
 	echo "uv is now installed!"
 
 	echo "Setup complete!"
+
+# LSP extension test cases
+define LSP_STAGES
+[{\"slug\":\"ls1\",\"tester_log_prefix\":\"stage-1\",\"title\":\"Stage #1: Send the initialization request\"},{\"slug\":\"ir2\",\"tester_log_prefix\":\"stage-2\",\"title\":\"Stage #2: Read the initialization response\"},{\"slug\":\"hv2\",\"tester_log_prefix\":\"stage-3\",\"title\":\"Stage #3: Look up a symbol's type\"},{\"slug\":\"df3\",\"tester_log_prefix\":\"stage-4\",\"title\":\"Stage #4: Go to a definition\"},{\"slug\":\"rf4\",\"tester_log_prefix\":\"stage-5\",\"title\":\"Stage #5: Find a symbol's references\"},{\"slug\":\"sy5\",\"tester_log_prefix\":\"stage-6\",\"title\":\"Stage #6: Keep the server up to date\"},{\"slug\":\"dg6\",\"tester_log_prefix\":\"stage-7\",\"title\":\"Stage #7: Read diagnostics after an edit\"},{\"slug\":\"rn7\",\"tester_log_prefix\":\"stage-8\",\"title\":\"Stage #8: Rename a symbol across files\"}]
+endef
+
+.PHONY: test_lsp_offline test_lsp_with_users_code record_lsp_fixtures
+
+# Uses the same stage checks with a deterministic model, without API credentials.
+test_lsp_offline: build
+	CODECRAFTERS_LSP_OFFLINE=1 OPENROUTER_BASE_URL=http://localhost:10000/api/v1 OPENROUTER_API_KEY=dummy-api-key $(MAKE) run_lsp_reference
+
+# Uses the existing OpenRouter proxy and CODECRAFTERS_SECRET_OPENROUTER_API_KEY.
+test_lsp_with_users_code: build
+	OPENROUTER_BASE_URL=http://localhost:10000/api/v1 OPENROUTER_API_KEY=dummy-api-key $(MAKE) run_lsp_reference
+
+run_lsp_reference:
+	$(call run_test,internal/test_helpers/scenarios/lsp_stages/users_code_pass_all,$(LSP_STAGES))
+
+record_lsp_fixtures:
+	CODECRAFTERS_RECORD_FIXTURES=true TESTER_DIR=$(shell pwd) go test -count=1 -run '^TestLSPStagesOffline$$' ./internal
+
+.PHONY: test_lsp test_lsp_with_pyright run_lsp_reference
+
+# Recorded stage fixtures, negative clients, YAML registration and fixture unit tests.
+test_lsp:
+	TESTER_DIR=$(shell pwd) go test -count=1 -run '^Test(LSP|StagesMatchYAML)' ./internal
+	go test -count=1 ./internal/lsp_manager ./proxy_server
+
+PYRIGHT_LANGSERVER ?= pyright-langserver
+test_lsp_with_pyright:
+	python3 internal/test_helpers/scenarios/lsp_stages/pyright_smoke.py --server "$(PYRIGHT_LANGSERVER)"

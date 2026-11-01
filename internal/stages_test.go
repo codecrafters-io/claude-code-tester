@@ -2,6 +2,10 @@ package internal
 
 import (
 	"os"
+	"os/exec"
+	"path/filepath"
+
+	"github.com/stretchr/testify/require"
 	"regexp"
 	"testing"
 
@@ -16,11 +20,13 @@ var skillsStageSlugs = []string{"vh1", "jd8", "wd2", "sk5", "tq1", "gq2", "mj2"}
 var skillsStageSlugsRealClaudeCode = []string{"vh1", "jd8", "wd2", "tq1", "gq2", "mj2"}
 
 func TestStages(t *testing.T) {
+	t.Setenv("CODECRAFTERS_LSP_FIXTURE_BINARY", lspFixtureBinary(t))
 	os.Setenv("CODECRAFTERS_RANDOM_SEED", "1234567890")
 	os.Setenv("OPENROUTER_BASE_URL", "http://localhost:10000/api/v1")
 	os.Setenv("OPENROUTER_API_KEY", "dummy-api-key")
 
 	testCases := map[string]tester_utils_testing.TesterOutputTestCase{
+		"lsp_stages_users_code_pass_all": lspOutputTestCase(),
 		"base_stages_pass_all": {
 			StageSlugs:          []string{"yy2", "aq1", "md6", "ff2", "oz7", "oq5"},
 			CodePath:            "./test_helpers/pass_all",
@@ -99,4 +105,48 @@ func normalizeTesterOutput(testerOutput []byte) []byte {
 	normalized := userProgramLinePattern.ReplaceAll(testerOutput, nil)
 
 	return requestCountPattern.ReplaceAll(normalized, []byte("sent N request(s)"))
+}
+
+var lspStageSlugs = []string{"ls1", "ir2", "hv2", "df3", "rf4", "sy5", "dg6", "rn7"}
+
+// All LSP stages pass through the real reference-agent loop without a paid model.
+func TestLSPStagesOffline(t *testing.T) {
+	// Arrange
+	t.Setenv("CODECRAFTERS_RANDOM_SEED", "1234567890")
+	t.Setenv("CODECRAFTERS_LSP_OFFLINE", "1")
+	t.Setenv("CODECRAFTERS_LSP_FIXTURE_BINARY", lspFixtureBinary(t))
+	t.Setenv("OPENROUTER_BASE_URL", "http://localhost:10000/api/v1")
+	t.Setenv("OPENROUTER_API_KEY", "dummy-api-key")
+
+	// Act and Assert
+	tester_utils_testing.TestTesterOutput(t, testerDefinition, map[string]tester_utils_testing.TesterOutputTestCase{
+		"lsp_stages_users_code_pass_all": lspOutputTestCase(),
+	})
+}
+
+func lspOutputTestCase() tester_utils_testing.TesterOutputTestCase {
+	return tester_utils_testing.TesterOutputTestCase{
+		StageSlugs:          lspStageSlugs,
+		CodePath:            "./test_helpers/scenarios/lsp_stages/users_code_pass_all",
+		ExpectedExitCode:    0,
+		StdoutFixturePath:   "./test_helpers/fixtures/lsp_stages/users_code_pass_all",
+		NormalizeOutputFunc: normalizeLSPTesterOutput,
+	}
+}
+
+func lspFixtureBinary(t *testing.T) string {
+	t.Helper()
+	binary := filepath.Join(t.TempDir(), "lsp-tester")
+	command := exec.Command("go", "build", "-o", binary, "./cmd/tester")
+	command.Dir = ".."
+	output, err := command.CombinedOutput()
+	require.NoError(t, err, "building the stdio fixture: %s", output)
+	return binary
+}
+
+var lspConfigurationPattern = regexp.MustCompile(`(?m)(Wrote \.lsp\.json: ).*$`)
+
+func normalizeLSPTesterOutput(output []byte) []byte {
+	// Executable and control-directory paths vary by checkout and test run.
+	return lspConfigurationPattern.ReplaceAll(normalizeTesterOutput(output), []byte(`${1}<configured stdio fixture>`))
 }

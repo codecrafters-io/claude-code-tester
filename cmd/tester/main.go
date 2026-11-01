@@ -5,9 +5,13 @@ import (
 	"strings"
 
 	"github.com/codecrafters-io/claude-code-tester/internal"
+	"github.com/codecrafters-io/claude-code-tester/internal/lsp_manager"
 )
 
 func main() {
+	if len(os.Args) == 3 && os.Args[1] == "--lsp-fixture" {
+		os.Exit(lsp_manager.RunServer(os.Args[2]))
+	}
 	os.Exit(internal.RunCLI(envMap()))
 }
 
