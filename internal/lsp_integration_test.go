@@ -2,10 +2,14 @@ package internal
 
 import (
 	"encoding/json"
+	"net"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -67,6 +71,7 @@ func TestLSPRejectsBrokenClients(t *testing.T) {
 	reference, err := os.ReadFile("test_helpers/scenarios/lsp_stages/users_code_pass_all/app/main.py")
 	require.NoError(t, err)
 	cases := []struct{ name, slug, from, to, want string }{
+		{"model-before-initialize", "ir2", "server.initialize()", "run_agent(arguments.p, None)\n            server.initialize()", "read initialization before calling the LLM"},
 		{"discarded-hover", "hv2", "return result\n        prepared", "return None\n        prepared", "server result did not reach"},
 		{"unsynchronized-write", "sy5", `self.send("textDocument/didChange", {`, `self.send("textDocument/didNotChange", {`, "stale text"},
 		{"forward-rename-edits", "rn7", "sorted(replacements, reverse=True)", "sorted(replacements)", "rename"},
@@ -91,4 +96,29 @@ func TestLSPRejectsBrokenClients(t *testing.T) {
 			require.Contains(t, output, testCase.want)
 		})
 	}
+}
+
+// A legacy model server on port 10000 cannot contaminate LSP stage recordings.
+func TestLSPIsolatesLegacyModelTraffic(t *testing.T) {
+	// Arrange
+	binary := lspFixtureBinary(t)
+	var legacyRequests atomic.Int64
+	legacy := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		legacyRequests.Add(1)
+		http.Error(w, "unrelated model endpoint", http.StatusUnauthorized)
+	}))
+	listener, err := net.Listen("tcp", "127.0.0.1:10000")
+	require.NoError(t, err)
+	legacy.Listener = listener
+	legacy.Start()
+	defer legacy.Close()
+	reference, err := os.ReadFile("test_helpers/scenarios/lsp_stages/users_code_pass_all/app/main.py")
+	require.NoError(t, err)
+	directory := lspScenario(t, string(reference))
+	// Act
+	output, err := runLSPScenario(t, binary, directory, "ir2")
+	// Assert
+	require.NoError(t, err, output)
+	require.Zero(t, legacyRequests.Load())
+	require.Contains(t, output, "Test passed")
 }

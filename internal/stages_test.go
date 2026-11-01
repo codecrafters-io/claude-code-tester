@@ -4,12 +4,11 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-
-	"github.com/stretchr/testify/require"
 	"regexp"
 	"testing"
 
 	tester_utils_testing "github.com/codecrafters-io/tester-utils/testing"
+	"github.com/stretchr/testify/require"
 )
 
 var skillsStageSlugs = []string{"vh1", "jd8", "wd2", "sk5", "tq1", "gq2", "mj2"}
@@ -144,9 +143,12 @@ func lspFixtureBinary(t *testing.T) string {
 	return binary
 }
 
+var lspColorPattern = regexp.MustCompile(`\x1b\[[0-9;]*m`)
+
 var lspConfigurationPattern = regexp.MustCompile(`(?m)(Wrote \.lsp\.json: ).*$`)
 
 func normalizeLSPTesterOutput(output []byte) []byte {
-	// Executable and control-directory paths vary by checkout and test run.
-	return lspConfigurationPattern.ReplaceAll(normalizeTesterOutput(output), []byte(`${1}<configured stdio fixture>`))
+	// Terminal colors and executable/control paths vary across CI and local runs.
+	colorless := lspColorPattern.ReplaceAll(normalizeTesterOutput(output), nil)
+	return lspConfigurationPattern.ReplaceAll(colorless, []byte(`${1}<configured stdio fixture>`))
 }

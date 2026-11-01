@@ -33,6 +33,22 @@ func StartProxyServerWithCleanup(stageHarness *test_case_harness.TestCaseHarness
 	return requestRecorder, func() { _ = proxyServer.server.Close() }
 }
 
+// StartIsolatedProxyServer keeps late requests from earlier stages out of this recording.
+func StartIsolatedProxyServer(stageHarness *test_case_harness.TestCaseHarness) (*RequestRecorder, string, func(), error) {
+	proxy, recorder := newProxyServer()
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		return nil, "", nil, err
+	}
+	go func() {
+		if err := proxy.server.Serve(listener); err != nil && err != http.ErrServerClosed {
+			panic(fmt.Sprintf("Codecrafters Internal Error - Failed to start isolated proxy server: %s", err))
+		}
+	}()
+	proxy.registerTeardown(stageHarness)
+	return recorder, "http://" + listener.Addr().String() + "/api/v1", func() { _ = proxy.server.Close() }, nil
+}
+
 type proxyServer struct {
 	server *http.Server
 }

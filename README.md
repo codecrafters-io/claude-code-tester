@@ -37,9 +37,10 @@ make test_lsp_offline
 The agent still performs its real HTTP/tool loop and talks to the stdio server.
 These checks cover 26 cases: initialization, partial frames, null/error results,
 aliases, document versions, diagnostics, and multi-file UTF-16 rename edits.
-They include a sending-only stage-one client and five rejected broken clients.
-The test model uses localhost port 10000, as the existing OpenRouter proxy does.
-Run these targets serially.
+They include a sending-only stage-one client and six rejected broken clients.
+Each LSP case starts its own model endpoint on an OS-assigned loopback port. The
+submission receives that endpoint through `OPENROUTER_BASE_URL`, keeping
+requests from earlier tests out of the current recording.
 
 To run the same stages with the course's live model, set
 `CODECRAFTERS_SECRET_OPENROUTER_API_KEY` and run:
@@ -72,3 +73,22 @@ versioned publications after each open/change and includes that call in its
 reference set. The reference client ignores unversioned publications and reports
 a bounded error when current-version diagnostics are unavailable. This smoke
 check does not claim the course subset supports every language server.
+
+## CI and repository conventions
+
+`make test` runs the entire suite without Go's test cache, as Redis's tester
+does. `make test_offline` runs protocol checks, fixture comparisons, and unit
+tests. `make test_live` runs the existing `TestStages` scenarios against
+OpenRouter. Both groups run as separate CI jobs, so an invalid model credential
+cannot hide an offline protocol regression. No live tests are skipped or allowed
+to fail.
+
+The base and Skills Python scenarios pin Python 3.14 through `.python-version`,
+matching the course starter. This prevents uv from selecting Python 3.15 when
+the locked native dependencies only support Python through 3.14.
+
+The tester follows Redis's slug-to-Go-function registration, synchronized course
+YAML, scenario fixtures, reference implementation, teardown, and flakiness-check
+patterns. LSP uses a controlled stdio fixture for repeatable protocol
+assertions; the separate live-model and Pyright checks retain their documented
+scope.

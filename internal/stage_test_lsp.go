@@ -19,6 +19,14 @@ import (
 
 func testLSP(stageHarness *test_case_harness.TestCaseHarness, slug string) error {
 	stageHarness.Executable.TimeoutInMilliseconds = 45 * 1000
+	originalURL, hadURL := os.LookupEnv("OPENROUTER_BASE_URL")
+	defer func() {
+		if hadURL {
+			_ = os.Setenv("OPENROUTER_BASE_URL", originalURL)
+		} else {
+			_ = os.Unsetenv("OPENROUTER_BASE_URL")
+		}
+	}()
 	for _, testCase := range lsp_manager.Cases(slug) {
 		stageHarness.Logger.Infof("Case: %s", testCase.Name)
 		workspace := workspace_manager.NewWorkspaceManager()
@@ -85,13 +93,21 @@ func testLSP(stageHarness *test_case_harness.TestCaseHarness, slug string) error
 		}
 		var recorder *proxy_server.RequestRecorder
 		var closeModel func()
+		var modelURL string
 		if os.Getenv("CODECRAFTERS_LSP_OFFLINE") == "1" {
-			recorder, closeModel, err = lsp_manager.StartOfflineModel(testCase.Actions)
+			recorder, modelURL, closeModel, err = lsp_manager.StartOfflineModel(testCase.Actions)
 			if err != nil {
 				return err
 			}
 		} else {
-			recorder, closeModel = proxy_server.StartProxyServerWithCleanup(stageHarness)
+			recorder, modelURL, closeModel, err = proxy_server.StartIsolatedProxyServer(stageHarness)
+			if err != nil {
+				return err
+			}
+		}
+		stageHarness.RegisterTeardownFunc(closeModel)
+		if err := os.Setenv("OPENROUTER_BASE_URL", modelURL); err != nil {
+			return err
 		}
 		stageHarness.Logger.Infof("$ ./your_program.sh -p %s", shellescape.Quote(testCase.Prompt))
 		result, runError := stageHarness.Executable.Run("-p", testCase.Prompt)

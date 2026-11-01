@@ -210,7 +210,7 @@ func Check(c Case, slug string, config Config, requests []string, firstRequest t
 		return nil
 	}
 	if initReplyAt == 0 || firstRequest.IsZero() || initReplyAt > firstRequest.UnixNano() {
-		return fmt.Errorf("read initialization before calling the LLM")
+		return fmt.Errorf("read initialization before calling the LLM (initialize reply: %d, first model request: %d)", initReplyAt, firstRequest.UnixNano())
 	}
 	if len(received) < 4 || received[1].Method != "initialized" || received[len(received)-2].Method != "shutdown" || received[len(received)-1].Method != "exit" {
 		return fmt.Errorf("expected initialize, initialized, document operations, shutdown, exit in that order")

@@ -59,3 +59,15 @@ func TestNormalizeTesterOutputKeepsWhatTheTesterPrinted(t *testing.T) {
 		})
 	}
 }
+
+// LSP fixtures compare identically when a terminal adds ANSI color codes.
+func TestLSPNormalizeOutputIgnoresTerminalColors(t *testing.T) {
+	// Arrange
+	plain := "[tester::#HV2] Test failed\n"
+	colored := "\x1b[33m[tester::#HV2] \x1b[0m\x1b[91mTest failed\x1b[0m\n"
+	// Act
+	normalized := normalizeLSPTesterOutput([]byte(colored))
+	// Assert
+	assert.Equal(t, plain, string(normalized))
+	assert.Equal(t, normalizeLSPTesterOutput([]byte(plain)), normalized)
+}

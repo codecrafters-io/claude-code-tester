@@ -101,15 +101,15 @@ func ScriptedModel(actions []Action) http.Handler {
 	})
 }
 
-func StartOfflineModel(actions []Action) (*proxy_server.RequestRecorder, func(), error) {
-	listener, err := net.Listen("tcp", "127.0.0.1:10000")
+func StartOfflineModel(actions []Action) (*proxy_server.RequestRecorder, string, func(), error) {
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
-		return nil, nil, err
+		return nil, "", nil, err
 	}
 	recorder := &proxy_server.RequestRecorder{}
 	server := &http.Server{Handler: recorder.WrapHandler(ScriptedModel(actions)), ReadHeaderTimeout: 5 * time.Second}
 	go server.Serve(listener)
-	return recorder, func() { server.Close() }, nil
+	return recorder, "http://" + listener.Addr().String() + "/api/v1", func() { server.Close() }, nil
 }
 
 // ToolResults retains IDs and result boundaries. Searching concatenated API

@@ -3,6 +3,24 @@ name: Test
 on: push
 
 jobs:
+  offline:
+    runs-on: ubuntu-latest
+    env:
+      EXECUTABLE_MEMORY_LIMIT_IN_MB: "8192"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Go
+        uses: actions/setup-go@v6.1.0
+        with:
+          go-version: 1.25.5
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - name: Run offline tests
+        run: make test_offline
+
   test:
     runs-on: ubuntu-latest
     env:
@@ -24,12 +42,12 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.13'
+          python-version: '3.14'
 
       - name: Install uv
         run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-      - name: Run tests
-        run: make test
+      - name: Run live-model tests
+        run: make test_live

@@ -1,4 +1,4 @@
-.PHONY: release build test test_with_bash copy_course_file
+.PHONY: release build test test_offline test_live test_with_bash copy_course_file
 
 # Skill stacking needs 2.1.199 and the $0/$1 argument shorthand landed after
 # 2.1.14, so the skills stages fail against anything older.
@@ -15,7 +15,14 @@ build:
 	go build -o dist/main.out ./cmd/tester
 
 test:
-	TESTER_DIR=$(shell pwd) go test -v ./...
+	TESTER_DIR=$(shell pwd) go test -count=1 -v ./...
+
+# Keep deterministic protocol checks visible when live-model credentials fail.
+test_offline:
+	TESTER_DIR=$(shell pwd) go test -count=1 -v -skip '^TestStages$$' ./...
+
+test_live:
+	TESTER_DIR=$(shell pwd) go test -count=1 -v -run '^TestStages$$' ./internal
 
 test_without_local_caching:
 	go clean -testcache
