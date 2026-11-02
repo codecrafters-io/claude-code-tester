@@ -21,11 +21,11 @@ func Cases(slug string) []Case {
 	definition := Action{Operation: "goToDefinition", File: "checkout.py", Line: 4, Character: 11}
 	references := query("findReferences")
 	switch slug {
-	case "lc1":
+	case "cx7":
 		return []Case{
 			{Name: "connected-tool-advertised", Prompt: "Use only Read to inspect checkout.py and pricing.py. Explain how checkout uses the pricing function.", Actions: []Action{{Operation: "read", File: "checkout.py"}, {Operation: "read", File: "pricing.py"}}},
 		}
-	case "df3":
+	case "gz6":
 		prompt := "Use LSP goToDefinition on checkout.py at line 5, character 12. Read the returned implementation and explain which total is called; preview.total is unrelated."
 		overloaded := Project(false)
 		overloaded["pricing.pyi"] = "\n\ndef total(price: int, quantity: int) -> int: ...\n"
@@ -35,7 +35,7 @@ func Cases(slug string) []Case {
 			{Name: "missing-definition", Prompt: prompt, Actions: []Action{definition}, Config: Config{Definition: "null"}},
 			{Name: "definition-error", Prompt: prompt, Actions: []Action{definition}, Config: Config{Definition: "error"}},
 		}
-	case "rf4":
+	case "rb6":
 		prompt := "Use LSP findReferences on pricing.py at line 1, character 5. Identify every affected caller before changing its return type. Preserve the returned locations; preview.total and comments are unrelated."
 		minimal := Project(false)
 		delete(minimal, "reports.py")
@@ -44,7 +44,7 @@ func Cases(slug string) []Case {
 			{Name: "affected-callers-across-files", Prompt: prompt, Actions: []Action{references}},
 			{Name: "no-references", Prompt: prompt, Actions: []Action{references}, Config: Config{EmptyReferences: true}},
 		}
-	case "sy5":
+	case "bn2":
 		changed := strings.Replace(files["checkout.py"], "from pricing", "from discounts", 1)
 		write := Action{Operation: "write", File: "checkout.py", Content: changed}
 		restore := write
@@ -56,7 +56,7 @@ func Cases(slug string) []Case {
 			{Name: "write-before-open", Prompt: "Use Write to change checkout.py's import from pricing to discounts, then look up invoice_total at line 5, character 12.", Actions: []Action{write, definition}, WantDefinitions: []string{"discounts.py"}},
 			{Name: "failed-write-keeps-analysis", Prompt: "Look up invoice_total in checkout.py at line 5, character 12. Try Write on the directory . with content invalid. Repeat the lookup.", Actions: []Action{definition, {Operation: "write", File: ".", Content: "invalid"}, definition}, WantDefinitions: []string{"pricing.py", "pricing.py"}},
 		}
-	case "dg6":
+	case "ql9":
 		api := Action{Operation: "write", File: "pricing.py", Content: PriceAPI}
 		reports := Action{Operation: "write", File: "reports.py", Content: strings.ReplaceAll(strings.ReplaceAll(files["reports.py"], "total(250, 2)", `total(250, 2)["cents"]`), "total(100, 1)", `total(100, 1)["cents"]`)}
 		// Replay a partial migration: the caller stores the new object but still returns it as int.

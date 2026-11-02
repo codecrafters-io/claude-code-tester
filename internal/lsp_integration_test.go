@@ -56,18 +56,18 @@ func TestLSPRejectsBrokenClients(t *testing.T) {
 	reference, err := os.ReadFile("test_helpers/scenarios/lsp_stages/users_code_pass_all/app/main.py")
 	require.NoError(t, err)
 	cases := []struct{ name, slug, from, to, want string }{
-		{"setup-without-configuration-request", "lc1", `self.languages = self.transport.call("configuration", {})["extensionToLanguage"]`, `self.languages = {".py": "python"}`, "call configuration with {}"},
-		{"setup-without-lsp-tool", "lc1", `"tools": TOOLS`, `"tools": [tool for tool in TOOLS if tool["function"]["name"] != "LSP"]`, "advertise the supplied LSP tool"},
-		{"setup-incomplete-tool-schema", "lc1", `"required": ["operation", "filePath", "line", "character"]`, `"required": ["operation", "filePath", "line"]`, "required character of type integer"},
-		{"tool-coordinates-not-converted", "df3", `"line": arguments["line"] - 1`, `"line": arguments["line"]`, "expected goToDefinition"},
-		{"discarded-definition", "df3", "        return result\n\n", "        return None\n\n", "server result did not reach"},
-		{"references-declaration-omitted", "rf4", `{"includeDeclaration": True}`, `{"includeDeclaration": False}`, "includeDeclaration: true"},
-		{"unsynchronized-write", "sy5", `self.send("textDocument/didChange", {`, `self.send("textDocument/didNotChange", {`, "stale text"},
-		{"unversioned-diagnostics-discarded", "dg6", `version = diagnostic.get("version")`, `version = diagnostic.get("version")
+		{"setup-without-configuration-request", "cx7", `self.languages = self.transport.call("configuration", {})["extensionToLanguage"]`, `self.languages = {".py": "python"}`, "call configuration with {}"},
+		{"setup-without-lsp-tool", "cx7", `"tools": TOOLS`, `"tools": [tool for tool in TOOLS if tool["function"]["name"] != "LSP"]`, "advertise the supplied LSP tool"},
+		{"setup-incomplete-tool-schema", "cx7", `"required": ["operation", "filePath", "line", "character"]`, `"required": ["operation", "filePath", "line"]`, "required character of type integer"},
+		{"tool-coordinates-not-converted", "gz6", `"line": arguments["line"] - 1`, `"line": arguments["line"]`, "expected goToDefinition"},
+		{"discarded-definition", "gz6", "        return result\n\n", "        return None\n\n", "server result did not reach"},
+		{"references-declaration-omitted", "rb6", `{"includeDeclaration": True}`, `{"includeDeclaration": False}`, "includeDeclaration: true"},
+		{"unsynchronized-write", "bn2", `self.send("textDocument/didChange", {`, `self.send("textDocument/didNotChange", {`, "stale text"},
+		{"unversioned-diagnostics-discarded", "ql9", `version = diagnostic.get("version")`, `version = diagnostic.get("version")
             if version is None:
                 continue`, "Return an error diagnostic from the preceding Write"},
-		{"cached-unversioned-diagnostics", "dg6", `before = self.diagnostic_ticks.get(uri, 0)`, `before = -1`, "Return an error diagnostic from the preceding Write"},
-		{"timeout-as-empty-diagnostics", "dg6", `raise TimeoutError("Diagnostic feedback error: no fresh publication")`, `return {"uri":uri,"diagnostics":[]}`, "missing diagnostics must be an error"},
+		{"cached-unversioned-diagnostics", "ql9", `before = self.diagnostic_ticks.get(uri, 0)`, `before = -1`, "Return an error diagnostic from the preceding Write"},
+		{"timeout-as-empty-diagnostics", "ql9", `raise TimeoutError("Diagnostic feedback error: no fresh publication")`, `return {"uri":uri,"diagnostics":[]}`, "missing diagnostics must be an error"},
 	}
 	for _, testCase := range cases {
 		t.Run(testCase.name, func(t *testing.T) {
@@ -102,7 +102,7 @@ func TestLSPIsolatesLegacyModelTraffic(t *testing.T) {
 	require.NoError(t, err)
 	directory := lspScenario(t, string(reference))
 	// Act
-	output, err := runLSPScenario(t, binary, directory, "df3")
+	output, err := runLSPScenario(t, binary, directory, "gz6")
 	// Assert
 	require.NoError(t, err, output)
 	require.Zero(t, legacyRequests.Load())
@@ -118,7 +118,7 @@ func TestLSPSetupWithoutNavigation(t *testing.T) {
 	source := strings.Replace(string(reference), "    def tool(self, arguments):", "    def tool(self, arguments):\n        raise AssertionError(\"Navigation is not implemented\")", 1)
 	directory := lspScenario(t, source)
 	// Act
-	output, err := runLSPScenario(t, binary, directory, "lc1")
+	output, err := runLSPScenario(t, binary, directory, "cx7")
 	// Assert
 	require.NoError(t, err, output)
 	require.Contains(t, output, "Connected to the helper and advertised LSP; navigation is next")

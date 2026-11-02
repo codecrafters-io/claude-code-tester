@@ -171,7 +171,7 @@ func checkSetupTools(requests []string) error {
 }
 
 func Check(c Case, slug string, config Config, requests []string) error {
-	if slug == "lc1" {
+	if slug == "cx7" {
 		if err := checkSetupTools(requests); err != nil {
 			return err
 		}

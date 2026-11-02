@@ -20,11 +20,11 @@ Code" challenge.
 Five graded stages connect an LSP tool and diagnostic feedback to the existing
 agent loop:
 
-1. lc1: Set up the LSP connection.
-2. df3: Find the implementation.
-3. rf4: Find the affected callers.
-4. sy5: Keep the analysis current.
-5. dg6: Catch an error after editing.
+1. cx7: Set up the LSP connection.
+2. gz6: Find the implementation.
+3. rb6: Find the affected callers.
+4. bn2: Keep the analysis current.
+5. ql9: Catch an error after editing.
 
 The supplied transport starts the configured server, handles JSON-RPC framing
 and initialization, and queues notifications while requests are running. The
@@ -64,8 +64,9 @@ make an error. Final files, protocol traffic and matching tool results are check
 Navigation operations are goToDefinition and findReferences, with filePath and
 one-based UTF-16 coordinates. Protocol positions are zero-based. Configuration
 uses the product's named command/args/extensionToLanguage map. Plugin management,
-hover stages and rename are outside the extension. Current IDs remain provisional;
-retired ls1/ir2/hv2 IDs are not reallocated.
+hover stages and rename are outside the extension. Stage IDs use the first five
+slugs supplied from the backend generator on 2 November 2026; retired ls1/ir2/hv2
+IDs are not reallocated.
 
 Regenerate recorded output when prompts or cases change:
 

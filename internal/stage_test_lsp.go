@@ -116,7 +116,7 @@ func testLSP(stageHarness *test_case_harness.TestCaseHarness, slug string) error
 			return err
 		}
 		connectionURL := transport.URL
-		if slug == "lc1" {
+		if slug == "cx7" {
 			// Observe setup's configuration call without changing the supplied helper.
 			target, err := url.Parse(transport.URL)
 			if err != nil {
@@ -151,7 +151,7 @@ func testLSP(stageHarness *test_case_harness.TestCaseHarness, slug string) error
 		if result.ExitCode != 0 {
 			return fmt.Errorf("%s: program exited %d; stdout %q; stderr %q", testCase.Name, result.ExitCode, result.Stdout, result.Stderr)
 		}
-		if slug == "lc1" && configurationRequests.Load() == 0 {
+		if slug == "cx7" && configurationRequests.Load() == 0 {
 			return fmt.Errorf("%s: connect with the supplied client and call configuration with {}", testCase.Name)
 		}
 		if err := lsp_manager.Check(testCase, slug, config, recorder.RequestBodies()); err != nil {
@@ -162,16 +162,16 @@ func testLSP(stageHarness *test_case_harness.TestCaseHarness, slug string) error
 			stageHarness.Logger.Successf("Edit feedback for checkout.py: %s", lsp_manager.ArgumentTypeDiagnostic)
 			stageHarness.Logger.Successf("Repair feedback for checkout.py: diagnostics []")
 		}
-		if slug == "lc1" {
+		if slug == "cx7" {
 			stageHarness.Logger.Successf("Connected to the helper and advertised LSP; navigation is next")
 		}
-		if slug == "df3" && testCase.Config.Definition == "" {
+		if slug == "gz6" && testCase.Config.Definition == "" {
 			stageHarness.Logger.Successf("Resolved invoice_total to pricing.total; preview.total is unrelated")
 		}
-		if slug == "rf4" && !testCase.Config.EmptyReferences {
+		if slug == "rb6" && !testCase.Config.EmptyReferences {
 			stageHarness.Logger.Successf("Returned the affected pricing callers; excluded unrelated preview.total")
 		}
-		if slug == "sy5" && len(testCase.WantDefinitions) > 1 {
+		if slug == "bn2" && len(testCase.WantDefinitions) > 1 {
 			stageHarness.Logger.Successf("Definition lookup followed the updated import without restarting the server")
 		}
 		stageHarness.Logger.Successf("Case %s passed protocol, tool-result and file checks", testCase.Name)

@@ -17,7 +17,7 @@ func TestCheckRejectsInvalidInitialize(t *testing.T) {
 	require.NoError(t, appendEvent(config.Log, "sent", Message{JSONRPC: "2.0", ID: json.RawMessage(`1`), Error: json.RawMessage(`{"code":-32602,"message":"wrong processId"}`)}, ""))
 	require.NoError(t, appendEvent(config.Log, "ended", Message{}, ""))
 	// Act
-	err := Check(Case{}, "df3", config, []string{`{"messages":[]}`})
+	err := Check(Case{}, "gz6", config, []string{`{"messages":[]}`})
 	// Assert
 	require.ErrorContains(t, err, "invalid initialization request")
 }
@@ -30,7 +30,7 @@ func TestCheckRejectsRestartedServer(t *testing.T) {
 	second, _ := json.Marshal(Event{Direction: "received", PID: 2, Message: Message{Method: "initialize"}})
 	require.NoError(t, os.WriteFile(config.Log, append(append(first, '\n'), second...), 0600))
 	// Act
-	err := Check(Case{}, "sy5", config, []string{"{}"})
+	err := Check(Case{}, "bn2", config, []string{"{}"})
 	// Assert
 	require.ErrorContains(t, err, "one language-server process")
 }
@@ -44,7 +44,7 @@ func TestCheckAcceptsEOFClosingAfterInitialization(t *testing.T) {
 	require.NoError(t, appendEvent(config.Log, "received", Message{Method: "initialized"}, ""))
 	require.NoError(t, appendEvent(config.Log, "ended", Message{}, ""))
 	// Act
-	err := Check(Case{}, "df3", config, []string{`{"messages":[]}`})
+	err := Check(Case{}, "gz6", config, []string{`{"messages":[]}`})
 	// Assert
 	require.NoError(t, err)
 }
