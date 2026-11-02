@@ -17,13 +17,14 @@ Code" challenge.
 
 ## LSP extension
 
-Four graded stages connect an LSP tool and diagnostic feedback to the existing
+Five graded stages connect an LSP tool and diagnostic feedback to the existing
 agent loop:
 
-1. df3: Find the implementation.
-2. rf4: Find the affected callers.
-3. sy5: Keep the analysis current.
-4. dg6: Catch an error after editing.
+1. lc1: Set up the LSP connection.
+2. df3: Find the implementation.
+3. rf4: Find the affected callers.
+4. sy5: Keep the analysis current.
+5. dg6: Catch an error after editing.
 
 The supplied transport starts the configured server, handles JSON-RPC framing
 and initialization, and queues notifications while requests are running. The
@@ -31,6 +32,8 @@ tester provides CODECRAFTERS_LSP_URL to the submitted program. The native starte
 clients retrieve extensionToLanguage through the configuration action and call
 request, notify, and notifications through that local URL. Document language IDs
 come from configuration rather than a Python default.
+Setup checks the configuration request and conditional model-facing schema.
+It uses Read to inspect the example and passes before navigation is implemented.
 The local HTTP facade is course scaffolding; the server still speaks stdio LSP.
 Learners construct document messages, track versions, return tool results and
 choose how diagnostic feedback reaches the model. The helper never runs an agent.
@@ -43,8 +46,9 @@ make test_lsp
 make test_lsp_offline
 ```
 
-These commands cover 16 graded cases and seven deliberately broken clients:
-wrong coordinates, lost definition results, omitted declaration context,
+These commands cover 17 graded cases and eleven deliberately broken clients:
+missing configuration requests, missing or unconditional LSP advertisement,
+incomplete tool schemas, wrong coordinates, lost definition results, omitted declaration context,
 unsynchronized writes, discarded unversioned reports, reused cached feedback and
 false clean diagnostics on timeout. Separate transport tests cover fragmented
 startup, notifications during requests, failed initialization and process cleanup.

@@ -106,7 +106,7 @@ func normalizeTesterOutput(testerOutput []byte) []byte {
 	return requestCountPattern.ReplaceAll(normalized, []byte("sent N request(s)"))
 }
 
-var lspStageSlugs = []string{"df3", "rf4", "sy5", "dg6"}
+var lspStageSlugs = []string{"lc1", "df3", "rf4", "sy5", "dg6"}
 
 // All LSP stages pass through the real reference-agent loop without a paid model.
 func TestLSPStagesOffline(t *testing.T) {

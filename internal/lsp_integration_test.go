@@ -56,6 +56,10 @@ func TestLSPRejectsBrokenClients(t *testing.T) {
 	reference, err := os.ReadFile("test_helpers/scenarios/lsp_stages/users_code_pass_all/app/main.py")
 	require.NoError(t, err)
 	cases := []struct{ name, slug, from, to, want string }{
+		{"setup-without-configuration-request", "lc1", `self.languages = self.transport.call("configuration", {})["extensionToLanguage"]`, `self.languages = {".py": "python"}`, "call configuration with {}"},
+		{"setup-without-lsp-tool", "lc1", `if server or tool["function"]["name"] != "LSP"`, `if tool["function"]["name"] != "LSP"`, "advertise the supplied LSP tool"},
+		{"setup-lsp-without-connection", "lc1", `if server or tool["function"]["name"] != "LSP"`, `if True`, "omit the LSP tool"},
+		{"setup-incomplete-tool-schema", "lc1", `"required": ["operation", "filePath", "line", "character"]`, `"required": ["operation", "filePath", "line"]`, "required character of type integer"},
 		{"tool-coordinates-not-converted", "df3", `"line": arguments["line"] - 1`, `"line": arguments["line"]`, "expected goToDefinition"},
 		{"discarded-definition", "df3", "        return result\n\n", "        return None\n\n", "server result did not reach"},
 		{"references-declaration-omitted", "rf4", `{"includeDeclaration": True}`, `{"includeDeclaration": False}`, "includeDeclaration: true"},
@@ -104,4 +108,19 @@ func TestLSPIsolatesLegacyModelTraffic(t *testing.T) {
 	require.NoError(t, err, output)
 	require.Zero(t, legacyRequests.Load())
 	require.Contains(t, output, "Test passed")
+}
+
+// Setup passes before the agent implements any navigation operations.
+func TestLSPSetupWithoutNavigation(t *testing.T) {
+	// Arrange
+	binary := lspFixtureBinary(t)
+	reference, err := os.ReadFile("test_helpers/scenarios/lsp_stages/users_code_pass_all/app/main.py")
+	require.NoError(t, err)
+	source := strings.Replace(string(reference), "    def tool(self, arguments):", "    def tool(self, arguments):\n        raise AssertionError(\"Navigation is not implemented\")", 1)
+	directory := lspScenario(t, source)
+	// Act
+	output, err := runLSPScenario(t, binary, directory, "lc1")
+	// Assert
+	require.NoError(t, err, output)
+	require.Contains(t, output, "Connected to the helper and advertised LSP; navigation is next")
 }

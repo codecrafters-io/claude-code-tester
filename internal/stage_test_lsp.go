@@ -3,9 +3,14 @@ package internal
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"net/http/httputil"
+	"net/url"
 	"os"
 	"path/filepath"
 	"sort"
+	"sync/atomic"
 
 	"al.essio.dev/pkg/shellescape"
 	"github.com/codecrafters-io/claude-code-tester/internal/lsp_manager"
@@ -106,18 +111,40 @@ func testLSP(stageHarness *test_case_harness.TestCaseHarness, slug string) error
 		// The course owns startup and framing. The submitted agent owns document messages.
 		oldTransport, hadTransport := os.LookupEnv("CODECRAFTERS_LSP_URL")
 		var transport *lsp_transport.Transport
+		var setupProxy *httptest.Server
+		var configurationRequests atomic.Int64
 		if !testCase.NoConfig {
 			var transportErr error
 			transport, transportErr = lsp_transport.Start(filepath.Join(project, ".lsp.json"))
 			if transportErr != nil {
 				return transportErr
 			}
-			os.Setenv("CODECRAFTERS_LSP_URL", transport.URL)
+			connectionURL := transport.URL
+			if slug == "lc1" {
+				// Observe setup's configuration call without changing the supplied helper.
+				target, err := url.Parse(transport.URL)
+				if err != nil {
+					transport.Close()
+					return err
+				}
+				proxy := httputil.NewSingleHostReverseProxy(target)
+				setupProxy = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					if r.Method == http.MethodPost && r.URL.Path == "/configuration" {
+						configurationRequests.Add(1)
+					}
+					proxy.ServeHTTP(w, r)
+				}))
+				connectionURL = setupProxy.URL
+			}
+			os.Setenv("CODECRAFTERS_LSP_URL", connectionURL)
 		} else {
 			os.Unsetenv("CODECRAFTERS_LSP_URL")
 		}
 
 		result, runError := stageHarness.Executable.Run("-p", testCase.Prompt)
+		if setupProxy != nil {
+			setupProxy.Close()
+		}
 		if transport != nil {
 			transport.Close()
 		}
@@ -133,6 +160,9 @@ func testLSP(stageHarness *test_case_harness.TestCaseHarness, slug string) error
 		if result.ExitCode != 0 {
 			return fmt.Errorf("%s: program exited %d; stdout %q; stderr %q", testCase.Name, result.ExitCode, result.Stdout, result.Stderr)
 		}
+		if slug == "lc1" && !testCase.NoConfig && configurationRequests.Load() == 0 {
+			return fmt.Errorf("%s: connect with the supplied client and call configuration with {}", testCase.Name)
+		}
 		if err := lsp_manager.Check(testCase, slug, config, recorder.RequestBodies()); err != nil {
 			return fmt.Errorf("%s: %w", testCase.Name, err)
 		}
@@ -140,6 +170,9 @@ func testLSP(stageHarness *test_case_harness.TestCaseHarness, slug string) error
 			stageHarness.Logger.Successf("Partial API migration: Write saved checkout.py, but the caller still returns Price as int")
 			stageHarness.Logger.Successf("Edit feedback for checkout.py: %s", lsp_manager.ArgumentTypeDiagnostic)
 			stageHarness.Logger.Successf("Repair feedback for checkout.py: diagnostics []")
+		}
+		if slug == "lc1" && !testCase.NoConfig {
+			stageHarness.Logger.Successf("Connected to the helper and advertised LSP; navigation is next")
 		}
 		if slug == "df3" && testCase.Config.Definition == "" && !testCase.NoConfig {
 			stageHarness.Logger.Successf("Resolved invoice_total to pricing.total; preview.total is unrelated")

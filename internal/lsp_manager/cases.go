@@ -22,6 +22,11 @@ func Cases(slug string) []Case {
 	definition := Action{Operation: "goToDefinition", File: "checkout.py", Line: 4, Character: 11}
 	references := query("findReferences")
 	switch slug {
+	case "lc1":
+		return []Case{
+			{Name: "connected-tool-advertised", Prompt: "Use only Read to inspect checkout.py and pricing.py. Explain how checkout uses the pricing function.", Actions: []Action{{Operation: "read", File: "checkout.py"}, {Operation: "read", File: "pricing.py"}}},
+			{Name: "without-connection", Prompt: "Reply with ready.", NoConfig: true},
+		}
 	case "df3":
 		prompt := "Use LSP goToDefinition on checkout.py at line 5, character 12. Read the returned implementation and explain which total is called; preview.total is unrelated."
 		overloaded := Project(false)
@@ -31,7 +36,6 @@ func Cases(slug string) []Case {
 			{Name: "multiple-definitions", Prompt: prompt, Actions: []Action{definition}, Files: overloaded, Config: Config{Definition: "array"}},
 			{Name: "missing-definition", Prompt: prompt, Actions: []Action{definition}, Config: Config{Definition: "null"}},
 			{Name: "definition-error", Prompt: prompt, Actions: []Action{definition}, Config: Config{Definition: "error"}},
-			{Name: "without-configuration", Prompt: "Reply with ready.", NoConfig: true},
 		}
 	case "rf4":
 		prompt := "Use LSP findReferences on pricing.py at line 1, character 5. Identify every affected caller before changing its return type. Preserve the returned locations; preview.total and comments are unrelated."
