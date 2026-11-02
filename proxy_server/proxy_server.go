@@ -59,6 +59,7 @@ func newProxyServer() (*proxyServer, *RequestRecorder) {
 
 	// Prepare the interceptor reverse proxy
 	reverseProxy := httputil.NewSingleHostReverseProxy(targetUrl)
+	reverseProxy.Transport = &emptyResponseRetryTransport{base: http.DefaultTransport}
 	reverseProxy.Director = nil
 	reverseProxy.Rewrite = func(req *httputil.ProxyRequest) {
 		req.SetURL(targetUrl)
