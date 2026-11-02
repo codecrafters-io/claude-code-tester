@@ -30,6 +30,16 @@ func lspScenario(t *testing.T, source string) string {
 	return directory
 }
 
+// Reference-agent document opening uses the helper's configured language mapping.
+func TestLSPConfiguredDocumentLanguage(t *testing.T) {
+	// Arrange
+	command := exec.Command("python3", "-m", "unittest", "discover", "-s", "test_helpers/scenarios/lsp_stages/users_code_pass_all/app", "-p", "test_language.py")
+	// Act
+	output, err := command.CombinedOutput()
+	// Assert
+	require.NoError(t, err, string(output))
+}
+
 func runLSPScenario(t *testing.T, binary, directory, slug string) (string, error) {
 	t.Helper()
 	stages, _ := json.Marshal([]map[string]string{{"slug": slug, "tester_log_prefix": "lsp-test", "title": "LSP regression"}})

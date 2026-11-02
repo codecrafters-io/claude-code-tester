@@ -18,7 +18,7 @@ class LanguageServer:
         self.diagnostics = {}
         self.diagnostic_ticks = {}
         self.cursor = 0
-        self.language = "python"
+        self.languages = self.transport.call("configuration", {})["extensionToLanguage"]
 
     def send(self, method, params):
         return self.transport.notify(method, params)
@@ -47,9 +47,12 @@ class LanguageServer:
         path = Path(path).resolve()
         uri = path.as_uri()
         if uri not in self.documents:
+            language = self.languages.get(path.suffix)
+            if language is None:
+                raise ValueError("Unsupported file extension: " + path.suffix)
             self.documents[uri] = 1
             self.send("textDocument/didOpen", {"textDocument": {
-                "uri": uri, "languageId": self.language, "version": 1,
+                "uri": uri, "languageId": language, "version": 1,
                 "text": path.read_text(encoding="utf-8"),
             }})
         return uri

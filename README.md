@@ -28,7 +28,9 @@ agent loop:
 The supplied transport starts the configured server, handles JSON-RPC framing
 and initialization, and queues notifications while requests are running. The
 tester provides CODECRAFTERS_LSP_URL to the submitted program. The native starter
-clients call request, notify, and notifications actions through that local URL.
+clients retrieve extensionToLanguage through the configuration action and call
+request, notify, and notifications through that local URL. Document language IDs
+come from configuration rather than a Python default.
 The local HTTP facade is course scaffolding; the server still speaks stdio LSP.
 Learners construct document messages, track versions, return tool results and
 choose how diagnostic feedback reaches the model. The helper never runs an agent.

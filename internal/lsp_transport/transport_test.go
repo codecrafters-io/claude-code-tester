@@ -115,3 +115,51 @@ func TestTransportResolvesProjectSymlink(t *testing.T) {
 	require.NoError(t, err)
 	transport.Close()
 }
+
+// The helper exposes the configured extensions without assuming a Python server.
+func TestTransportExposesConfiguredLanguages(t *testing.T) {
+	// Arrange
+	path, _ := configuration(t, "")
+	data, err := os.ReadFile(path)
+	require.NoError(t, err)
+	var servers map[string]map[string]any
+	require.NoError(t, json.Unmarshal(data, &servers))
+	server := servers["python"]
+	mapping := map[string]string{".ts": "typescript", ".tsx": "typescript"}
+	server["extensionToLanguage"] = mapping
+	data, err = json.Marshal(map[string]any{"typescript": server})
+	require.NoError(t, err)
+	require.NoError(t, os.WriteFile(path, data, 0644))
+	transport, err := lsp_transport.Start(path)
+	require.NoError(t, err)
+	t.Cleanup(transport.Close)
+
+	// Act
+	result := call(t, transport.URL, "configuration", map[string]any{})
+
+	// Assert
+	want, err := json.Marshal(map[string]any{"extensionToLanguage": mapping})
+	require.NoError(t, err)
+	require.JSONEq(t, string(want), string(result))
+}
+
+// Missing language configuration is rejected instead of defaulting to Python.
+func TestTransportRequiresLanguageMapping(t *testing.T) {
+	// Arrange
+	path, _ := configuration(t, "")
+	data, err := os.ReadFile(path)
+	require.NoError(t, err)
+	var servers map[string]map[string]any
+	require.NoError(t, json.Unmarshal(data, &servers))
+	delete(servers["python"], "extensionToLanguage")
+	data, err = json.Marshal(servers)
+	require.NoError(t, err)
+	require.NoError(t, os.WriteFile(path, data, 0644))
+
+	// Act
+	transport, err := lsp_transport.Start(path)
+
+	// Assert
+	require.ErrorContains(t, err, "expected extensionToLanguage")
+	require.Nil(t, transport)
+}
