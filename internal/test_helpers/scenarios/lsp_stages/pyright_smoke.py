@@ -37,6 +37,8 @@ def inside():
     assert "checkout.py" in json.dumps(references),references
     assert "reports.py" in json.dumps(references),references
     assert "preview.py" not in json.dumps(references),references
+    checkout_locations = [item["range"]["start"] for item in references if item["uri"].endswith("/checkout.py")]
+    assert {"line": 0, "character": 20} in checkout_locations, checkout_locations
     original = Path("checkout.py").read_text()
     imported = original.replace("from pricing","from discounts")
     server.write("checkout.py", imported)
@@ -45,6 +47,9 @@ def inside():
     server.write("checkout.py", original)
     server.write("pricing.py",PRICE_API)
     report = Path("reports.py").read_text().replace("total(250, 2)",'total(250, 2)["cents"]').replace("total(100, 1)",'total(100, 1)["cents"]')
+    # Shift lines as well as the second call column so stale indexed text cannot pass.
+    report = "\n\n" + report
+    assert not any(uri.endswith("/reports.py") for uri in server.documents)
     server.write("reports.py", report)
     checkout = original.replace("invoice_total(250, 2)", 'invoice_total(250, 2)["cents"]')
     server.write("checkout.py", checkout)
@@ -56,6 +61,11 @@ def inside():
     assert "checkout.py" in json.dumps(references), references
     assert "reports.py" in json.dumps(references), references
     assert "preview.py" not in json.dumps(references), references
+    report_locations = [item["range"]["start"] for item in references if item["uri"].endswith("/reports.py")]
+    assert {"line": 6, "character": 11} in report_locations, report_locations
+    assert {"line": 6, "character": 36} in report_locations, report_locations
+    assert all(position["line"] in (2, 6) for position in report_locations), report_locations
+    print("Pyright: closed-file references moved to line 7, columns 12 and 37")
     command = subprocess.run([sys.executable, "-B", "-m", "unittest", "-v", "test_invoice.py"], capture_output=True, text=True, check=True)
     print(command.stderr, end="")
     from pricing import total

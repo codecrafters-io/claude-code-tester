@@ -51,6 +51,7 @@ type Document struct {
 type projectState struct {
 	Root      string
 	Documents map[string]Document
+	Indexed   map[string]string
 }
 
 func (p *projectState) text(name string) string {
@@ -58,7 +59,15 @@ func (p *projectState) text(name string) string {
 	if document, ok := p.Documents[uri]; ok {
 		return document.Text
 	}
+	// Simulate a server's indexed closed-file text until the client supplies an update.
+	if p.Indexed == nil {
+		p.Indexed = map[string]string{}
+	}
+	if text, ok := p.Indexed[uri]; ok {
+		return text
+	}
 	contents, _ := os.ReadFile(filepath.Join(p.Root, name))
+	p.Indexed[uri] = string(contents)
 	return string(contents)
 }
 

@@ -354,6 +354,12 @@ func Check(c Case, slug string, config Config, requests []string) error {
 		return fmt.Errorf("missing the requested LSP operations in the model conversation")
 	}
 	if slug == "ql9" {
+		// Recompute locations from disk so a cached closed file cannot pass with stale ranges.
+		current := projectState{Root: config.Root, Documents: map[string]Document{}}
+		expected, _ := json.Marshal(current.references(true))
+		if !resultReachedModel(matchedQueries[len(matchedQueries)-1].Result, expected) {
+			return fmt.Errorf("follow-up references contain stale locations; synchronize edited closed files such as reports.py with didOpen")
+		}
 		return checkMigration(c, config.Root, allCalls)
 	}
 
@@ -428,7 +434,7 @@ func checkMigration(c Case, root string, tools []call) error {
 	tested := false
 	for index, tool := range tools {
 		command, _ := tool.Arguments["command"].(string)
-		if index > lastWrite && strings.Contains(command, "unittest") && strings.Contains(command, "test_invoice") && strings.Contains(tool.Result, "Ran 3 tests") && strings.Contains(tool.Result, "OK") && !strings.Contains(tool.Result, "FAILED") {
+		if index > lastWrite && strings.Contains(command, "unittest") && strings.Contains(command, "test_invoice") && strings.Contains(tool.Result, "Ran 5 tests") && strings.Contains(tool.Result, "OK") && !strings.Contains(tool.Result, "FAILED") {
 			tested = true
 		}
 	}

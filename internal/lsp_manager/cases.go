@@ -62,7 +62,7 @@ func Cases(slug string) []Case {
 		reports := Action{Operation: "write", File: "reports.py", Content: strings.ReplaceAll(strings.ReplaceAll(files["reports.py"], "total(250, 2)", `total(250, 2)["cents"]`), "total(100, 1)", `total(100, 1)["cents"]`)}
 		updatedReferences := references
 		updatedReferences.Line = 7
-		prompt := `Change pricing.total to return a Price TypedDict with a cents field. Use LSP goToDefinition on checkout.py at line 5, character 12 and findReferences on pricing.py at line 1, character 5. Read the implementation and affected callers. Update checkout and reporting so they still return integer cents. Leave unrelated files unchanged. After editing, repeat definition lookup on checkout.py and findReferences on pricing.py at line 8, character 5 to check the current code. Run python3 -m unittest -v test_invoice.py and report the result.`
+		prompt := `Change pricing.total to return a Price TypedDict with a cents field. Use LSP goToDefinition on checkout.py at line 5, character 12 and findReferences on pricing.py at line 1, character 5. Read the implementation and affected callers. Update checkout.py and reports.py so they still return integer cents. Don't modify test_invoice.py. Leave preview.total and other unrelated files unchanged. After editing, repeat definition lookup on checkout.py and findReferences on pricing.py at line 8, character 5 to check the current code. Run python3 -m unittest -v test_invoice.py and report the result.`
 		actions := []Action{
 			definition, {Operation: "read", File: "pricing.py"}, references,
 			{Operation: "read", File: "checkout.py"}, {Operation: "read", File: "reports.py"},

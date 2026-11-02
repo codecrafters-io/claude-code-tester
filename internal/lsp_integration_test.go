@@ -64,6 +64,9 @@ func TestLSPRejectsBrokenClients(t *testing.T) {
 		{"references-declaration-omitted", "rb6", `{"includeDeclaration": True}`, `{"includeDeclaration": False}`, "includeDeclaration: true"},
 		{"unsynchronized-write", "bn2", `self.send("textDocument/didChange", {`, `self.send("textDocument/didNotChange", {`, "stale text"},
 		{"capstone-unsynchronized-write", "ql9", `self.send("textDocument/didChange", {`, `self.send("textDocument/didNotChange", {`, "stale text"},
+		{"capstone-closed-file-not-synchronized", "ql9", `elif path.suffix in self.languages:
+            self.open(path)`, `elif path.suffix in self.languages:
+            pass`, "follow-up references contain stale locations"},
 		{"capstone-missed-reporting-caller", "ql9", `path.write_text(content, encoding="utf-8")`, `if path.name != "reports.py":
             path.write_text(content, encoding="utf-8")`, "return the passing test output"},
 		{"capstone-unrelated-preview-edited", "ql9", `path.write_text(content, encoding="utf-8")`, `path.write_text(content, encoding="utf-8")
@@ -165,7 +168,7 @@ func TestLSPMigrationRejectsFabricatedTestOutput(t *testing.T) {
 	require.NoError(t, err)
 	source := strings.Replace(string(reference), `path.write_text(content, encoding="utf-8")`, `if path.name != "reports.py":
             path.write_text(content, encoding="utf-8")`, 1)
-	source = strings.Replace(source, `result = {"stdout": output.stdout, "stderr": output.stderr, "exit_code": output.returncode}`, `result = {"stdout": "Ran 3 tests\nOK", "exit_code": 0}`, 1)
+	source = strings.Replace(source, `result = {"stdout": output.stdout, "stderr": output.stderr, "exit_code": output.returncode}`, `result = {"stdout": "Ran 5 tests\nOK", "exit_code": 0}`, 1)
 	directory := lspScenario(t, source)
 	// Act
 	output, err := runLSPScenario(t, binary, directory, "ql9")

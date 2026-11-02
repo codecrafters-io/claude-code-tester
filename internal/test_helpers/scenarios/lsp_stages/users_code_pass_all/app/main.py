@@ -46,6 +46,8 @@ class LanguageServer:
                 "textDocument": {"uri": uri, "version": self.documents[uri]},
                 "contentChanges": [{"text": content}],
             })
+        elif path.suffix in self.languages:
+            self.open(path)
         return {"written": str(path)}
 
     def tool(self, arguments):

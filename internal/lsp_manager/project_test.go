@@ -63,3 +63,21 @@ func TestDefinitionUsesSynchronizedImport(t *testing.T) {
 	// Assert
 	require.Equal(t, Location{URI: URI(filepath.Join(state.Root, "discounts.py")), Range: Range{Start: Position{Line: 0, Character: 4}, End: Position{Line: 0, Character: 9}}}, location)
 }
+
+// A closed indexed file stays stale until the client opens it with current text.
+func TestClosedFileReferencesRequireSynchronization(t *testing.T) {
+	// Arrange
+	state := seededProject(t)
+	before := state.references(true)
+	updated := strings.ReplaceAll(state.text("reports.py"), "total(250, 2)", `total(250, 2)["cents"]`)
+	require.NoError(t, os.WriteFile(filepath.Join(state.Root, "reports.py"), []byte(updated), 0644))
+	// Act
+	stale := state.references(true)
+	uri := URI(filepath.Join(state.Root, "reports.py"))
+	state.Documents[uri] = Document{URI: uri, Version: 1, Text: updated}
+	current := state.references(true)
+	// Assert
+	require.Equal(t, before, stale)
+	require.NotEqual(t, stale, current)
+	require.Contains(t, current, Location{URI: uri, Range: Range{Start: Position{Line: 4, Character: 36}, End: Position{Line: 4, Character: 41}}})
+}
