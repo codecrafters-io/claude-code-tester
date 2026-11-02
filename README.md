@@ -32,7 +32,8 @@ tester provides CODECRAFTERS_LSP_URL to the submitted program. The native starte
 clients retrieve extensionToLanguage through the configuration action and call
 request, notify, and notifications through that local URL. Document language IDs
 come from configuration rather than a Python default.
-Setup checks the configuration request and conditional model-facing schema.
+Every LSP case supplies a connection. Setup checks the configuration request
+and model-facing schema; learners construct the supplied client directly.
 It uses Read to inspect the example and passes before navigation is implemented.
 The local HTTP facade is course scaffolding; the server still speaks stdio LSP.
 Learners construct document messages, track versions, return tool results and
@@ -46,8 +47,8 @@ make test_lsp
 make test_lsp_offline
 ```
 
-These commands cover 17 graded cases and eleven deliberately broken clients:
-missing configuration requests, missing or unconditional LSP advertisement,
+These commands cover 16 graded cases and ten deliberately broken clients:
+missing configuration requests, missing LSP advertisement,
 incomplete tool schemas, wrong coordinates, lost definition results, omitted declaration context,
 unsynchronized writes, discarded unversioned reports, reused cached feedback and
 false clean diagnostics on timeout. Separate transport tests cover fragmented

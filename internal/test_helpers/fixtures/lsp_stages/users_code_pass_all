@@ -10,15 +10,6 @@
 [your_program] Done.
 [tester::#LC1] Connected to the helper and advertised LSP; navigation is next
 [tester::#LC1] Case connected-tool-advertised passed protocol, tool-result and file checks
-[tester::#LC1] Case: without-connection
-[tester::#LC1] Wrote checkout.py: "from pricing import total as invoice_total\n\n\ndef checkout_total() -> int:\n    return invoice_total(250, 2)\n"
-[tester::#LC1] Wrote discounts.py: "def total(price: int, quantity: int) -> int:\n    return price * quantity - 50\n"
-[tester::#LC1] Wrote preview.py: "# The word total in this comment should stay as it is.\ndef total(label: str) -> str:\n    return \"Preview total: \" + label\n"
-[tester::#LC1] Wrote pricing.py: "def total(price: int, quantity: int) -> int:\n    return price * quantity\n"
-[tester::#LC1] Wrote reports.py: "from pricing import total\n\n\ndef report_total() -> int:\n    return total(250, 2) + total(100, 1)\n"
-[tester::#LC1] $ ./your_program.sh -p 'Reply with ready.'
-[your_program] Done.
-[tester::#LC1] Case without-connection passed protocol, tool-result and file checks
 [tester::#LC1] Test passed.
 
 [tester::#DF3] Running tests for Stage #DF3 (df3)

@@ -119,7 +119,7 @@ def run_agent(prompt, server):
     messages = [{"role": "system", "content": "Use the LSP tool for code navigation. Tool positions are one-based UTF-16. Use Write for edits."},
                 {"role": "user", "content": prompt}]
     for _ in range(50):
-        payload = {"model": "anthropic/claude-haiku-4.5", "messages": messages, "tools": [tool for tool in TOOLS if server or tool["function"]["name"] != "LSP"]}
+        payload = {"model": "anthropic/claude-haiku-4.5", "messages": messages, "tools": TOOLS}
         request = urllib.request.Request(
             os.environ["OPENROUTER_BASE_URL"].rstrip("/") + "/chat/completions",
             data=json.dumps(payload).encode("utf-8"),
@@ -141,11 +141,7 @@ def run_agent(prompt, server):
                 if name == "LSP":
                     result = server.tool(arguments)
                 elif name == "Write":
-                    if server:
-                        result = server.write(arguments["file_path"], arguments["content"])
-                    else:
-                        Path(arguments["file_path"]).write_text(arguments["content"],encoding="utf-8")
-                        result = {"written":arguments["file_path"]}
+                    result = server.write(arguments["file_path"], arguments["content"])
                 elif name == "Read":
                     result = Path(arguments["file_path"]).read_text(encoding="utf-8")
                 elif name == "Bash":
@@ -163,7 +159,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-p", required=True)
     arguments = parser.parse_args()
-    server = LanguageServer() if os.environ.get("CODECRAFTERS_LSP_URL") else None
+    server = LanguageServer()
     print(run_agent(arguments.p, server))
 
 

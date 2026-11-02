@@ -73,22 +73,21 @@ func testLSP(stageHarness *test_case_harness.TestCaseHarness, slug string) error
 		if err := os.WriteFile(configPath, encoded, 0600); err != nil {
 			return err
 		}
-		if !testCase.NoConfig {
-			binary, err := os.Executable()
-			if err != nil {
-				return err
-			}
-			// Test binaries do not dispatch the fixture CLI. The Go tests set a
-			// built tester binary explicitly rather than recursively running tests.
-			if fixture := os.Getenv("CODECRAFTERS_LSP_FIXTURE_BINARY"); fixture != "" {
-				binary = fixture
-			}
-			configuration, _ := json.Marshal(map[string]any{"python": map[string]any{"command": binary, "args": []string{"--lsp-fixture", configPath}, "extensionToLanguage": map[string]string{".py": "python"}}})
-			if err := os.WriteFile(filepath.Join(project, ".lsp.json"), configuration, 0644); err != nil {
-				return err
-			}
-			stageHarness.Logger.Infof("Wrote .lsp.json: %s", configuration)
+		binary, err := os.Executable()
+		if err != nil {
+			return err
 		}
+		// Test binaries do not dispatch the fixture CLI. The Go tests set a
+		// built tester binary explicitly rather than recursively running tests.
+		if fixture := os.Getenv("CODECRAFTERS_LSP_FIXTURE_BINARY"); fixture != "" {
+			binary = fixture
+		}
+		configuration, _ := json.Marshal(map[string]any{"python": map[string]any{"command": binary, "args": []string{"--lsp-fixture", configPath}, "extensionToLanguage": map[string]string{".py": "python"}}})
+		if err := os.WriteFile(filepath.Join(project, ".lsp.json"), configuration, 0644); err != nil {
+			return err
+		}
+		stageHarness.Logger.Infof("Wrote .lsp.json: %s", configuration)
+
 		var recorder *proxy_server.RequestRecorder
 		var closeModel func()
 		var modelURL string
@@ -110,44 +109,36 @@ func testLSP(stageHarness *test_case_harness.TestCaseHarness, slug string) error
 		stageHarness.Logger.Infof("$ ./your_program.sh -p %s", shellescape.Quote(testCase.Prompt))
 		// The course owns startup and framing. The submitted agent owns document messages.
 		oldTransport, hadTransport := os.LookupEnv("CODECRAFTERS_LSP_URL")
-		var transport *lsp_transport.Transport
 		var setupProxy *httptest.Server
 		var configurationRequests atomic.Int64
-		if !testCase.NoConfig {
-			var transportErr error
-			transport, transportErr = lsp_transport.Start(filepath.Join(project, ".lsp.json"))
-			if transportErr != nil {
-				return transportErr
-			}
-			connectionURL := transport.URL
-			if slug == "lc1" {
-				// Observe setup's configuration call without changing the supplied helper.
-				target, err := url.Parse(transport.URL)
-				if err != nil {
-					transport.Close()
-					return err
-				}
-				proxy := httputil.NewSingleHostReverseProxy(target)
-				setupProxy = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					if r.Method == http.MethodPost && r.URL.Path == "/configuration" {
-						configurationRequests.Add(1)
-					}
-					proxy.ServeHTTP(w, r)
-				}))
-				connectionURL = setupProxy.URL
-			}
-			os.Setenv("CODECRAFTERS_LSP_URL", connectionURL)
-		} else {
-			os.Unsetenv("CODECRAFTERS_LSP_URL")
+		transport, err := lsp_transport.Start(filepath.Join(project, ".lsp.json"))
+		if err != nil {
+			return err
 		}
+		connectionURL := transport.URL
+		if slug == "lc1" {
+			// Observe setup's configuration call without changing the supplied helper.
+			target, err := url.Parse(transport.URL)
+			if err != nil {
+				transport.Close()
+				return err
+			}
+			proxy := httputil.NewSingleHostReverseProxy(target)
+			setupProxy = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.Method == http.MethodPost && r.URL.Path == "/configuration" {
+					configurationRequests.Add(1)
+				}
+				proxy.ServeHTTP(w, r)
+			}))
+			connectionURL = setupProxy.URL
+		}
+		os.Setenv("CODECRAFTERS_LSP_URL", connectionURL)
 
 		result, runError := stageHarness.Executable.Run("-p", testCase.Prompt)
 		if setupProxy != nil {
 			setupProxy.Close()
 		}
-		if transport != nil {
-			transport.Close()
-		}
+		transport.Close()
 		if hadTransport {
 			os.Setenv("CODECRAFTERS_LSP_URL", oldTransport)
 		} else {
@@ -160,7 +151,7 @@ func testLSP(stageHarness *test_case_harness.TestCaseHarness, slug string) error
 		if result.ExitCode != 0 {
 			return fmt.Errorf("%s: program exited %d; stdout %q; stderr %q", testCase.Name, result.ExitCode, result.Stdout, result.Stderr)
 		}
-		if slug == "lc1" && !testCase.NoConfig && configurationRequests.Load() == 0 {
+		if slug == "lc1" && configurationRequests.Load() == 0 {
 			return fmt.Errorf("%s: connect with the supplied client and call configuration with {}", testCase.Name)
 		}
 		if err := lsp_manager.Check(testCase, slug, config, recorder.RequestBodies()); err != nil {
@@ -171,10 +162,10 @@ func testLSP(stageHarness *test_case_harness.TestCaseHarness, slug string) error
 			stageHarness.Logger.Successf("Edit feedback for checkout.py: %s", lsp_manager.ArgumentTypeDiagnostic)
 			stageHarness.Logger.Successf("Repair feedback for checkout.py: diagnostics []")
 		}
-		if slug == "lc1" && !testCase.NoConfig {
+		if slug == "lc1" {
 			stageHarness.Logger.Successf("Connected to the helper and advertised LSP; navigation is next")
 		}
-		if slug == "df3" && testCase.Config.Definition == "" && !testCase.NoConfig {
+		if slug == "df3" && testCase.Config.Definition == "" {
 			stageHarness.Logger.Successf("Resolved invoice_total to pricing.total; preview.total is unrelated")
 		}
 		if slug == "rf4" && !testCase.Config.EmptyReferences {

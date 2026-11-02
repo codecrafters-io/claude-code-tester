@@ -130,7 +130,7 @@ func resultReachedModel(content string, raw json.RawMessage) bool {
 	return json.Unmarshal(raw, &expected) == nil && ContainsJSON(content, expected)
 }
 
-func checkSetupTools(c Case, requests []string) error {
+func checkSetupTools(requests []string) error {
 	if len(requests) == 0 {
 		return fmt.Errorf("the user's prompt never reached the LLM")
 	}
@@ -153,9 +153,6 @@ func checkSetupTools(c Case, requests []string) error {
 		if tool.Function.Name != "LSP" && parameters.Properties["operation"] == nil {
 			continue
 		}
-		if c.NoConfig {
-			return fmt.Errorf("omit the LSP tool when CODECRAFTERS_LSP_URL is absent")
-		}
 		for name, kind := range map[string]string{"operation": "string", "filePath": "string", "line": "integer", "character": "integer"} {
 			var property struct {
 				Type string   `json:"type"`
@@ -170,23 +167,14 @@ func checkSetupTools(c Case, requests []string) error {
 		}
 		return nil
 	}
-	if !c.NoConfig {
-		return fmt.Errorf("advertise the supplied LSP tool when CODECRAFTERS_LSP_URL is set")
-	}
-	return nil
+	return fmt.Errorf("advertise the supplied LSP tool")
 }
 
 func Check(c Case, slug string, config Config, requests []string) error {
 	if slug == "lc1" {
-		if err := checkSetupTools(c, requests); err != nil {
+		if err := checkSetupTools(requests); err != nil {
 			return err
 		}
-	}
-	if c.NoConfig {
-		if len(requests) == 0 {
-			return fmt.Errorf("the base prompt never reached the LLM")
-		}
-		return nil
 	}
 	events, err := Events(config.Log)
 	if err != nil {

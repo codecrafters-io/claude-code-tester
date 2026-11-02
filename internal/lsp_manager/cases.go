@@ -8,7 +8,6 @@ type Case struct {
 	Actions                []Action
 	Config                 Config
 	Files                  map[string]string
-	NoConfig               bool
 	WantDefinitions        []string
 	WantDiagnosticVersions []int
 }
@@ -25,7 +24,6 @@ func Cases(slug string) []Case {
 	case "lc1":
 		return []Case{
 			{Name: "connected-tool-advertised", Prompt: "Use only Read to inspect checkout.py and pricing.py. Explain how checkout uses the pricing function.", Actions: []Action{{Operation: "read", File: "checkout.py"}, {Operation: "read", File: "pricing.py"}}},
-			{Name: "without-connection", Prompt: "Reply with ready.", NoConfig: true},
 		}
 	case "df3":
 		prompt := "Use LSP goToDefinition on checkout.py at line 5, character 12. Read the returned implementation and explain which total is called; preview.total is unrelated."

@@ -57,8 +57,7 @@ func TestLSPRejectsBrokenClients(t *testing.T) {
 	require.NoError(t, err)
 	cases := []struct{ name, slug, from, to, want string }{
 		{"setup-without-configuration-request", "lc1", `self.languages = self.transport.call("configuration", {})["extensionToLanguage"]`, `self.languages = {".py": "python"}`, "call configuration with {}"},
-		{"setup-without-lsp-tool", "lc1", `if server or tool["function"]["name"] != "LSP"`, `if tool["function"]["name"] != "LSP"`, "advertise the supplied LSP tool"},
-		{"setup-lsp-without-connection", "lc1", `if server or tool["function"]["name"] != "LSP"`, `if True`, "omit the LSP tool"},
+		{"setup-without-lsp-tool", "lc1", `"tools": TOOLS`, `"tools": [tool for tool in TOOLS if tool["function"]["name"] != "LSP"]`, "advertise the supplied LSP tool"},
 		{"setup-incomplete-tool-schema", "lc1", `"required": ["operation", "filePath", "line", "character"]`, `"required": ["operation", "filePath", "line"]`, "required character of type integer"},
 		{"tool-coordinates-not-converted", "df3", `"line": arguments["line"] - 1`, `"line": arguments["line"]`, "expected goToDefinition"},
 		{"discarded-definition", "df3", "        return result\n\n", "        return None\n\n", "server result did not reach"},
