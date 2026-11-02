@@ -103,7 +103,7 @@ var testerDefinition = tester_definition.TesterDefinition{
 		},
 		{
 			Slug:     "ql9",
-			TestFunc: testLSPDiagnostics,
+			TestFunc: testLSPMigration,
 			Timeout:  190 * time.Second,
 		},
 	},

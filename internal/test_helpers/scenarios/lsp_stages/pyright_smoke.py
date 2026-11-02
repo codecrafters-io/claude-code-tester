@@ -39,31 +39,32 @@ def inside():
     assert "preview.py" not in json.dumps(references),references
     original = Path("checkout.py").read_text()
     imported = original.replace("from pricing","from discounts")
-    assert server.write("checkout.py",imported)["diagnostics"] == []
+    server.write("checkout.py", imported)
     moved = server.tool({"operation":"goToDefinition","filePath":"checkout.py","line":5,"character":12})
     assert "discounts.py" in json.dumps(moved),moved
-    assert server.write("checkout.py",original)["diagnostics"] == []
+    server.write("checkout.py", original)
     server.write("pricing.py",PRICE_API)
     report = Path("reports.py").read_text().replace("total(250, 2)",'total(250, 2)["cents"]').replace("total(100, 1)",'total(100, 1)["cents"]')
-    assert server.write("reports.py",report)["diagnostics"] == []
-    partial = original.replace("    return invoice_total(250, 2)","    amount = invoice_total(250, 2)\n    return amount")
-    errors = server.write("checkout.py",partial)["diagnostics"]
-    assert any(issue.get("severity")==1 and "int" in issue["message"] for issue in errors),errors
-    namespace = {}
-    exec(compile(partial,"checkout.py","exec"),namespace)
-    before = namespace["checkout_total"]()
-    assert before == {"cents":500},before
-    print("Before feedback: saved caller returns",before,"instead of integer 500")
-    print("Pyright reports:",errors[0]["message"])
-    repaired = partial.replace("return amount",'return amount["cents"]')
-    assert server.write("checkout.py",repaired)["diagnostics"] == []
-    namespace = {}
-    exec(compile(Path("checkout.py").read_text(),"checkout.py","exec"),namespace)
-    assert namespace["checkout_total"]()==500
+    server.write("reports.py", report)
+    checkout = original.replace("invoice_total(250, 2)", 'invoice_total(250, 2)["cents"]')
+    server.write("checkout.py", checkout)
+    current = server.tool({"operation":"goToDefinition","filePath":"checkout.py","line":5,"character":12})
+    assert "pricing.py" in json.dumps(current), current
+    locations = current if isinstance(current, list) else [current]
+    assert any(location["range"]["start"]["line"] == 7 for location in locations), current
+    references = server.tool({"operation":"findReferences","filePath":"pricing.py","line":8,"character":5})
+    assert "checkout.py" in json.dumps(references), references
+    assert "reports.py" in json.dumps(references), references
+    assert "preview.py" not in json.dumps(references), references
+    command = subprocess.run([sys.executable, "-B", "-m", "unittest", "-v", "test_invoice.py"], capture_output=True, text=True, check=True)
+    print(command.stderr, end="")
+    from pricing import total
+    from checkout import checkout_total
     from reports import report_total
-    assert report_total()==600
-    print("Repaired caller: diagnostics []; checkout result: 500; report result: 600")
-    print("Pyright: definition, references, edited-import synchronization, API migration, error feedback and clearing passed")
+    assert total(37, 4) == {"cents": 148}
+    assert type(checkout_total()) is int and checkout_total() == 500
+    assert type(report_total()) is int and report_total() == 600
+    print("Pyright: definition, references, edited-import synchronization and API migration passed")
 
 
 def main():
@@ -84,7 +85,9 @@ def main():
         (root/"discounts.py").write_text("def total(price: int, quantity: int) -> int:\n    return price * quantity - 50\n")
         (root/"checkout.py").write_text("from pricing import total as invoice_total\n\n\ndef checkout_total() -> int:\n    return invoice_total(250, 2)\n")
         (root/"reports.py").write_text("from pricing import total\n\n\ndef report_total() -> int:\n    return total(250, 2) + total(100, 1)\n")
-        (root/"preview.py").write_text("def total(label: str) -> str:\n    return label\n")
+        (root/"preview.py").write_text('def total(label: str) -> str:\n    return "Preview total: " + label\n')
+        tests = Path(__file__).parents[3] / "lsp_manager/testdata/test_invoice.py"
+        (root/"test_invoice.py").write_text(tests.read_text())
         (root/"pyrightconfig.json").write_text(json.dumps({"typeCheckingMode":"basic"}))
         config=root/".lsp.json"
         config.write_text(json.dumps({"python":{"command":server,"args":["--stdio"],"extensionToLanguage":{".py":"python"}}}))

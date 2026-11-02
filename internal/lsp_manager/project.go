@@ -1,6 +1,7 @@
 package lsp_manager
 
 import (
+	_ "embed"
 	"fmt"
 	"net/url"
 	"os"
@@ -127,3 +128,8 @@ func (p *projectState) diagnostics(document Document) []map[string]any {
 }
 
 func mustPath(uri string) string { path, _ := Path(uri); return path }
+
+// These behavior tests are supplied with the invoice project for the Bash check.
+//
+//go:embed testdata/test_invoice.py
+var InvoiceTests string

@@ -6,7 +6,6 @@ import os
 from pathlib import Path
 import subprocess
 import sys
-import time
 from lsp_client import LSPClient
 import urllib.request
 
@@ -15,9 +14,6 @@ class LanguageServer:
     def __init__(self):
         self.transport = LSPClient()
         self.documents = {}
-        self.diagnostics = {}
-        self.diagnostic_ticks = {}
-        self.cursor = 0
         self.languages = self.transport.call("configuration", {})["extensionToLanguage"]
 
     def send(self, method, params):
@@ -25,23 +21,6 @@ class LanguageServer:
 
     def request(self, method, params):
         return self.transport.request(method, params)
-
-    def receive_pending(self):
-        self.receive(0)
-
-    def receive(self, timeout_ms=1000):
-        batch = self.transport.notifications(self.cursor, timeout_ms)
-        self.cursor = batch["cursor"]
-        for message in batch["notifications"]:
-            if message["method"] != "textDocument/publishDiagnostics":
-                continue
-            diagnostic = message["params"]
-            uri = diagnostic["uri"]
-            version = diagnostic.get("version")
-            if version is not None and version < self.documents.get(uri, 0):
-                continue
-            self.diagnostics[uri] = diagnostic
-            self.diagnostic_ticks[uri] = self.diagnostic_ticks.get(uri, 0) + 1
 
     def open(self, path):
         path = Path(path).resolve()
@@ -57,21 +36,9 @@ class LanguageServer:
             }})
         return uri
 
-    def current_diagnostics(self, path, after=0):
-        uri = self.open(path)
-        version = self.documents[uri]
-        deadline = time.monotonic() + 3
-        while self.diagnostic_ticks.get(uri, 0) <= after or self.diagnostics.get(uri, {}).get("version", version) != version:
-            if time.monotonic() >= deadline:
-                raise TimeoutError("Diagnostic feedback error: no fresh publication")
-            self.receive()
-        return {"uri": uri, "diagnostics": self.diagnostics[uri]["diagnostics"]}
-
     def write(self, path, content):
         path = Path(path).resolve()
         uri = path.as_uri()
-        self.receive_pending()
-        before = self.diagnostic_ticks.get(uri, 0)
         path.write_text(content, encoding="utf-8")
         if uri in self.documents:
             self.documents[uri] += 1
@@ -79,7 +46,7 @@ class LanguageServer:
                 "textDocument": {"uri": uri, "version": self.documents[uri]},
                 "contentChanges": [{"text": content}],
             })
-        return {"written": str(path), **self.current_diagnostics(path, after=before)}
+        return {"written": str(path)}
 
     def tool(self, arguments):
         operation = arguments["operation"]
@@ -105,7 +72,7 @@ TOOLS = [
     {"type": "function", "function": {"name": "Read", "description": "Returns file contents", "parameters": {
         "type": "object", "properties": {"file_path": {"type": "string"}}, "required": ["file_path"],
     }}},
-    {"type": "function", "function": {"name": "Write", "description": "Writes a file and returns diagnostics", "parameters": {
+    {"type": "function", "function": {"name": "Write", "description": "Writes a file and synchronizes open documents", "parameters": {
         "type": "object", "properties": {"file_path": {"type": "string"}, "content": {"type": "string"}},
         "required": ["file_path", "content"],
     }}},

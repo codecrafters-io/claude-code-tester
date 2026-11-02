@@ -107,7 +107,7 @@ setup:
 
 # LSP extension test cases
 define LSP_STAGES
-[{\"slug\":\"cx7\",\"tester_log_prefix\":\"stage-1\",\"title\":\"Stage #1: Set up the LSP connection\"},{\"slug\":\"gz6\",\"tester_log_prefix\":\"stage-2\",\"title\":\"Stage #2: Find the implementation\"},{\"slug\":\"rb6\",\"tester_log_prefix\":\"stage-3\",\"title\":\"Stage #3: Find the affected callers\"},{\"slug\":\"bn2\",\"tester_log_prefix\":\"stage-4\",\"title\":\"Stage #4: Keep the analysis current\"},{\"slug\":\"ql9\",\"tester_log_prefix\":\"stage-5\",\"title\":\"Stage #5: Catch an error after editing\"}]
+[{\"slug\":\"cx7\",\"tester_log_prefix\":\"stage-1\",\"title\":\"Stage #1: Set up the LSP connection\"},{\"slug\":\"gz6\",\"tester_log_prefix\":\"stage-2\",\"title\":\"Stage #2: Find the implementation\"},{\"slug\":\"rb6\",\"tester_log_prefix\":\"stage-3\",\"title\":\"Stage #3: Find the affected callers\"},{\"slug\":\"bn2\",\"tester_log_prefix\":\"stage-4\",\"title\":\"Stage #4: Keep the analysis current\"},{\"slug\":\"ql9\",\"tester_log_prefix\":\"stage-5\",\"title\":\"Stage #5: Change an API across files\"}]
 endef
 
 .PHONY: test_lsp_offline test_lsp_with_users_code record_lsp_fixtures

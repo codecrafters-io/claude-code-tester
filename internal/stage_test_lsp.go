@@ -157,10 +157,9 @@ func testLSP(stageHarness *test_case_harness.TestCaseHarness, slug string) error
 		if err := lsp_manager.Check(testCase, slug, config, recorder.RequestBodies()); err != nil {
 			return fmt.Errorf("%s: %w", testCase.Name, err)
 		}
-		if len(testCase.WantDiagnosticVersions) > 0 {
-			stageHarness.Logger.Successf("Partial API migration: Write saved checkout.py, but the caller still returns Price as int")
-			stageHarness.Logger.Successf("Edit feedback for checkout.py: %s", lsp_manager.ArgumentTypeDiagnostic)
-			stageHarness.Logger.Successf("Repair feedback for checkout.py: diagnostics []")
+		if slug == "ql9" {
+			stageHarness.Logger.Successf("Migrated pricing.total and its callers; unrelated preview.total is unchanged")
+			stageHarness.Logger.Successf("Project tests passed through Bash: checkout 500 cents, reporting 600 cents")
 		}
 		if slug == "cx7" {
 			stageHarness.Logger.Successf("Connected to the helper and advertised LSP; navigation is next")

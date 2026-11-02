@@ -1,13 +1,16 @@
 package lsp_manager
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"reflect"
 	"slices"
 	"strings"
+	"time"
 )
 
 type call struct {
@@ -244,7 +247,7 @@ func Check(c Case, slug string, config Config, requests []string) error {
 	}
 	var expectedQueries []Action
 	for _, action := range c.Actions {
-		if action.Operation != "write" && action.Operation != "read" {
+		if action.Operation != "write" && action.Operation != "read" && action.Operation != "bash" {
 			expectedQueries = append(expectedQueries, action)
 		}
 	}
@@ -350,6 +353,10 @@ func Check(c Case, slug string, config Config, requests []string) error {
 	if len(matchedQueries) != len(expectedQueries) {
 		return fmt.Errorf("missing the requested LSP operations in the model conversation")
 	}
+	if slug == "ql9" {
+		return checkMigration(c, config.Root, allCalls)
+	}
+
 	// Check the final text of every successful scripted write, including unopened files.
 	final := map[string]string{}
 	for _, action := range c.Actions {
@@ -364,85 +371,91 @@ func Check(c Case, slug string, config Config, requests []string) error {
 		}
 	}
 
-	if len(c.WantDiagnosticVersions) > 0 {
-		diagnosticCalls := []call{}
-		for _, tool := range allCalls {
-			if tool.Arguments["content"] != nil {
-				diagnosticCalls = append(diagnosticCalls, tool)
-			}
-		}
-		requiredCalls := []call{}
-		next := 0
-		for _, action := range c.Actions {
-			if action.Operation != "write" || action.File != "checkout.py" {
-				continue
-			}
-			found := false
-			for next < len(diagnosticCalls) {
-				tool := diagnosticCalls[next]
-				next++
-				file, _ := tool.Arguments["file_path"].(string)
-				if file == "" {
-					file, _ = tool.Arguments["path"].(string)
-				}
-				if !filepath.IsAbs(file) {
-					file = filepath.Join(config.Root, file)
-				}
-				write := tool.Arguments["content"] != nil
-				if filepath.Clean(file) == filepath.Join(config.Root, action.File) && (action.Operation == "write" && write) {
-					requiredCalls = append(requiredCalls, tool)
-					found = true
-					break
-				}
-			}
-			if !found {
-				if action.AfterDiagnostic {
-					return fmt.Errorf("missing repair Write for %s; return the preceding Write's error diagnostic to the model so it can choose a repair", action.File)
-				}
-				return fmt.Errorf("missing %s tool result for %s", action.Operation, action.File)
-			}
-		}
-		diagnosticCalls = requiredCalls
+	return nil
+}
 
-		for index, version := range c.WantDiagnosticVersions {
-			var want any
-			currentVersion := map[string]int{}
-			for _, event := range events {
-				if event.Direction == "received" && (event.Message.Method == "textDocument/didOpen" || event.Message.Method == "textDocument/didChange") {
-					var params struct {
-						Document Document `json:"textDocument"`
-					}
-					json.Unmarshal(event.Message.Params, &params)
-					currentVersion[params.Document.URI] = params.Document.Version
-				}
-				if event.Direction == "sent" && event.Message.Method == "textDocument/publishDiagnostics" {
-					var params map[string]any
-					json.Unmarshal(event.Message.Params, &params)
-					uri, _ := params["uri"].(string)
-					publicationVersion := currentVersion[uri]
-					if value, ok := params["version"].(float64); ok {
-						publicationVersion = int(value)
-					}
-					if publicationVersion == version && uri == URI(filepath.Join(config.Root, "checkout.py")) {
-						want = map[string]any{"diagnostics": params["diagnostics"]}
-						break
-					}
-				}
-			}
-			if want == nil {
-				return fmt.Errorf("no diagnostic publication recorded for checkout.py version %d; synchronize the edit and keep reading publishDiagnostics notifications for that URI", version)
-			}
-			if !ContainsJSON(diagnosticCalls[index].Result, want) {
-				expected, _ := json.Marshal(want)
-				return fmt.Errorf("Write feedback for checkout.py version %d is missing or stale: expected %s, got %q; return the new publication in tool result %s, rather than reusing cached diagnostics", version, expected, diagnosticCalls[index].Result, diagnosticCalls[index].ID)
-			}
+// The capstone checks behavior rather than requiring one spelling of the migration.
+func checkMigration(c Case, root string, tools []call) error {
+	firstWrite, lastWrite := len(tools), -1
+	writes := map[string]bool{}
+	for index, tool := range tools {
+		if tool.Arguments["content"] == nil {
+			continue
 		}
-
+		if index < firstWrite {
+			firstWrite = index
+		}
+		lastWrite = index
+		file, _ := tool.Arguments["file_path"].(string)
+		if file == "" {
+			file, _ = tool.Arguments["path"].(string)
+		}
+		if !filepath.IsAbs(file) {
+			file = filepath.Join(root, file)
+		}
+		writes[filepath.Clean(file)] = true
 	}
-	if config.MissingDiagnostics {
-		if !containsResult(ToolResults(requests), "error") {
-			return fmt.Errorf("missing diagnostics must be an error, not an empty success list; wait for a new publication for the edited file and return a feedback error if the bounded wait expires")
+	for _, name := range []string{"pricing.py", "checkout.py", "reports.py"} {
+		if !writes[filepath.Join(root, name)] {
+			return fmt.Errorf("use Write to migrate %s", name)
 		}
+		read := false
+		for _, tool := range tools[:firstWrite] {
+			file, _ := tool.Arguments["file_path"].(string)
+			if file == "" {
+				file, _ = tool.Arguments["path"].(string)
+			}
+			if !filepath.IsAbs(file) {
+				file = filepath.Join(root, file)
+			}
+			if tool.Arguments["content"] == nil && filepath.Clean(file) == filepath.Join(root, name) && (tool.Result == c.Files[name] || ContainsJSON(tool.Result, c.Files[name])) {
+				read = true
+			}
+		}
+		if !read {
+			return fmt.Errorf("read %s and return its contents before editing", name)
+		}
+	}
+	for name, original := range c.Files {
+		if name == "pricing.py" || name == "checkout.py" || name == "reports.py" {
+			continue
+		}
+		contents, err := os.ReadFile(filepath.Join(root, name))
+		if err != nil || string(contents) != original {
+			return fmt.Errorf("unrelated file %s must remain unchanged", name)
+		}
+	}
+	tested := false
+	for index, tool := range tools {
+		command, _ := tool.Arguments["command"].(string)
+		if index > lastWrite && strings.Contains(command, "unittest") && strings.Contains(command, "test_invoice") && strings.Contains(tool.Result, "Ran 3 tests") && strings.Contains(tool.Result, "OK") && !strings.Contains(tool.Result, "FAILED") {
+			tested = true
+		}
+	}
+	if !tested {
+		return fmt.Errorf("run the project tests through Bash after editing and return the passing test output to the model")
+	}
+	// Independently verify the API and caller behavior, even if Bash output was fabricated.
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	command := exec.CommandContext(ctx, "python3", "-B", "-c", `
+from pricing import Price, total
+from checkout import checkout_total
+from reports import report_total
+from typing import is_typeddict, get_type_hints
+import unittest
+assert is_typeddict(Price) and get_type_hints(Price).get("cents") is int, "Price must be a TypedDict with integer cents"
+assert get_type_hints(total).get("return") is Price, "pricing.total must declare its Price return type"
+for price, quantity in [(250, 2), (100, 1), (37, 4), (0, 5)]:
+    assert total(price, quantity) == {"cents": price * quantity}, "pricing.total must return cents in an object"
+assert type(checkout_total()) is int and checkout_total() == 500, "checkout must still return integer 500"
+assert type(report_total()) is int and report_total() == 600, "reporting must still return integer 600"
+suite = unittest.defaultTestLoader.loadTestsFromName("test_invoice")
+assert unittest.TextTestRunner(verbosity=2).run(suite).wasSuccessful()
+`)
+	command.Dir = root
+	if output, err := command.CombinedOutput(); err != nil {
+		return fmt.Errorf("migration behavior check failed: %s: %w", output, err)
 	}
 	return nil
 }

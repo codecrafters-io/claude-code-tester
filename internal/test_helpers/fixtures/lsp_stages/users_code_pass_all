@@ -5,7 +5,7 @@
 [tester::#CX7] Wrote preview.py: "# The word total in this comment should stay as it is.\ndef total(label: str) -> str:\n    return \"Preview total: \" + label\n"
 [tester::#CX7] Wrote pricing.py: "def total(price: int, quantity: int) -> int:\n    return price * quantity\n"
 [tester::#CX7] Wrote reports.py: "from pricing import total\n\n\ndef report_total() -> int:\n    return total(250, 2) + total(100, 1)\n"
-[tester::#CX7] Wrote .lsp.json: {"python":{"args":["--lsp-fixture","/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/codecrafters-lsp-control-2747346804/server.json"],"command":"/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/TestLSPStagesOffline1874399945/001/lsp-tester","extensionToLanguage":{".py":"python"}}}
+[tester::#CX7] Wrote .lsp.json: {"python":{"args":["--lsp-fixture","/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/codecrafters-lsp-control-3205131190/server.json"],"command":"/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/TestLSPStagesOffline1027713959/001/lsp-tester","extensionToLanguage":{".py":"python"}}}
 [tester::#CX7] $ ./your_program.sh -p 'Use only Read to inspect checkout.py and pricing.py. Explain how checkout uses the pricing function.'
 [your_program] Done.
 [tester::#CX7] Connected to the helper and advertised LSP; navigation is next
@@ -19,7 +19,7 @@
 [tester::#GZ6] Wrote preview.py: "# The word total in this comment should stay as it is.\ndef total(label: str) -> str:\n    return \"Preview total: \" + label\n"
 [tester::#GZ6] Wrote pricing.py: "def total(price: int, quantity: int) -> int:\n    return price * quantity\n"
 [tester::#GZ6] Wrote reports.py: "from pricing import total\n\n\ndef report_total() -> int:\n    return total(250, 2) + total(100, 1)\n"
-[tester::#GZ6] Wrote .lsp.json: {"python":{"args":["--lsp-fixture","/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/codecrafters-lsp-control-4246113361/server.json"],"command":"/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/TestLSPStagesOffline1874399945/001/lsp-tester","extensionToLanguage":{".py":"python"}}}
+[tester::#GZ6] Wrote .lsp.json: {"python":{"args":["--lsp-fixture","/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/codecrafters-lsp-control-886644607/server.json"],"command":"/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/TestLSPStagesOffline1027713959/001/lsp-tester","extensionToLanguage":{".py":"python"}}}
 [tester::#GZ6] $ ./your_program.sh -p 'Use LSP goToDefinition on checkout.py at line 5, character 12. Read the returned implementation and explain which total is called; preview.total is unrelated.'
 [your_program] Done.
 [tester::#GZ6] Resolved invoice_total to pricing.total; preview.total is unrelated
@@ -31,7 +31,7 @@
 [tester::#GZ6] Wrote pricing.py: "def total(price: int, quantity: int) -> int:\n    return price * quantity\n"
 [tester::#GZ6] Wrote pricing.pyi: "\n\ndef total(price: int, quantity: int) -> int: ...\n"
 [tester::#GZ6] Wrote reports.py: "from pricing import total\n\n\ndef report_total() -> int:\n    return total(250, 2) + total(100, 1)\n"
-[tester::#GZ6] Wrote .lsp.json: {"python":{"args":["--lsp-fixture","/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/codecrafters-lsp-control-3597362417/server.json"],"command":"/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/TestLSPStagesOffline1874399945/001/lsp-tester","extensionToLanguage":{".py":"python"}}}
+[tester::#GZ6] Wrote .lsp.json: {"python":{"args":["--lsp-fixture","/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/codecrafters-lsp-control-1210824643/server.json"],"command":"/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/TestLSPStagesOffline1027713959/001/lsp-tester","extensionToLanguage":{".py":"python"}}}
 [tester::#GZ6] $ ./your_program.sh -p 'Use LSP goToDefinition on checkout.py at line 5, character 12. Read the returned implementation and explain which total is called; preview.total is unrelated.'
 [your_program] Done.
 [tester::#GZ6] Case multiple-definitions passed protocol, tool-result and file checks
@@ -41,7 +41,7 @@
 [tester::#GZ6] Wrote preview.py: "# The word total in this comment should stay as it is.\ndef total(label: str) -> str:\n    return \"Preview total: \" + label\n"
 [tester::#GZ6] Wrote pricing.py: "def total(price: int, quantity: int) -> int:\n    return price * quantity\n"
 [tester::#GZ6] Wrote reports.py: "from pricing import total\n\n\ndef report_total() -> int:\n    return total(250, 2) + total(100, 1)\n"
-[tester::#GZ6] Wrote .lsp.json: {"python":{"args":["--lsp-fixture","/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/codecrafters-lsp-control-3244826464/server.json"],"command":"/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/TestLSPStagesOffline1874399945/001/lsp-tester","extensionToLanguage":{".py":"python"}}}
+[tester::#GZ6] Wrote .lsp.json: {"python":{"args":["--lsp-fixture","/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/codecrafters-lsp-control-4256583513/server.json"],"command":"/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/TestLSPStagesOffline1027713959/001/lsp-tester","extensionToLanguage":{".py":"python"}}}
 [tester::#GZ6] $ ./your_program.sh -p 'Use LSP goToDefinition on checkout.py at line 5, character 12. Read the returned implementation and explain which total is called; preview.total is unrelated.'
 [your_program] Done.
 [tester::#GZ6] Case missing-definition passed protocol, tool-result and file checks
@@ -51,7 +51,7 @@
 [tester::#GZ6] Wrote preview.py: "# The word total in this comment should stay as it is.\ndef total(label: str) -> str:\n    return \"Preview total: \" + label\n"
 [tester::#GZ6] Wrote pricing.py: "def total(price: int, quantity: int) -> int:\n    return price * quantity\n"
 [tester::#GZ6] Wrote reports.py: "from pricing import total\n\n\ndef report_total() -> int:\n    return total(250, 2) + total(100, 1)\n"
-[tester::#GZ6] Wrote .lsp.json: {"python":{"args":["--lsp-fixture","/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/codecrafters-lsp-control-1499236975/server.json"],"command":"/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/TestLSPStagesOffline1874399945/001/lsp-tester","extensionToLanguage":{".py":"python"}}}
+[tester::#GZ6] Wrote .lsp.json: {"python":{"args":["--lsp-fixture","/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/codecrafters-lsp-control-1690175820/server.json"],"command":"/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/TestLSPStagesOffline1027713959/001/lsp-tester","extensionToLanguage":{".py":"python"}}}
 [tester::#GZ6] $ ./your_program.sh -p 'Use LSP goToDefinition on checkout.py at line 5, character 12. Read the returned implementation and explain which total is called; preview.total is unrelated.'
 [your_program] Done.
 [tester::#GZ6] Case definition-error passed protocol, tool-result and file checks
@@ -63,7 +63,7 @@
 [tester::#RB6] Wrote discounts.py: "def total(price: int, quantity: int) -> int:\n    return price * quantity - 50\n"
 [tester::#RB6] Wrote preview.py: "# The word total in this comment should stay as it is.\ndef total(label: str) -> str:\n    return \"Preview total: \" + label\n"
 [tester::#RB6] Wrote pricing.py: "def total(price: int, quantity: int) -> int:\n    return price * quantity\n"
-[tester::#RB6] Wrote .lsp.json: {"python":{"args":["--lsp-fixture","/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/codecrafters-lsp-control-1954921248/server.json"],"command":"/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/TestLSPStagesOffline1874399945/001/lsp-tester","extensionToLanguage":{".py":"python"}}}
+[tester::#RB6] Wrote .lsp.json: {"python":{"args":["--lsp-fixture","/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/codecrafters-lsp-control-82157394/server.json"],"command":"/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/TestLSPStagesOffline1027713959/001/lsp-tester","extensionToLanguage":{".py":"python"}}}
 [tester::#RB6] $ ./your_program.sh -p 'Use LSP findReferences on pricing.py at line 1, character 5. Identify every affected caller before changing its return type. Preserve the returned locations; preview.total and comments are unrelated.'
 [your_program] Done.
 [tester::#RB6] Returned the affected pricing callers; excluded unrelated preview.total
@@ -74,7 +74,7 @@
 [tester::#RB6] Wrote preview.py: "# The word total in this comment should stay as it is.\ndef total(label: str) -> str:\n    return \"Preview total: \" + label\n"
 [tester::#RB6] Wrote pricing.py: "def total(price: int, quantity: int) -> int:\n    return price * quantity\n"
 [tester::#RB6] Wrote reports.py: "from pricing import total\n\n\ndef report_total() -> int:\n    return total(250, 2) + total(100, 1)\n"
-[tester::#RB6] Wrote .lsp.json: {"python":{"args":["--lsp-fixture","/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/codecrafters-lsp-control-1760523683/server.json"],"command":"/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/TestLSPStagesOffline1874399945/001/lsp-tester","extensionToLanguage":{".py":"python"}}}
+[tester::#RB6] Wrote .lsp.json: {"python":{"args":["--lsp-fixture","/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/codecrafters-lsp-control-1467864781/server.json"],"command":"/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/TestLSPStagesOffline1027713959/001/lsp-tester","extensionToLanguage":{".py":"python"}}}
 [tester::#RB6] $ ./your_program.sh -p 'Use LSP findReferences on pricing.py at line 1, character 5. Identify every affected caller before changing its return type. Preserve the returned locations; preview.total and comments are unrelated.'
 [your_program] Done.
 [tester::#RB6] Returned the affected pricing callers; excluded unrelated preview.total
@@ -85,7 +85,7 @@
 [tester::#RB6] Wrote preview.py: "# The word total in this comment should stay as it is.\ndef total(label: str) -> str:\n    return \"Preview total: \" + label\n"
 [tester::#RB6] Wrote pricing.py: "def total(price: int, quantity: int) -> int:\n    return price * quantity\n"
 [tester::#RB6] Wrote reports.py: "from pricing import total\n\n\ndef report_total() -> int:\n    return total(250, 2) + total(100, 1)\n"
-[tester::#RB6] Wrote .lsp.json: {"python":{"args":["--lsp-fixture","/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/codecrafters-lsp-control-2420009501/server.json"],"command":"/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/TestLSPStagesOffline1874399945/001/lsp-tester","extensionToLanguage":{".py":"python"}}}
+[tester::#RB6] Wrote .lsp.json: {"python":{"args":["--lsp-fixture","/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/codecrafters-lsp-control-4068253317/server.json"],"command":"/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/TestLSPStagesOffline1027713959/001/lsp-tester","extensionToLanguage":{".py":"python"}}}
 [tester::#RB6] $ ./your_program.sh -p 'Use LSP findReferences on pricing.py at line 1, character 5. Identify every affected caller before changing its return type. Preserve the returned locations; preview.total and comments are unrelated.'
 [your_program] Done.
 [tester::#RB6] Case no-references passed protocol, tool-result and file checks
@@ -98,7 +98,7 @@
 [tester::#BN2] Wrote preview.py: "# The word total in this comment should stay as it is.\ndef total(label: str) -> str:\n    return \"Preview total: \" + label\n"
 [tester::#BN2] Wrote pricing.py: "def total(price: int, quantity: int) -> int:\n    return price * quantity\n"
 [tester::#BN2] Wrote reports.py: "from pricing import total\n\n\ndef report_total() -> int:\n    return total(250, 2) + total(100, 1)\n"
-[tester::#BN2] Wrote .lsp.json: {"python":{"args":["--lsp-fixture","/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/codecrafters-lsp-control-3488697327/server.json"],"command":"/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/TestLSPStagesOffline1874399945/001/lsp-tester","extensionToLanguage":{".py":"python"}}}
+[tester::#BN2] Wrote .lsp.json: {"python":{"args":["--lsp-fixture","/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/codecrafters-lsp-control-26092648/server.json"],"command":"/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/TestLSPStagesOffline1027713959/001/lsp-tester","extensionToLanguage":{".py":"python"}}}
 [tester::#BN2] $ ./your_program.sh -p 'Use LSP goToDefinition on checkout.py at line 5, character 12. Use Write to change its import from pricing to discounts, preserving the invoice_total alias. Repeat definition lookup at the same position and report the new target.'
 [your_program] Done.
 [tester::#BN2] Definition lookup followed the updated import without restarting the server
@@ -109,7 +109,7 @@
 [tester::#BN2] Wrote preview.py: "# The word total in this comment should stay as it is.\ndef total(label: str) -> str:\n    return \"Preview total: \" + label\n"
 [tester::#BN2] Wrote pricing.py: "def total(price: int, quantity: int) -> int:\n    return price * quantity\n"
 [tester::#BN2] Wrote reports.py: "from pricing import total\n\n\ndef report_total() -> int:\n    return total(250, 2) + total(100, 1)\n"
-[tester::#BN2] Wrote .lsp.json: {"python":{"args":["--lsp-fixture","/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/codecrafters-lsp-control-3609748035/server.json"],"command":"/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/TestLSPStagesOffline1874399945/001/lsp-tester","extensionToLanguage":{".py":"python"}}}
+[tester::#BN2] Wrote .lsp.json: {"python":{"args":["--lsp-fixture","/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/codecrafters-lsp-control-319235858/server.json"],"command":"/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/TestLSPStagesOffline1027713959/001/lsp-tester","extensionToLanguage":{".py":"python"}}}
 [tester::#BN2] $ ./your_program.sh -p 'Use LSP goToDefinition on checkout.py at line 5, character 12. Use Write to change its import from pricing to discounts, preserving the invoice_total alias. Repeat definition lookup at the same position and report the new target. Restore the pricing import using Write and repeat the lookup.'
 [your_program] Done.
 [tester::#BN2] Definition lookup followed the updated import without restarting the server
@@ -120,7 +120,7 @@
 [tester::#BN2] Wrote preview.py: "# The word total in this comment should stay as it is.\ndef total(label: str) -> str:\n    return \"Preview total: \" + label\n"
 [tester::#BN2] Wrote pricing.py: "def total(price: int, quantity: int) -> int:\n    return price * quantity\n"
 [tester::#BN2] Wrote reports.py: "from pricing import total\n\n\ndef report_total() -> int:\n    return total(250, 2) + total(100, 1)\n"
-[tester::#BN2] Wrote .lsp.json: {"python":{"args":["--lsp-fixture","/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/codecrafters-lsp-control-370431602/server.json"],"command":"/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/TestLSPStagesOffline1874399945/001/lsp-tester","extensionToLanguage":{".py":"python"}}}
+[tester::#BN2] Wrote .lsp.json: {"python":{"args":["--lsp-fixture","/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/codecrafters-lsp-control-1944471926/server.json"],"command":"/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/TestLSPStagesOffline1027713959/001/lsp-tester","extensionToLanguage":{".py":"python"}}}
 [tester::#BN2] $ ./your_program.sh -p 'Use Write to change checkout.py'"'"'s import from pricing to discounts, then look up invoice_total at line 5, character 12.'
 [your_program] Done.
 [tester::#BN2] Case write-before-open passed protocol, tool-result and file checks
@@ -130,7 +130,7 @@
 [tester::#BN2] Wrote preview.py: "# The word total in this comment should stay as it is.\ndef total(label: str) -> str:\n    return \"Preview total: \" + label\n"
 [tester::#BN2] Wrote pricing.py: "def total(price: int, quantity: int) -> int:\n    return price * quantity\n"
 [tester::#BN2] Wrote reports.py: "from pricing import total\n\n\ndef report_total() -> int:\n    return total(250, 2) + total(100, 1)\n"
-[tester::#BN2] Wrote .lsp.json: {"python":{"args":["--lsp-fixture","/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/codecrafters-lsp-control-416887318/server.json"],"command":"/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/TestLSPStagesOffline1874399945/001/lsp-tester","extensionToLanguage":{".py":"python"}}}
+[tester::#BN2] Wrote .lsp.json: {"python":{"args":["--lsp-fixture","/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/codecrafters-lsp-control-2496023223/server.json"],"command":"/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/TestLSPStagesOffline1027713959/001/lsp-tester","extensionToLanguage":{".py":"python"}}}
 [tester::#BN2] $ ./your_program.sh -p 'Look up invoice_total in checkout.py at line 5, character 12. Try Write on the directory . with content invalid. Repeat the lookup.'
 [your_program] Done.
 [tester::#BN2] Definition lookup followed the updated import without restarting the server
@@ -138,53 +138,30 @@
 [tester::#BN2] Test passed.
 
 [tester::#QL9] Running tests for Stage #QL9 (ql9)
-[tester::#QL9] Case: api-change-missed-caller-repaired
+[tester::#QL9] Case: api-migration-across-files
 [tester::#QL9] Wrote checkout.py: "from pricing import total as invoice_total\n\n\ndef checkout_total() -> int:\n    return invoice_total(250, 2)\n"
 [tester::#QL9] Wrote discounts.py: "def total(price: int, quantity: int) -> int:\n    return price * quantity - 50\n"
 [tester::#QL9] Wrote preview.py: "# The word total in this comment should stay as it is.\ndef total(label: str) -> str:\n    return \"Preview total: \" + label\n"
 [tester::#QL9] Wrote pricing.py: "def total(price: int, quantity: int) -> int:\n    return price * quantity\n"
 [tester::#QL9] Wrote reports.py: "from pricing import total\n\n\ndef report_total() -> int:\n    return total(250, 2) + total(100, 1)\n"
-[tester::#QL9] Wrote .lsp.json: {"python":{"args":["--lsp-fixture","/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/codecrafters-lsp-control-2092767288/server.json"],"command":"/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/TestLSPStagesOffline1874399945/001/lsp-tester","extensionToLanguage":{".py":"python"}}}
-[tester::#QL9] $ ./your_program.sh -p 'Migrate pricing.total from integer cents to a Price TypedDict containing cents. Use LSP definition on checkout.py at line 5, character 12 and references on pricing.py at line 1, character 5 to inspect affected callers. Update reporting to read cents. Replay the supplied partial checkout migration (store invoice_total(250, 2) in amount, then return amount), inspect its Write feedback, and repair the caller using that feedback. Report whether the error cleared. The fixed first attempt makes this a controlled before/after demonstration.'
+[tester::#QL9] Wrote test_invoice.py: "import unittest\n\nfrom checkout import checkout_total\nfrom preview import total as preview_total\nfrom reports import report_total\n\n\nclass InvoiceTests(unittest.TestCase):\n    # The checkout returns an integer amount in cents.\n    def test_checkout_total_is_500_cents(self):\n        # Arrange\n        expected = 500\n\n        # Act\n        actual = checkout_total()\n\n        # Assert\n        self.assertEqual(actual, expected)\n\n    # Both calls in the report keep their original behavior.\n    def test_report_total_is_600_cents(self):\n        # Arrange\n        expected = 600\n\n        # Act\n        actual = report_total()\n\n        # Assert\n        self.assertEqual(actual, expected)\n\n    # The unrelated preview function keeps its original behavior.\n    def test_preview_keeps_its_label(self):\n        # Arrange\n        label = \"sample\"\n\n        # Act\n        actual = preview_total(label)\n\n        # Assert\n        self.assertEqual(actual, \"Preview total: sample\")\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+[tester::#QL9] Wrote .lsp.json: {"python":{"args":["--lsp-fixture","/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/codecrafters-lsp-control-807050841/server.json"],"command":"/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/TestLSPStagesOffline1027713959/001/lsp-tester","extensionToLanguage":{".py":"python"}}}
+[tester::#QL9] $ ./your_program.sh -p 'Change pricing.total to return a Price TypedDict with a cents field. Use LSP goToDefinition on checkout.py at line 5, character 12 and findReferences on pricing.py at line 1, character 5. Read the implementation and affected callers. Update checkout and reporting so they still return integer cents. Leave unrelated files unchanged. After editing, repeat definition lookup on checkout.py and findReferences on pricing.py at line 8, character 5 to check the current code. Run python3 -m unittest -v test_invoice.py and report the result.'
 [your_program] Done.
-[tester::#QL9] Partial API migration: Write saved checkout.py, but the caller still returns Price as int
-[tester::#QL9] Edit feedback for checkout.py: Type Price is not assignable to return type int
-[tester::#QL9] Repair feedback for checkout.py: diagnostics []
-[tester::#QL9] Case api-change-missed-caller-repaired passed protocol, tool-result and file checks
-[tester::#QL9] Case: unversioned-publications
+[tester::#QL9] Migrated pricing.total and its callers; unrelated preview.total is unchanged
+[tester::#QL9] Project tests passed through Bash: checkout 500 cents, reporting 600 cents
+[tester::#QL9] Case api-migration-across-files passed protocol, tool-result and file checks
+[tester::#QL9] Case: migration-without-diagnostic-publications
 [tester::#QL9] Wrote checkout.py: "from pricing import total as invoice_total\n\n\ndef checkout_total() -> int:\n    return invoice_total(250, 2)\n"
 [tester::#QL9] Wrote discounts.py: "def total(price: int, quantity: int) -> int:\n    return price * quantity - 50\n"
 [tester::#QL9] Wrote preview.py: "# The word total in this comment should stay as it is.\ndef total(label: str) -> str:\n    return \"Preview total: \" + label\n"
 [tester::#QL9] Wrote pricing.py: "def total(price: int, quantity: int) -> int:\n    return price * quantity\n"
 [tester::#QL9] Wrote reports.py: "from pricing import total\n\n\ndef report_total() -> int:\n    return total(250, 2) + total(100, 1)\n"
-[tester::#QL9] Wrote .lsp.json: {"python":{"args":["--lsp-fixture","/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/codecrafters-lsp-control-27471443/server.json"],"command":"/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/TestLSPStagesOffline1874399945/001/lsp-tester","extensionToLanguage":{".py":"python"}}}
-[tester::#QL9] $ ./your_program.sh -p 'Migrate pricing.total from integer cents to a Price TypedDict containing cents. Use LSP definition on checkout.py at line 5, character 12 and references on pricing.py at line 1, character 5 to inspect affected callers. Update reporting to read cents. Replay the supplied partial checkout migration (store invoice_total(250, 2) in amount, then return amount), inspect its Write feedback, and repair the caller using that feedback. Report whether the error cleared. The fixed first attempt makes this a controlled before/after demonstration.'
+[tester::#QL9] Wrote test_invoice.py: "import unittest\n\nfrom checkout import checkout_total\nfrom preview import total as preview_total\nfrom reports import report_total\n\n\nclass InvoiceTests(unittest.TestCase):\n    # The checkout returns an integer amount in cents.\n    def test_checkout_total_is_500_cents(self):\n        # Arrange\n        expected = 500\n\n        # Act\n        actual = checkout_total()\n\n        # Assert\n        self.assertEqual(actual, expected)\n\n    # Both calls in the report keep their original behavior.\n    def test_report_total_is_600_cents(self):\n        # Arrange\n        expected = 600\n\n        # Act\n        actual = report_total()\n\n        # Assert\n        self.assertEqual(actual, expected)\n\n    # The unrelated preview function keeps its original behavior.\n    def test_preview_keeps_its_label(self):\n        # Arrange\n        label = \"sample\"\n\n        # Act\n        actual = preview_total(label)\n\n        # Assert\n        self.assertEqual(actual, \"Preview total: sample\")\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+[tester::#QL9] Wrote .lsp.json: {"python":{"args":["--lsp-fixture","/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/codecrafters-lsp-control-358428046/server.json"],"command":"/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/TestLSPStagesOffline1027713959/001/lsp-tester","extensionToLanguage":{".py":"python"}}}
+[tester::#QL9] $ ./your_program.sh -p 'Change pricing.total to return a Price TypedDict with a cents field. Use LSP goToDefinition on checkout.py at line 5, character 12 and findReferences on pricing.py at line 1, character 5. Read the implementation and affected callers. Update checkout and reporting so they still return integer cents. Leave unrelated files unchanged. After editing, repeat definition lookup on checkout.py and findReferences on pricing.py at line 8, character 5 to check the current code. Run python3 -m unittest -v test_invoice.py and report the result.'
 [your_program] Done.
-[tester::#QL9] Partial API migration: Write saved checkout.py, but the caller still returns Price as int
-[tester::#QL9] Edit feedback for checkout.py: Type Price is not assignable to return type int
-[tester::#QL9] Repair feedback for checkout.py: diagnostics []
-[tester::#QL9] Case unversioned-publications passed protocol, tool-result and file checks
-[tester::#QL9] Case: older-version-after-repair
-[tester::#QL9] Wrote checkout.py: "from pricing import total as invoice_total\n\n\ndef checkout_total() -> int:\n    return invoice_total(250, 2)\n"
-[tester::#QL9] Wrote discounts.py: "def total(price: int, quantity: int) -> int:\n    return price * quantity - 50\n"
-[tester::#QL9] Wrote preview.py: "# The word total in this comment should stay as it is.\ndef total(label: str) -> str:\n    return \"Preview total: \" + label\n"
-[tester::#QL9] Wrote pricing.py: "def total(price: int, quantity: int) -> int:\n    return price * quantity\n"
-[tester::#QL9] Wrote reports.py: "from pricing import total\n\n\ndef report_total() -> int:\n    return total(250, 2) + total(100, 1)\n"
-[tester::#QL9] Wrote .lsp.json: {"python":{"args":["--lsp-fixture","/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/codecrafters-lsp-control-1631518897/server.json"],"command":"/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/TestLSPStagesOffline1874399945/001/lsp-tester","extensionToLanguage":{".py":"python"}}}
-[tester::#QL9] $ ./your_program.sh -p 'Migrate pricing.total from integer cents to a Price TypedDict containing cents. Use LSP definition on checkout.py at line 5, character 12 and references on pricing.py at line 1, character 5 to inspect affected callers. Update reporting to read cents. Replay the supplied partial checkout migration (store invoice_total(250, 2) in amount, then return amount), inspect its Write feedback, and repair the caller using that feedback. Report whether the error cleared. The fixed first attempt makes this a controlled before/after demonstration.'
-[your_program] Done.
-[tester::#QL9] Partial API migration: Write saved checkout.py, but the caller still returns Price as int
-[tester::#QL9] Edit feedback for checkout.py: Type Price is not assignable to return type int
-[tester::#QL9] Repair feedback for checkout.py: diagnostics []
-[tester::#QL9] Case older-version-after-repair passed protocol, tool-result and file checks
-[tester::#QL9] Case: missing-feedback-is-an-error
-[tester::#QL9] Wrote checkout.py: "from pricing import total as invoice_total\n\n\ndef checkout_total() -> int:\n    return invoice_total(250, 2)\n"
-[tester::#QL9] Wrote discounts.py: "def total(price: int, quantity: int) -> int:\n    return price * quantity - 50\n"
-[tester::#QL9] Wrote preview.py: "# The word total in this comment should stay as it is.\ndef total(label: str) -> str:\n    return \"Preview total: \" + label\n"
-[tester::#QL9] Wrote pricing.py: "def total(price: int, quantity: int) -> int:\n    return price * quantity\n"
-[tester::#QL9] Wrote reports.py: "from pricing import total\n\n\ndef report_total() -> int:\n    return total(250, 2) + total(100, 1)\n"
-[tester::#QL9] Wrote .lsp.json: {"python":{"args":["--lsp-fixture","/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/codecrafters-lsp-control-1509862874/server.json"],"command":"/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/TestLSPStagesOffline1874399945/001/lsp-tester","extensionToLanguage":{".py":"python"}}}
-[tester::#QL9] $ ./your_program.sh -p 'Use Write to migrate pricing.total to a Price TypedDict with cents. Report a feedback error if the server never publishes diagnostics.'
-[your_program] Done.
-[tester::#QL9] Case missing-feedback-is-an-error passed protocol, tool-result and file checks
+[tester::#QL9] Migrated pricing.total and its callers; unrelated preview.total is unchanged
+[tester::#QL9] Project tests passed through Bash: checkout 500 cents, reporting 600 cents
+[tester::#QL9] Case migration-without-diagnostic-publications passed protocol, tool-result and file checks
 [tester::#QL9] Test passed.

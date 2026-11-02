@@ -3,13 +3,12 @@ package lsp_manager
 import "strings"
 
 type Case struct {
-	Name                   string
-	Prompt                 string
-	Actions                []Action
-	Config                 Config
-	Files                  map[string]string
-	WantDefinitions        []string
-	WantDiagnosticVersions []int
+	Name            string
+	Prompt          string
+	Actions         []Action
+	Config          Config
+	Files           map[string]string
+	WantDefinitions []string
 }
 
 func query(operation string) Action {
@@ -57,21 +56,22 @@ func Cases(slug string) []Case {
 			{Name: "failed-write-keeps-analysis", Prompt: "Look up invoice_total in checkout.py at line 5, character 12. Try Write on the directory . with content invalid. Repeat the lookup.", Actions: []Action{definition, {Operation: "write", File: ".", Content: "invalid"}, definition}, WantDefinitions: []string{"pricing.py", "pricing.py"}},
 		}
 	case "ql9":
+		files["test_invoice.py"] = InvoiceTests
 		api := Action{Operation: "write", File: "pricing.py", Content: PriceAPI}
+		checkout := Action{Operation: "write", File: "checkout.py", Content: strings.Replace(files["checkout.py"], "invoice_total(250, 2)", `invoice_total(250, 2)["cents"]`, 1)}
 		reports := Action{Operation: "write", File: "reports.py", Content: strings.ReplaceAll(strings.ReplaceAll(files["reports.py"], "total(250, 2)", `total(250, 2)["cents"]`), "total(100, 1)", `total(100, 1)["cents"]`)}
-		// Replay a partial migration: the caller stores the new object but still returns it as int.
-		partial := strings.Replace(files["checkout.py"], "    return invoice_total(250, 2)", "    amount = invoice_total(250, 2)\n    return amount", 1)
-		bad := Action{Operation: "write", File: "checkout.py", Content: partial}
-		repair := bad
-		repair.Content = strings.Replace(partial, "return amount", `return amount["cents"]`, 1)
-		repair.AfterDiagnostic = true
-		prompt := `Migrate pricing.total from integer cents to a Price TypedDict containing cents. Use LSP definition on checkout.py at line 5, character 12 and references on pricing.py at line 1, character 5 to inspect affected callers. Update reporting to read cents. Replay the supplied partial checkout migration (store invoice_total(250, 2) in amount, then return amount), inspect its Write feedback, and repair the caller using that feedback. Report whether the error cleared. The fixed first attempt makes this a controlled before/after demonstration.`
-		actions := []Action{definition, references, api, reports, bad, repair}
+		updatedReferences := references
+		updatedReferences.Line = 7
+		prompt := `Change pricing.total to return a Price TypedDict with a cents field. Use LSP goToDefinition on checkout.py at line 5, character 12 and findReferences on pricing.py at line 1, character 5. Read the implementation and affected callers. Update checkout and reporting so they still return integer cents. Leave unrelated files unchanged. After editing, repeat definition lookup on checkout.py and findReferences on pricing.py at line 8, character 5 to check the current code. Run python3 -m unittest -v test_invoice.py and report the result.`
+		actions := []Action{
+			definition, {Operation: "read", File: "pricing.py"}, references,
+			{Operation: "read", File: "checkout.py"}, {Operation: "read", File: "reports.py"},
+			api, checkout, reports, definition, updatedReferences,
+			{Operation: "bash", Content: "python3 -m unittest -v test_invoice.py"},
+		}
 		return []Case{
-			{Name: "api-change-missed-caller-repaired", Prompt: prompt, Actions: actions, WantDiagnosticVersions: []int{2, 3}},
-			{Name: "unversioned-publications", Prompt: prompt, Actions: actions, Config: Config{UnversionedDiagnostics: true}, WantDiagnosticVersions: []int{2, 3}},
-			{Name: "older-version-after-repair", Prompt: prompt, Actions: actions, Config: Config{StaleDiagnostics: true}, WantDiagnosticVersions: []int{2, 3}},
-			{Name: "missing-feedback-is-an-error", Prompt: "Use Write to migrate pricing.total to a Price TypedDict with cents. Report a feedback error if the server never publishes diagnostics.", Actions: []Action{api}, Config: Config{MissingDiagnostics: true}},
+			{Name: "api-migration-across-files", Prompt: prompt, Actions: actions, Files: files},
+			{Name: "migration-without-diagnostic-publications", Prompt: prompt, Actions: actions, Files: files, Config: Config{MissingDiagnostics: true}},
 		}
 	}
 	return nil

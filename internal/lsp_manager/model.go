@@ -5,22 +5,23 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/codecrafters-io/claude-code-tester/proxy_server"
 )
 
 type Action struct {
-	Operation       string
-	File            string
-	Line            int
-	Character       int
-	Content         string
-	AfterDiagnostic bool
+	Operation string
+	File      string
+	Line      int
+	Character int
+	Content   string
 }
 
 func (a Action) arguments() map[string]any {
+	if a.Operation == "bash" {
+		return map[string]any{"command": a.Content}
+	}
 	if a.Operation == "write" {
 		return map[string]any{"file_path": a.File, "content": a.Content}
 	}
@@ -47,9 +48,7 @@ func ScriptedModel(actions []Action) http.Handler {
 	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		var body struct {
 			Messages []struct {
-				Role    string          `json:"role"`
-				ID      string          `json:"tool_call_id"`
-				Content json.RawMessage `json:"content"`
+				Role string `json:"role"`
 			} `json:"messages"`
 			Tools []struct {
 				Function struct {
@@ -74,39 +73,22 @@ func ScriptedModel(actions []Action) http.Handler {
 		finish := "stop"
 		if step < len(actions) {
 			action := actions[step]
-			if action.AfterDiagnostic {
-				hasDiagnostic := false
-				for _, message := range body.Messages {
-					if message.Role != "tool" || message.ID != fmt.Sprintf("lsp_call_%d", step-1) {
-						continue
-					}
-					var content string
-					if json.Unmarshal(message.Content, &content) != nil {
-						content = string(message.Content)
-					}
-					hasDiagnostic = ContainsJSON(content, map[string]any{"severity": 1})
-				}
-				if !hasDiagnostic {
-					http.Error(writer, "Return an error diagnostic from the preceding Write before the model can choose a repair. After synchronizing the file, keep reading publishDiagnostics notifications and return the new list in that Write result. A timeout is a feedback error, not an empty diagnostics list.", http.StatusBadRequest)
-					return
-				}
-			}
 			name := ""
 			for _, tool := range body.Tools {
 				properties := tool.Function.Parameters.Properties
-				if action.Operation == "write" && properties["content"] != nil || action.Operation == "read" && properties["file_path"] != nil && properties["content"] == nil || action.Operation != "write" && action.Operation != "read" && properties["operation"] != nil {
+				if action.Operation == "bash" && properties["command"] != nil || action.Operation == "write" && properties["content"] != nil || action.Operation == "read" && (properties["file_path"] != nil || properties["path"] != nil) && properties["content"] == nil || action.Operation != "bash" && action.Operation != "write" && action.Operation != "read" && properties["operation"] != nil {
 					name = tool.Function.Name
 					break
 				}
 			}
 			if name == "" {
-				http.Error(writer, "Advertise the requested LSP or Write tool", 400)
+				http.Error(writer, "Advertise the requested LSP, Read, Write, or Bash tool", 400)
 				return
 			}
 			arguments := action.arguments()
 			// Accept the base course's path spelling as well as file_path.
 			for _, tool := range body.Tools {
-				if tool.Function.Name == name && tool.Function.Parameters.Properties["file_path"] == nil && tool.Function.Parameters.Properties["path"] != nil {
+				if action.Operation != "bash" && tool.Function.Name == name && tool.Function.Parameters.Properties["file_path"] == nil && tool.Function.Parameters.Properties["path"] != nil {
 					arguments["path"] = arguments["file_path"]
 					delete(arguments, "file_path")
 				}
@@ -161,13 +143,4 @@ func ToolResults(requests []string) map[string]string {
 		}
 	}
 	return results
-}
-
-func containsResult(results map[string]string, value string) bool {
-	for _, result := range results {
-		if strings.Contains(result, value) {
-			return true
-		}
-	}
-	return false
 }

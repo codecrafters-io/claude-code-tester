@@ -63,11 +63,12 @@ func TestLSPRejectsBrokenClients(t *testing.T) {
 		{"discarded-definition", "gz6", "        return result\n\n", "        return None\n\n", "server result did not reach"},
 		{"references-declaration-omitted", "rb6", `{"includeDeclaration": True}`, `{"includeDeclaration": False}`, "includeDeclaration: true"},
 		{"unsynchronized-write", "bn2", `self.send("textDocument/didChange", {`, `self.send("textDocument/didNotChange", {`, "stale text"},
-		{"unversioned-diagnostics-discarded", "ql9", `version = diagnostic.get("version")`, `version = diagnostic.get("version")
-            if version is None:
-                continue`, "Return an error diagnostic from the preceding Write"},
-		{"cached-unversioned-diagnostics", "ql9", `before = self.diagnostic_ticks.get(uri, 0)`, `before = -1`, "Return an error diagnostic from the preceding Write"},
-		{"timeout-as-empty-diagnostics", "ql9", `raise TimeoutError("Diagnostic feedback error: no fresh publication")`, `return {"uri":uri,"diagnostics":[]}`, "missing diagnostics must be an error"},
+		{"capstone-unsynchronized-write", "ql9", `self.send("textDocument/didChange", {`, `self.send("textDocument/didNotChange", {`, "stale text"},
+		{"capstone-missed-reporting-caller", "ql9", `path.write_text(content, encoding="utf-8")`, `if path.name != "reports.py":
+            path.write_text(content, encoding="utf-8")`, "return the passing test output"},
+		{"capstone-unrelated-preview-edited", "ql9", `path.write_text(content, encoding="utf-8")`, `path.write_text(content, encoding="utf-8")
+        Path("preview.py").write_text("# unrelated edit\n")`, "unrelated file preview.py must remain unchanged"},
+		{"capstone-lost-test-output", "ql9", `result = {"stdout": output.stdout, "stderr": output.stderr, "exit_code": output.returncode}`, `result = {"exit_code": output.returncode}`, "return the passing test output"},
 	}
 	for _, testCase := range cases {
 		t.Run(testCase.name, func(t *testing.T) {
@@ -122,4 +123,53 @@ func TestLSPSetupWithoutNavigation(t *testing.T) {
 	// Assert
 	require.NoError(t, err, output)
 	require.Contains(t, output, "Connected to the helper and advertised LSP; navigation is next")
+}
+
+// The capstone passes without implementing diagnostic collection in the agent.
+func TestLSPMigrationWithoutDiagnostics(t *testing.T) {
+	// Arrange
+	binary := lspFixtureBinary(t)
+	reference, err := os.ReadFile("test_helpers/scenarios/lsp_stages/users_code_pass_all/app/main.py")
+	require.NoError(t, err)
+	require.NotContains(t, string(reference), "publishDiagnostics")
+	directory := lspScenario(t, string(reference))
+	// Act
+	output, err := runLSPScenario(t, binary, directory, "ql9")
+	// Assert
+	require.NoError(t, err, output)
+	require.Contains(t, output, "migration-without-diagnostic-publications")
+	require.Contains(t, output, "Project tests passed through Bash")
+}
+
+// Equivalent source code passes the capstone's behavior checks.
+func TestLSPMigrationAcceptsEquivalentImplementation(t *testing.T) {
+	// Arrange
+	binary := lspFixtureBinary(t)
+	reference, err := os.ReadFile("test_helpers/scenarios/lsp_stages/users_code_pass_all/app/main.py")
+	require.NoError(t, err)
+	source := strings.Replace(string(reference), `path.write_text(content, encoding="utf-8")`, `content = content.replace('return {"cents": price * quantity}', 'return dict(cents=price * quantity)')
+        path.write_text(content, encoding="utf-8")`, 1)
+	directory := lspScenario(t, source)
+	// Act
+	output, err := runLSPScenario(t, binary, directory, "ql9")
+	// Assert
+	require.NoError(t, err, output)
+	require.Contains(t, output, "Project tests passed through Bash")
+}
+
+// Fabricated passing Bash output cannot hide a caller that was never migrated.
+func TestLSPMigrationRejectsFabricatedTestOutput(t *testing.T) {
+	// Arrange
+	binary := lspFixtureBinary(t)
+	reference, err := os.ReadFile("test_helpers/scenarios/lsp_stages/users_code_pass_all/app/main.py")
+	require.NoError(t, err)
+	source := strings.Replace(string(reference), `path.write_text(content, encoding="utf-8")`, `if path.name != "reports.py":
+            path.write_text(content, encoding="utf-8")`, 1)
+	source = strings.Replace(source, `result = {"stdout": output.stdout, "stderr": output.stderr, "exit_code": output.returncode}`, `result = {"stdout": "Ran 3 tests\nOK", "exit_code": 0}`, 1)
+	directory := lspScenario(t, source)
+	// Act
+	output, err := runLSPScenario(t, binary, directory, "ql9")
+	// Assert
+	require.Error(t, err, output)
+	require.Contains(t, output, "migration behavior check failed")
 }
