@@ -17,87 +17,89 @@ Code" challenge.
 
 ## LSP extension
 
-The seven graded stages stay within Claude Code's built-in LSP capabilities.
-The finale lets the agent catch its own mistake: a bad Write returns a type
-error, the model uses that feedback to choose a repair, and the next Write
-clears the error. The scripted model refuses to select the repair without an
-error diagnostic from the preceding Write. Rename is outside this extension.
-Official allocation of current stage IDs is deferred at the course author's
-request.
+Four graded stages connect an LSP tool and diagnostic feedback to the existing
+agent loop:
+
+1. df3: Find the implementation.
+2. rf4: Find the affected callers.
+3. sy5: Keep the analysis current.
+4. dg6: Catch an error after editing.
+
+The supplied transport starts the configured server, handles JSON-RPC framing
+and initialization, and queues notifications while requests are running. The
+tester provides CODECRAFTERS_LSP_URL to the submitted program. The native starter
+clients call request, notify, and notifications actions through that local URL.
+The local HTTP facade is course scaffolding; the server still speaks stdio LSP.
+Learners construct document messages, track versions, return tool results and
+choose how diagnostic feedback reaches the model. The helper never runs an agent.
 
 The reference agent uses Python's standard library. The controlled stdio fixture
-runs from the tester binary, so grading does not require installing Pyright.
+runs from the tester binary, so grading doesn't require installing Pyright.
 
 ```sh
 make test_lsp
 make test_lsp_offline
 ```
 
-These commands cover 23 stage cases and eight deliberately broken clients:
-missing initialization, wrong coordinate conversion, omitted declarations,
-discarded hover results, unsynchronized writes, discarded unversioned reports,
-reused cached unversioned reports, and false empty diagnostics after a timeout. Stage output is recorded in the
-existing fixture format. Each case gets a private loopback model endpoint via
-OPENROUTER_BASE_URL, keeping unrelated traffic out of its recording.
+These commands cover 16 graded cases and seven deliberately broken clients:
+wrong coordinates, lost definition results, omitted declaration context,
+unsynchronized writes, discarded unversioned reports, reused cached feedback and
+false clean diagnostics on timeout. Separate transport tests cover fragmented
+startup, notifications during requests, failed initialization and process cleanup.
 
-The LSP tool uses Claude Code's hover, goToDefinition and findReferences names,
-filePath, and one-based editor coordinates. JSON-RPC positions remain zero-based.
-The project configuration uses the product's named server map with command,
-args and extensionToLanguage. Plugin installation and discovery are outside the
-course. Diagnostic feedback uses the base course's Write tool-result channel;
-Claude Code can deliver it as a separate conversation attachment.
+The exercise migrates pricing.total from integer cents to a Price TypedDict.
+A controlled partial caller edit still returns Price as int. The scripted model
+requires the preceding Write's error before selecting the repair; the repaired
+Write must receive an empty diagnostic publication. Logs show both the error and
+clearing. This is a fixed demonstration, not a guarantee that a live model will
+make an error. Final files, protocol traffic and matching tool results are checked.
 
-To regenerate recorded stage output:
+Navigation operations are goToDefinition and findReferences, with filePath and
+one-based UTF-16 coordinates. Protocol positions are zero-based. Configuration
+uses the product's named command/args/extensionToLanguage map. Plugin management,
+hover stages and rename are outside the extension. Current IDs remain provisional;
+retired ls1/ir2/hv2 IDs are not reallocated.
+
+Regenerate recorded output when prompts or cases change:
 
 ```sh
 make record_lsp_fixtures
 ```
 
-For live-model trials, configure CODECRAFTERS_SECRET_OPENROUTER_API_KEY and run:
-
-```sh
-make test_lsp_with_users_code
-```
-
-The earlier CI credential received HTTP 401. No valid key is configured locally.
-Live-model reliability, 100-run live flakiness checks and model-backed prose lint
-remain unverified. Offline or scripted checks do not establish those results.
+For live-model trials, configure CODECRAFTERS_SECRET_OPENROUTER_API_KEY and run
+`make test_lsp_with_users_code`. Live-model reliability, 100-run live flakiness
+checks and learner pacing trials remain release gates. Offline scripted checks
+do not establish those results.
 
 ### Independent implementation checks
 
-Install the pinned Python language server outside the repository:
+Install a pinned server outside the repository, then run:
 
 ```sh
 npm install --prefix /tmp/lsp-pyright --ignore-scripts pyright@1.1.414
 make test_lsp_with_pyright PYRIGHT_LANGSERVER=/tmp/lsp-pyright/node_modules/.bin/pyright-langserver
-```
-
-This runs the reference client against Pyright through initialization, hover,
-alias definition, references, a bad write, diagnostic feedback, repair, clearing
-and shutdown. It enables basic type checking in the temporary project. The
-client accepts unversioned publications instead of rejecting Pyright's reports.
-An unversioned publication cannot identify which edit was analyzed; the course
-fixture supplies one response per open/change for deterministic grading.
-
-The second check runs the actual CI-pinned Claude Code 2.1.266 against Pyright,
-using a temporary plugin and a local scripted Anthropic endpoint:
-
-```sh
 make test_lsp_with_claude_code CLAUDE_CODE_BINARY=/path/to/claude-2.1.266 PYRIGHT_LANGSERVER=/tmp/lsp-pyright/node_modules/.bin/pyright-langserver
 ```
 
-It verifies protocol traffic, one-based-to-zero-based coordinate conversion,
-includeDeclaration true, file synchronization, type-error delivery to the model,
-and a completed repair. It makes no paid model calls and uses a temporary config
-directory. The stage runner prints the verified edit error and diagnostic
-clearing after a successful repair, so the payoff is visible in learner logs.
-Bash remains available, matching the completed base course: the pinned
-CLI suppresses diagnostic attachments when both Bash and PowerShell are absent.
-The scripted model only calls navigation and file tools.
+The first check uses the supplied transport and reference integration with real
+Pyright. It waits for Pyright's project discovery before asserting workspace
+references, checks the target after an edited import, then observes the actual
+Price return-type error and diagnostic clearing. The repaired caller returns 500.
+The helper transports notifications; the reference agent implements freshness.
 
-This native check compares the features against an independent implementation;
-it does not claim that Claude Code's formatted output passes the learner
-fixture's structured JSON assertions. The two checks run in a dedicated CI job.
+The second runs Claude Code 2.1.266 with a temporary plugin, Pyright and a local
+scripted Anthropic endpoint. It verifies definition, references, position conversion,
+includeDeclaration true, the same API migration, diagnostic delivery and repair.
+Bash stays available because this product version suppresses automatic diagnostic
+attachments without Bash or PowerShell. The scripted model never invokes a shell.
+The native check observes product diagnostic attachments separately from the
+learner fixture's structured Write results. Neither check uses paid model calls.
+
+Versioned stale reports are rejected; unversioned reports are accepted in arrival
+order and cannot establish which edit was analyzed. Missing feedback is an error.
+The fixture publishes once per open/change except in its missing-feedback case;
+real servers determine publication timing. Cleared diagnostics do not prove
+behavioral correctness.
 
 ## CI and repository conventions
 

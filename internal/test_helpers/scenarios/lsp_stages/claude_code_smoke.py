@@ -69,20 +69,23 @@ def verify(claude, server):
         (plugin / ".claude-plugin").mkdir(parents=True)
         (plugin / ".claude-plugin/plugin.json").write_text(json.dumps({"name": "lsp-course-smoke", "version": "1.0.0"}))
         pricing = "def total(price: int, quantity: int) -> int:\n    return price * quantity\n"
-        good = "from pricing import total as invoice_total\n\namount = invoice_total(250, 2)\n"
-        bad = good.replace("(250,", '("250",')
+        original = "from pricing import total as invoice_total\n\n\ndef checkout_total() -> int:\n    return invoice_total(250, 2)\n"
+        bad = original.replace("    return invoice_total(250, 2)", "    amount = invoice_total(250, 2)\n    return amount")
+        good = bad.replace("return amount", 'return amount["cents"]')
+        migrated = 'from typing import TypedDict\n\nclass Price(TypedDict):\n    cents: int\n\ndef total(price: int, quantity: int) -> Price:\n    return {"cents": price * quantity}\n'
         (root / "pricing.py").write_text(pricing)
-        (root / "checkout.py").write_text(good)
+        (root / "checkout.py").write_text(original)
         (root / "pyrightconfig.json").write_text(json.dumps({"typeCheckingMode": "basic"}))
         actions = [
-            ("Read", {"file_path": str(root / "checkout.py")}),
-            ("LSP", {"operation": "hover", "filePath": "pricing.py", "line": 1, "character": 5}),
-            ("LSP", {"operation": "goToDefinition", "filePath": "checkout.py", "line": 3, "character": 10}),
-            ("LSP", {"operation": "findReferences", "filePath": "pricing.py", "line": 1, "character": 5}),
-            ("Write", {"file_path": str(root / "checkout.py"), "content": bad}),
-            ("LSP", {"operation": "hover", "filePath": "checkout.py", "line": 3, "character": 10}),
-            ("Write", {"file_path": str(root / "checkout.py"), "content": good}),
-            ("LSP", {"operation": "hover", "filePath": "checkout.py", "line": 3, "character": 10}),
+            ("Read", {"file_path":str(root/"pricing.py")}),
+            ("Read", {"file_path":str(root/"checkout.py")}),
+            ("LSP", {"operation":"goToDefinition","filePath":"checkout.py","line":5,"character":12}),
+            ("LSP", {"operation":"findReferences","filePath":"pricing.py","line":1,"character":5}),
+            ("Write", {"file_path":str(root/"pricing.py"),"content":migrated}),
+            ("Write", {"file_path":str(root/"checkout.py"),"content":bad}),
+            ("LSP", {"operation":"goToDefinition","filePath":"checkout.py","line":5,"character":14}),
+            ("Write", {"file_path":str(root/"checkout.py"),"content":good}),
+            ("LSP", {"operation":"goToDefinition","filePath":"checkout.py","line":5,"character":14}),
         ]
 
         def publication_after_edit(content):
@@ -115,12 +118,12 @@ def verify(claude, server):
                 else:
                     requests.append(body)
                     completed = sum(1 for message in body.get("messages", []) for block in message.get("content", []) if isinstance(block, dict) and block.get("type") == "tool_result")
-                    if completed in [5, 7]:
-                        content = bad if completed == 5 else good
+                    if completed in [6, 8]:
+                        content = bad if completed == 6 else good
                         with condition:
                             if not condition.wait_for(lambda: publication_after_edit(content), timeout=10):
                                 failures.append(f"No diagnostic publication after edit {completed}")
-                    repair_ready = completed != 6 or "cannot be assigned" in json.dumps(body.get("messages", []))
+                    repair_ready = completed != 7 or any(word in json.dumps(body.get("messages", [])) for word in ["not assignable", "cannot be assigned"])
                     if not repair_ready:
                         failures.append("Type error must reach the model before it selects the repair")
                     content = [{"type": "text", "text": "Done."}]
@@ -142,7 +145,7 @@ def verify(claude, server):
         (plugin / ".lsp.json").write_text(json.dumps(configuration))
         environment = os.environ.copy()
         environment.update({"CLAUDE_CONFIG_DIR": str(root / "config"), "ANTHROPIC_BASE_URL": address, "ANTHROPIC_API_KEY": "local-smoke-only", "ANTHROPIC_AUTH_TOKEN": "", "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1", "DISABLE_AUTOUPDATER": "1"})
-        command = [claude, "--debug-file", str(root / "debug.log"), "--setting-sources", "", "--strict-mcp-config", "--no-session-persistence", "--plugin-dir", str(plugin), "--model", "claude-haiku-4-5", "--tools", "LSP,Read,Write,Edit,Bash", "--allowedTools", "LSP,Read,Write,Edit", "-p", "Use code navigation on the invoice project, introduce a type error with Write, then repair it with Write."]
+        command = [claude, "--debug-file", str(root / "debug.log"), "--setting-sources", "", "--strict-mcp-config", "--no-session-persistence", "--plugin-dir", str(plugin), "--model", "claude-haiku-4-5", "--tools", "LSP,Read,Write,Edit,Bash", "--allowedTools", "LSP,Read,Write,Edit", "-p", "Migrate pricing.total to a Price TypedDict with cents, update its caller, and repair any missed return conversion using diagnostic feedback."]
         # Act
         try:
             process = subprocess.run(command, cwd=root, env=environment, stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=60)
@@ -153,15 +156,15 @@ def verify(claude, server):
         assert not failures, failures
         client = [e["message"] for e in events if e["direction"] == "client"]
         methods = [m.get("method") for m in client]
-        for method in ["initialize", "initialized", "textDocument/hover", "textDocument/definition", "textDocument/references", "textDocument/didChange"]:
+        for method in ["initialize", "initialized", "textDocument/definition", "textDocument/references", "textDocument/didChange"]:
             assert method in methods, (method, methods)
-        hover = next(m for m in client if m.get("method") == "textDocument/hover")
-        assert hover["params"]["position"] == {"line": 0, "character": 4}
+        definition = next(m for m in client if m.get("method")=="textDocument/definition")
+        assert definition["params"]["position"] == {"line":4,"character":11}
         references = next(m for m in client if m.get("method") == "textDocument/references")
         assert references["params"]["context"] == {"includeDeclaration": True}
         assert publication_after_edit(bad) and publication_after_edit(good)
         assert (root / "checkout.py").read_text() == good
-        if not any("cannot be assigned" in json.dumps(request.get("messages", [])) for request in requests):
+        if not any(word in json.dumps(request.get("messages", [])) for request in requests for word in ["not assignable", "cannot be assigned"]):
             debug = (root / "debug.log").read_text()
             print("\n".join(line for line in debug.splitlines() if "diagnostic" in line.lower())[-8000:])
             raise AssertionError("Type error never reached the model")

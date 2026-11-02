@@ -14,17 +14,17 @@ import (
 // Tool arguments use the editor coordinates observed in Claude Code 2.1.266.
 func TestActionUsesEditorCoordinates(t *testing.T) {
 	// Arrange
-	action := Action{Operation: "hover", File: "pricing.py", Line: 0, Character: 4}
+	action := Action{Operation: "goToDefinition", File: "pricing.py", Line: 0, Character: 4}
 	// Act
 	actual := action.arguments()
 	// Assert
-	require.Equal(t, map[string]any{"operation": "hover", "filePath": "pricing.py", "line": 1, "character": 5}, actual)
+	require.Equal(t, map[string]any{"operation": "goToDefinition", "filePath": "pricing.py", "line": 1, "character": 5}, actual)
 }
 
 // Product operation names map to the protocol methods captured from the pinned CLI.
 func TestProtocolMethodsMatchClaudeCode(t *testing.T) {
 	// Arrange
-	methods := map[string]string{"hover": "textDocument/hover", "goToDefinition": "textDocument/definition", "findReferences": "textDocument/references"}
+	methods := map[string]string{"goToDefinition": "textDocument/definition", "findReferences": "textDocument/references"}
 	for operation, expected := range methods {
 		t.Run(operation, func(t *testing.T) {
 			// Act

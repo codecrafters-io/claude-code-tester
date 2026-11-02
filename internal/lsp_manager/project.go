@@ -11,16 +11,17 @@ import (
 
 // The fixture analyzes only this documented project shape. It is not a Python server.
 func Project(shortCheckout bool) map[string]string {
-	checkout := "from pricing import total as invoice_total\n\n\ndef checkout_total() -> int:\n    return invoice_total(\"250\", 2)\n"
+	checkout := "from pricing import total as invoice_total\n\n\ndef checkout_total() -> int:\n    return invoice_total(250, 2)\n"
 	if shortCheckout {
 		checkout = "from pricing import total as invoice_total\n\namount = invoice_total(250, 2)\n"
 	}
 	reports := "from pricing import total\n\n\ndef report_total() -> int:\n    return total(250, 2) + total(100, 1)\n"
 	return map[string]string{
-		"pricing.py":  "def total(price: int, quantity: int) -> int:\n    return price * quantity\n",
-		"checkout.py": checkout,
-		"reports.py":  reports,
-		"preview.py":  "# The word total in this comment should stay as it is.\ndef total(label: str) -> str:\n    return \"Preview total: \" + label\n",
+		"discounts.py": "def total(price: int, quantity: int) -> int:\n    return price * quantity - 50\n",
+		"pricing.py":   "def total(price: int, quantity: int) -> int:\n    return price * quantity\n",
+		"checkout.py":  checkout,
+		"reports.py":   reports,
+		"preview.py":   "# The word total in this comment should stay as it is.\ndef total(label: str) -> str:\n    return \"Preview total: \" + label\n",
 	}
 }
 
@@ -36,9 +37,8 @@ func Path(uri string) (string, error) {
 	return filepath.FromSlash(parsed.Path), nil
 }
 
-var signaturePattern = regexp.MustCompile(`(?m)^def ([a-zA-Z_][a-zA-Z_0-9]*)\(price: (int|str), quantity: int\) -> (int|str):`)
+var signaturePattern = regexp.MustCompile(`(?m)^def ([a-zA-Z_][a-zA-Z_0-9]*)\(price: (int|str), quantity: int\) -> (int|str|Price):`)
 var wordPattern = regexp.MustCompile(`[a-zA-Z_][a-zA-Z_0-9]*`)
-var argumentPattern = regexp.MustCompile(`invoice_total\(("[^"]*"|[0-9]+),`)
 
 type Document struct {
 	URI        string `json:"uri"`
@@ -98,25 +98,30 @@ func (p *projectState) references(includeDeclaration bool) []Location {
 }
 
 func (p *projectState) definition() any {
-	text := p.text("pricing.py")
+	target := "pricing.py"
+	if strings.Contains(p.text("checkout.py"), "from discounts import") {
+		target = "discounts.py"
+	}
+	text := p.text(target)
 	match := signaturePattern.FindStringSubmatchIndex(text)
 	if len(match) == 0 {
 		return nil
 	}
-	return Location{URI: URI(filepath.Join(p.Root, "pricing.py")), Range: textRange(text, match[2], match[3])}
+	return Location{URI: URI(filepath.Join(p.Root, target)), Range: textRange(text, match[2], match[3])}
 }
 
-const ArgumentTypeDiagnostic = "Argument of type str cannot be assigned to parameter price of type int"
+const ArgumentTypeDiagnostic = "Type Price is not assignable to return type int"
+
+const PriceAPI = "from typing import TypedDict\n\n\nclass Price(TypedDict):\n    cents: int\n\n\ndef total(price: int, quantity: int) -> Price:\n    return {\"cents\": price * quantity}\n"
 
 func (p *projectState) diagnostics(document Document) []map[string]any {
 	result := []map[string]any{}
 	if filepath.Base(mustPath(document.URI)) != "checkout.py" {
 		return result
 	}
-	signature := p.signature()
-	match := argumentPattern.FindStringSubmatchIndex(document.Text)
-	if len(signature) > 0 && signature[2] == "int" && len(match) > 0 && document.Text[match[2]] == '"' {
-		result = append(result, map[string]any{"range": textRange(document.Text, match[2], match[3]), "severity": 1, "message": ArgumentTypeDiagnostic})
+	if strings.Contains(p.text("pricing.py"), "-> Price:") && strings.Contains(document.Text, "    return amount\n") {
+		start := strings.Index(document.Text, "return amount") + len("return ")
+		result = append(result, map[string]any{"range": textRange(document.Text, start, start+len("amount")), "severity": 1, "message": ArgumentTypeDiagnostic})
 	}
 	return result
 }

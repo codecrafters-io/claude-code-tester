@@ -15,10 +15,8 @@ type Config struct {
 	Stage                  string `json:"stage"`
 	Root                   string `json:"root"`
 	Log                    string `json:"log"`
-	Token                  string `json:"token"`
 	Fragmented             bool   `json:"fragmented"`
 	Fault                  string `json:"fault,omitempty"`
-	Hover                  string `json:"hover,omitempty"`
 	Definition             string `json:"definition,omitempty"`
 	EmptyReferences        bool   `json:"emptyReferences,omitempty"`
 	StaleDiagnostics       bool   `json:"staleDiagnostics,omitempty"`
@@ -133,7 +131,7 @@ func Serve(config Config, input io.Reader, output io.Writer) error {
 						return err
 					}
 				}
-				result = map[string]any{"capabilities": map[string]any{"textDocumentSync": map[string]any{"openClose": true, "change": 1}, "hoverProvider": true, "definitionProvider": true, "referencesProvider": true}}
+				result = map[string]any{"capabilities": map[string]any{"textDocumentSync": map[string]any{"openClose": true, "change": 1}, "definitionProvider": true, "referencesProvider": true}}
 			}
 		case "initialized":
 			ready = initialized
@@ -183,20 +181,15 @@ func Serve(config Config, input io.Reader, output io.Writer) error {
 				state.Documents[uri] = old
 			case "textDocument/didClose":
 				delete(state.Documents, uri)
-			case "textDocument/hover", "textDocument/definition", "textDocument/references":
+			case "textDocument/definition", "textDocument/references":
 				if _, exists := state.Documents[uri]; !exists {
 					return fmt.Errorf("open %s before querying it", relative)
 				}
-				signature := state.signature()
 				switch message.Method {
-				case "textDocument/hover":
-					if config.Hover == "error" {
-						protocolError = map[string]any{"code": -32603, "message": "Hover unavailable"}
-					} else if config.Hover != "null" && len(signature) > 0 {
-						result = map[string]any{"contents": map[string]any{"kind": "plaintext", "value": fmt.Sprintf("(price: %s, quantity: int) -> %s\nDocumentation word: %s", signature[2], signature[3], config.Token)}}
-					}
 				case "textDocument/definition":
-					if config.Definition != "null" {
+					if config.Definition == "error" {
+						protocolError = map[string]any{"code": -32603, "message": "Definition unavailable"}
+					} else if config.Definition != "null" {
 						result = state.definition()
 						if config.Definition == "array" {
 							result = []any{result, Location{URI: URI(filepath.Join(config.Root, "pricing.pyi")), Range: Range{Start: Position{Line: 2, Character: 4}, End: Position{Line: 2, Character: 9}}}}

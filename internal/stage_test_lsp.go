@@ -1,17 +1,15 @@
 package internal
 
 import (
-	"crypto/rand"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
-	"strings"
 
 	"al.essio.dev/pkg/shellescape"
 	"github.com/codecrafters-io/claude-code-tester/internal/lsp_manager"
+	"github.com/codecrafters-io/claude-code-tester/internal/lsp_transport"
 	"github.com/codecrafters-io/claude-code-tester/internal/workspace_manager"
 	"github.com/codecrafters-io/claude-code-tester/proxy_server"
 	"github.com/codecrafters-io/tester-utils/test_case_harness"
@@ -65,11 +63,6 @@ func testLSP(stageHarness *test_case_harness.TestCaseHarness, slug string) error
 		config.Stage = slug
 		config.Root = project
 		config.Log = filepath.Join(controlDir, "events.jsonl")
-		token := make([]byte, 12)
-		if _, err := rand.Read(token); err != nil {
-			return err
-		}
-		config.Token = hex.EncodeToString(token)
 		configPath := filepath.Join(controlDir, "server.json")
 		encoded, _ := json.Marshal(config)
 		if err := os.WriteFile(configPath, encoded, 0600); err != nil {
@@ -110,27 +103,52 @@ func testLSP(stageHarness *test_case_harness.TestCaseHarness, slug string) error
 			return err
 		}
 		stageHarness.Logger.Infof("$ ./your_program.sh -p %s", shellescape.Quote(testCase.Prompt))
+		// The course owns startup and framing. The submitted agent owns document messages.
+		oldTransport, hadTransport := os.LookupEnv("CODECRAFTERS_LSP_URL")
+		var transport *lsp_transport.Transport
+		if !testCase.NoConfig {
+			var transportErr error
+			transport, transportErr = lsp_transport.Start(filepath.Join(project, ".lsp.json"))
+			if transportErr != nil {
+				return transportErr
+			}
+			os.Setenv("CODECRAFTERS_LSP_URL", transport.URL)
+		} else {
+			os.Unsetenv("CODECRAFTERS_LSP_URL")
+		}
+
 		result, runError := stageHarness.Executable.Run("-p", testCase.Prompt)
+		if transport != nil {
+			transport.Close()
+		}
+		if hadTransport {
+			os.Setenv("CODECRAFTERS_LSP_URL", oldTransport)
+		} else {
+			os.Unsetenv("CODECRAFTERS_LSP_URL")
+		}
 		closeModel()
 		if runError != nil {
 			return fmt.Errorf("%s: %w", testCase.Name, runError)
 		}
-		if testCase.Failure {
-			if result.ExitCode == 0 {
-				return fmt.Errorf("%s: initialization failure must exit nonzero", testCase.Name)
-			}
-			if len(strings.TrimSpace(string(result.Stderr))) == 0 && len(strings.TrimSpace(string(result.Stdout))) == 0 {
-				return fmt.Errorf("%s: program exited %d without explaining the initialization error", testCase.Name, result.ExitCode)
-			}
-		} else if result.ExitCode != 0 {
+		if result.ExitCode != 0 {
 			return fmt.Errorf("%s: program exited %d; stdout %q; stderr %q", testCase.Name, result.ExitCode, result.Stdout, result.Stderr)
 		}
 		if err := lsp_manager.Check(testCase, slug, config, recorder.RequestBodies()); err != nil {
 			return fmt.Errorf("%s: %w", testCase.Name, err)
 		}
 		if len(testCase.WantDiagnosticVersions) > 0 {
+			stageHarness.Logger.Successf("Partial API migration: Write saved checkout.py, but the caller still returns Price as int")
 			stageHarness.Logger.Successf("Edit feedback for checkout.py: %s", lsp_manager.ArgumentTypeDiagnostic)
 			stageHarness.Logger.Successf("Repair feedback for checkout.py: diagnostics []")
+		}
+		if slug == "df3" && testCase.Config.Definition == "" && !testCase.NoConfig {
+			stageHarness.Logger.Successf("Resolved invoice_total to pricing.total; preview.total is unrelated")
+		}
+		if slug == "rf4" && !testCase.Config.EmptyReferences {
+			stageHarness.Logger.Successf("Returned the affected pricing callers; excluded unrelated preview.total")
+		}
+		if slug == "sy5" && len(testCase.WantDefinitions) > 1 {
+			stageHarness.Logger.Successf("Definition lookup followed the updated import without restarting the server")
 		}
 		stageHarness.Logger.Successf("Case %s passed protocol, tool-result and file checks", testCase.Name)
 	}

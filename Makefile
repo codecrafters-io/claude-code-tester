@@ -107,7 +107,7 @@ setup:
 
 # LSP extension test cases
 define LSP_STAGES
-[{\"slug\":\"ls1\",\"tester_log_prefix\":\"stage-1\",\"title\":\"Stage #1: Send the initialization request\"},{\"slug\":\"ir2\",\"tester_log_prefix\":\"stage-2\",\"title\":\"Stage #2: Read the initialization response\"},{\"slug\":\"hv2\",\"tester_log_prefix\":\"stage-3\",\"title\":\"Stage #3: Look up a symbol's type\"},{\"slug\":\"df3\",\"tester_log_prefix\":\"stage-4\",\"title\":\"Stage #4: Go to a definition\"},{\"slug\":\"rf4\",\"tester_log_prefix\":\"stage-5\",\"title\":\"Stage #5: Find a symbol's references\"},{\"slug\":\"sy5\",\"tester_log_prefix\":\"stage-6\",\"title\":\"Stage #6: Keep the server up to date\"},{\"slug\":\"dg6\",\"tester_log_prefix\":\"stage-7\",\"title\":\"Stage #7: Feed diagnostics back after edits\"}]
+[{\"slug\":\"df3\",\"tester_log_prefix\":\"stage-1\",\"title\":\"Stage #1: Find the implementation\"},{\"slug\":\"rf4\",\"tester_log_prefix\":\"stage-2\",\"title\":\"Stage #2: Find the affected callers\"},{\"slug\":\"sy5\",\"tester_log_prefix\":\"stage-3\",\"title\":\"Stage #3: Keep the analysis current\"},{\"slug\":\"dg6\",\"tester_log_prefix\":\"stage-4\",\"title\":\"Stage #4: Catch an error after editing\"}]
 endef
 
 .PHONY: test_lsp_offline test_lsp_with_users_code record_lsp_fixtures
@@ -131,11 +131,11 @@ record_lsp_fixtures:
 # Recorded stage fixtures, negative clients, YAML registration and fixture unit tests.
 test_lsp:
 	TESTER_DIR=$(shell pwd) go test -count=1 -run '^Test(LSP|StagesMatchYAML)' ./internal
-	go test -count=1 ./internal/lsp_manager ./proxy_server
+	go test -count=1 ./internal/lsp_manager ./internal/lsp_transport ./proxy_server
 
 PYRIGHT_LANGSERVER ?= pyright-langserver
-test_lsp_with_pyright:
-	python3 internal/test_helpers/scenarios/lsp_stages/pyright_smoke.py --server "$(PYRIGHT_LANGSERVER)"
+test_lsp_with_pyright: build
+	CODECRAFTERS_LSP_TRANSPORT=$(shell pwd)/dist/main.out python3 internal/test_helpers/scenarios/lsp_stages/pyright_smoke.py --server "$(PYRIGHT_LANGSERVER)"
 
 # Independent product check, with a scripted local Anthropic endpoint and Pyright.
 CLAUDE_CODE_BINARY ?= claude

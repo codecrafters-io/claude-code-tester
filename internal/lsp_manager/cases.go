@@ -9,8 +9,7 @@ type Case struct {
 	Config                 Config
 	Files                  map[string]string
 	NoConfig               bool
-	Failure                bool
-	WantTypes              []string
+	WantDefinitions        []string
 	WantDiagnosticVersions []int
 }
 
@@ -20,78 +19,58 @@ func query(operation string) Action {
 
 func Cases(slug string) []Case {
 	files := Project(false)
-	initial := files["pricing.py"]
-	changed := strings.ReplaceAll(initial, "int", "str")
-	// quantity stays integer, so the function can still multiply by the count.
-	changed = strings.Replace(changed, "quantity: str", "quantity: int", 1)
-	hover := query("hover")
+	definition := Action{Operation: "goToDefinition", File: "checkout.py", Line: 4, Character: 11}
 	references := query("findReferences")
-	writeBad := Action{Operation: "write", File: "checkout.py", Content: files["checkout.py"]}
-	writeGood := writeBad
-	writeGood.Content = strings.Replace(writeBad.Content, `"250"`, `250`, 1)
-	ready := "Reply with ready."
 	switch slug {
-	case "ls1":
-		return []Case{{Name: "initialize-project", Prompt: ready}, {Name: "without-configuration", Prompt: ready, NoConfig: true}}
-	case "ir2":
-		return []Case{
-			{Name: "fragmented-reply-and-notification", Prompt: ready, Config: Config{Fragmented: true}},
-			{Name: "initialization-error", Prompt: ready, Config: Config{Fault: "initialize-error"}, Failure: true},
-			{Name: "incomplete-response", Prompt: ready, Config: Config{Fault: "incomplete"}, Failure: true},
-		}
-	case "hv2":
-		prompt := "Use LSP hover on pricing.py at line 1, character 5. Report its documentation word."
-		return []Case{
-			{Name: "server-only-documentation", Prompt: prompt, Actions: []Action{hover}},
-			{Name: "null-hover", Prompt: prompt, Actions: []Action{hover}, Config: Config{Hover: "null"}},
-			{Name: "hover-error", Prompt: prompt, Actions: []Action{hover}, Config: Config{Hover: "error"}},
-			{Name: "reuse-open-document", Prompt: prompt + " Ask for hover at that position again.", Actions: []Action{hover, hover}, Config: Config{Fragmented: true}},
-		}
 	case "df3":
-		overloaded := Project(true)
+		prompt := "Use LSP goToDefinition on checkout.py at line 5, character 12. Read the returned implementation and explain which total is called; preview.total is unrelated."
+		overloaded := Project(false)
 		overloaded["pricing.pyi"] = "\n\ndef total(price: int, quantity: int) -> int: ...\n"
-		definition := Action{Operation: "goToDefinition", File: "checkout.py", Line: 2, Character: 9}
-		prompt := "Use LSP goToDefinition on checkout.py at line 3, character 10. Report the definition location."
 		return []Case{
-			{Name: "imported-alias", Prompt: prompt, Actions: []Action{definition}, Files: Project(true)},
-			{Name: "multiple-locations", Prompt: prompt, Actions: []Action{definition}, Files: overloaded, Config: Config{Definition: "array"}},
-			{Name: "missing-definition", Prompt: prompt, Actions: []Action{definition}, Files: Project(true), Config: Config{Definition: "null"}},
+			{Name: "resolve-and-read-implementation", Prompt: prompt, Actions: []Action{definition, {Operation: "read", File: "pricing.py"}}, Config: Config{Fragmented: true}},
+			{Name: "multiple-definitions", Prompt: prompt, Actions: []Action{definition}, Files: overloaded, Config: Config{Definition: "array"}},
+			{Name: "missing-definition", Prompt: prompt, Actions: []Action{definition}, Config: Config{Definition: "null"}},
+			{Name: "definition-error", Prompt: prompt, Actions: []Action{definition}, Config: Config{Definition: "error"}},
+			{Name: "without-configuration", Prompt: "Reply with ready.", NoConfig: true},
 		}
 	case "rf4":
-		prompt := "Use LSP findReferences on pricing.py at line 1, character 5. Report every returned location."
+		prompt := "Use LSP findReferences on pricing.py at line 1, character 5. Identify every affected caller before changing its return type. Preserve the returned locations; preview.total and comments are unrelated."
 		minimal := Project(false)
 		delete(minimal, "reports.py")
 		return []Case{
-			{Name: "aliases-and-declaration", Prompt: prompt, Actions: []Action{references}, Files: minimal},
-			{Name: "multiple-files-and-unrelated-names", Prompt: prompt, Actions: []Action{references}},
+			{Name: "aliased-caller-and-declaration", Prompt: prompt, Actions: []Action{references}, Files: minimal},
+			{Name: "affected-callers-across-files", Prompt: prompt, Actions: []Action{references}},
 			{Name: "no-references", Prompt: prompt, Actions: []Action{references}, Config: Config{EmptyReferences: true}},
 		}
 	case "sy5":
-		write := Action{Operation: "write", File: "pricing.py", Content: changed}
+		changed := strings.Replace(files["checkout.py"], "from pricing", "from discounts", 1)
+		write := Action{Operation: "write", File: "checkout.py", Content: changed}
 		restore := write
-		restore.Content = initial
-		prompt := "Hover on pricing.py at line 1, character 5. Use Write to change total to accept price: str and return str. Hover at the same position again."
+		restore.Content = files["checkout.py"]
+		prompt := "Use LSP goToDefinition on checkout.py at line 5, character 12. Use Write to change its import from pricing to discounts, preserving the invoice_total alias. Repeat definition lookup at the same position and report the new target."
 		return []Case{
-			{Name: "query-after-write", Prompt: prompt, Actions: []Action{hover, write, hover}, WantTypes: []string{"int", "str"}},
-			{Name: "successive-versions", Prompt: prompt + " Then use Write to restore the original int types and hover again.", Actions: []Action{hover, write, hover, restore, hover}, WantTypes: []string{"int", "str", "int"}},
-			{Name: "write-before-open", Prompt: "Use Write to change pricing.total to accept price: str and return str, then use LSP hover at line 1, character 5.", Actions: []Action{write, hover}, WantTypes: []string{"str"}},
-			{Name: "failed-write", Prompt: "Hover on pricing.py at line 1, character 5. Try Write on the directory . with content invalid, then hover on pricing.py again.", Actions: []Action{hover, {Operation: "write", File: ".", Content: "invalid"}, hover}, WantTypes: []string{"int", "int"}},
+			{Name: "definition-follows-edited-import", Prompt: prompt, Actions: []Action{definition, write, definition}, WantDefinitions: []string{"pricing.py", "discounts.py"}},
+			{Name: "successive-document-versions", Prompt: prompt + " Restore the pricing import using Write and repeat the lookup.", Actions: []Action{definition, write, definition, restore, definition}, WantDefinitions: []string{"pricing.py", "discounts.py", "pricing.py"}},
+			{Name: "write-before-open", Prompt: "Use Write to change checkout.py's import from pricing to discounts, then look up invoice_total at line 5, character 12.", Actions: []Action{write, definition}, WantDefinitions: []string{"discounts.py"}},
+			{Name: "failed-write-keeps-analysis", Prompt: "Look up invoice_total in checkout.py at line 5, character 12. Try Write on the directory . with content invalid. Repeat the lookup.", Actions: []Action{definition, {Operation: "write", File: ".", Content: "invalid"}, definition}, WantDefinitions: []string{"pricing.py", "pricing.py"}},
 		}
 	case "dg6":
-		valid := Project(false)
-		valid["checkout.py"] = writeGood.Content
-		writeGood.AfterDiagnostic = true
-		read := Action{Operation: "read", File: "checkout.py"}
-		definition := Action{Operation: "goToDefinition", File: "checkout.py", Line: 4, Character: 11}
-		prompt := `Read checkout.py and use LSP goToDefinition on its invoice_total call at line 5, character 12. Use Write to replace integer 250 with string "250". Use the diagnostic feedback to repair the argument with Write, then report whether the error cleared.`
-		actions := []Action{read, definition, writeBad, writeGood}
+		api := Action{Operation: "write", File: "pricing.py", Content: PriceAPI}
+		reports := Action{Operation: "write", File: "reports.py", Content: strings.ReplaceAll(strings.ReplaceAll(files["reports.py"], "total(250, 2)", `total(250, 2)["cents"]`), "total(100, 1)", `total(100, 1)["cents"]`)}
+		// Replay a partial migration: the caller stores the new object but still returns it as int.
+		partial := strings.Replace(files["checkout.py"], "    return invoice_total(250, 2)", "    amount = invoice_total(250, 2)\n    return amount", 1)
+		bad := Action{Operation: "write", File: "checkout.py", Content: partial}
+		repair := bad
+		repair.Content = strings.Replace(partial, "return amount", `return amount["cents"]`, 1)
+		repair.AfterDiagnostic = true
+		prompt := `Migrate pricing.total from integer cents to a Price TypedDict containing cents. Use LSP definition on checkout.py at line 5, character 12 and references on pricing.py at line 1, character 5 to inspect affected callers. Update reporting to read cents. Replay the supplied partial checkout migration (store invoice_total(250, 2) in amount, then return amount), inspect its Write feedback, and repair the caller using that feedback. Report whether the error cleared. The fixed first attempt makes this a controlled before/after demonstration.`
+		actions := []Action{definition, references, api, reports, bad, repair}
 		return []Case{
-			{Name: "invalid-edit-then-repair", Prompt: prompt, Actions: actions, Files: valid, WantDiagnosticVersions: []int{2, 3}},
-			{Name: "unversioned-publications", Prompt: prompt, Actions: actions, Files: valid, Config: Config{UnversionedDiagnostics: true}, WantDiagnosticVersions: []int{2, 3}},
-			{Name: "older-version-after-repair", Prompt: prompt, Actions: actions, Files: valid, Config: Config{StaleDiagnostics: true}, WantDiagnosticVersions: []int{2, 3}},
-			{Name: "missing-publication-is-an-error", Prompt: `Read checkout.py, then use Write to change integer 250 to string "250". Report an error if diagnostic feedback never arrives.`, Actions: []Action{read, writeBad}, Files: valid, Config: Config{MissingDiagnostics: true}},
+			{Name: "api-change-missed-caller-repaired", Prompt: prompt, Actions: actions, WantDiagnosticVersions: []int{2, 3}},
+			{Name: "unversioned-publications", Prompt: prompt, Actions: actions, Config: Config{UnversionedDiagnostics: true}, WantDiagnosticVersions: []int{2, 3}},
+			{Name: "older-version-after-repair", Prompt: prompt, Actions: actions, Config: Config{StaleDiagnostics: true}, WantDiagnosticVersions: []int{2, 3}},
+			{Name: "missing-feedback-is-an-error", Prompt: "Use Write to migrate pricing.total to a Price TypedDict with cents. Report a feedback error if the server never publishes diagnostics.", Actions: []Action{api}, Config: Config{MissingDiagnostics: true}},
 		}
-
 	}
 	return nil
 }

@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Stage one rejects an invalid initialize even if the client ignores its error reply.
+// The checker rejects an invalid initialize even if the client ignores its error reply.
 func TestCheckRejectsInvalidInitialize(t *testing.T) {
 	// Arrange
 	config := Config{Log: filepath.Join(t.TempDir(), "events.jsonl")}
@@ -17,18 +17,9 @@ func TestCheckRejectsInvalidInitialize(t *testing.T) {
 	require.NoError(t, appendEvent(config.Log, "sent", Message{JSONRPC: "2.0", ID: json.RawMessage(`1`), Error: json.RawMessage(`{"code":-32602,"message":"wrong processId"}`)}, ""))
 	require.NoError(t, appendEvent(config.Log, "ended", Message{}, ""))
 	// Act
-	err := Check(Case{}, "ls1", config, []string{`{"messages":[]}`})
+	err := Check(Case{}, "df3", config, []string{`{"messages":[]}`})
 	// Assert
 	require.ErrorContains(t, err, "invalid initialization request")
-}
-
-// Hover text can reach the model without retaining the LSP JSON envelope.
-func TestHoverResultAllowsPlainText(t *testing.T) {
-	// Arrange
-	result := json.RawMessage(`{"contents":{"kind":"plaintext","value":"price: int; documentation word: orchard"}}`)
-	// Act and Assert
-	require.True(t, resultReachedModel("textDocument/hover", "price: int; documentation word: orchard", result))
-	require.False(t, resultReachedModel("textDocument/hover", "price: int", result))
 }
 
 // Restarting a server cannot substitute for synchronizing its open documents.
@@ -44,7 +35,7 @@ func TestCheckRejectsRestartedServer(t *testing.T) {
 	require.ErrorContains(t, err, "one language-server process")
 }
 
-// Response reading does not require implementing a separate shutdown handshake.
+// A transport that closes stdin can clean up without a separate shutdown exchange.
 func TestCheckAcceptsEOFClosingAfterInitialization(t *testing.T) {
 	// Arrange
 	config := Config{Root: t.TempDir(), Log: filepath.Join(t.TempDir(), "events.jsonl")}
@@ -53,7 +44,7 @@ func TestCheckAcceptsEOFClosingAfterInitialization(t *testing.T) {
 	require.NoError(t, appendEvent(config.Log, "received", Message{Method: "initialized"}, ""))
 	require.NoError(t, appendEvent(config.Log, "ended", Message{}, ""))
 	// Act
-	err := Check(Case{}, "ir2", config, []string{`{"messages":[]}`})
+	err := Check(Case{}, "df3", config, []string{`{"messages":[]}`})
 	// Assert
 	require.NoError(t, err)
 }

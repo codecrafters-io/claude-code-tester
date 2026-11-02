@@ -123,25 +123,10 @@ func equalNode(actual, expected any) bool {
 	}
 }
 
-// Hover may be shown as its plaintext contents instead of the JSON envelope.
-// Locations and diagnostics retain their structured fields for comparison.
-func resultReachedModel(method, content string, raw json.RawMessage) bool {
+// Preserve structured result boundaries, including null and complete location arrays.
+func resultReachedModel(content string, raw json.RawMessage) bool {
 	var expected any
-	if json.Unmarshal(raw, &expected) != nil {
-		return false
-	}
-	if ContainsJSON(content, expected) {
-		return true
-	}
-	if method != "textDocument/hover" {
-		return false
-	}
-	var hover struct {
-		Contents struct {
-			Value string `json:"value"`
-		} `json:"contents"`
-	}
-	return json.Unmarshal(raw, &hover) == nil && hover.Contents.Value != "" && strings.Contains(content, hover.Contents.Value)
+	return json.Unmarshal(raw, &expected) == nil && ContainsJSON(content, expected)
 }
 
 func Check(c Case, slug string, config Config, requests []string) error {
@@ -184,23 +169,14 @@ func Check(c Case, slug string, config Config, requests []string) error {
 	if !ended {
 		return fmt.Errorf("the language-server process was not closed")
 	}
-	if c.Failure {
-		for _, message := range received {
-			if message.Method == "initialized" {
-				return fmt.Errorf("initialized was sent after a failed initialization")
-			}
-		}
-		return nil
-	}
+
 	if len(requests) == 0 {
 		return fmt.Errorf("the user's prompt never reached the LLM")
 	}
 	if reply, ok := responses[string(received[0].ID)]; !ok || len(reply.Error) > 0 {
 		return fmt.Errorf("invalid initialization request: %s", reply.Error)
 	}
-	if slug == "ls1" {
-		return nil
-	}
+
 	if len(received) < 2 || received[1].Method != "initialized" {
 		return fmt.Errorf("send initialized after the successful initialization response")
 	}
@@ -262,7 +238,7 @@ func Check(c Case, slug string, config Config, requests []string) error {
 		if len(matchedQueries) < len(expectedQueries) {
 			expected := expectedQueries[len(matchedQueries)]
 			samePosition := action.Operation == expected.Operation && filepath.Clean(file) == filepath.Join(config.Root, expected.File) && action.Line == expected.Line && action.Character == expected.Character
-			currentType := len(c.WantTypes) == 0 || strings.Contains(tool.Result, "price: "+c.WantTypes[len(matchedQueries)])
+			currentType := len(c.WantDefinitions) == 0 || len(matchedQueries) < len(c.WantDefinitions) && strings.Contains(tool.Result, c.WantDefinitions[len(matchedQueries)])
 			if samePosition && currentType {
 				matchedQueries = append(matchedQueries, tool)
 			}
@@ -294,7 +270,7 @@ func Check(c Case, slug string, config Config, requests []string) error {
 				return fmt.Errorf("the server's error did not reach the model for %s", tool.ID)
 			}
 		} else {
-			if !resultReachedModel(message.Method, tool.Result, response.Result) {
+			if !resultReachedModel(tool.Result, response.Result) {
 				return fmt.Errorf("server result did not reach the matching tool call %s: expected %s, got %s", tool.ID, response.Result, tool.Result)
 			}
 		}
@@ -334,13 +310,20 @@ func Check(c Case, slug string, config Config, requests []string) error {
 	if len(matchedQueries) != len(expectedQueries) {
 		return fmt.Errorf("missing the requested LSP operations in the model conversation")
 	}
-	if len(c.WantTypes) > 0 {
-		for index, kind := range c.WantTypes {
-			if !strings.Contains(matchedQueries[index].Result, "price: "+kind) {
-				return fmt.Errorf("hover %d should report price: %s", index+1, kind)
-			}
+	// Check the final text of every successful scripted write, including unopened files.
+	final := map[string]string{}
+	for _, action := range c.Actions {
+		if action.Operation == "write" && action.File != "." {
+			final[action.File] = action.Content
 		}
 	}
+	for name, want := range final {
+		data, err := os.ReadFile(filepath.Join(config.Root, name))
+		if err != nil || string(data) != want {
+			return fmt.Errorf("final file %s does not match the requested edit", name)
+		}
+	}
+
 	if len(c.WantDiagnosticVersions) > 0 {
 		diagnosticCalls := []call{}
 		for _, tool := range allCalls {
@@ -351,7 +334,7 @@ func Check(c Case, slug string, config Config, requests []string) error {
 		requiredCalls := []call{}
 		next := 0
 		for _, action := range c.Actions {
-			if action.Operation != "write" {
+			if action.Operation != "write" || action.File != "checkout.py" {
 				continue
 			}
 			found := false
@@ -418,7 +401,7 @@ func Check(c Case, slug string, config Config, requests []string) error {
 	}
 	if config.MissingDiagnostics {
 		if !containsResult(ToolResults(requests), "error") {
-			return fmt.Errorf("missing diagnostics must be an error, not an empty success list; wait for a new publication for checkout.py and return a feedback error if the bounded wait expires")
+			return fmt.Errorf("missing diagnostics must be an error, not an empty success list; wait for a new publication for the edited file and return a feedback error if the bounded wait expires")
 		}
 	}
 	return nil

@@ -82,21 +82,6 @@ var testerDefinition = tester_definition.TesterDefinition{
 		},
 		// Extension: LSP. Each case gets 45 seconds plus setup headroom.
 		{
-			Slug:     "ls1",
-			TestFunc: testLSPInitialize,
-			Timeout:  100 * time.Second,
-		},
-		{
-			Slug:     "ir2",
-			TestFunc: testLSPInitializeResponse,
-			Timeout:  145 * time.Second,
-		},
-		{
-			Slug:     "hv2",
-			TestFunc: testLSPHover,
-			Timeout:  190 * time.Second,
-		},
-		{
 			Slug:     "df3",
 			TestFunc: testLSPDefinition,
 			Timeout:  145 * time.Second,

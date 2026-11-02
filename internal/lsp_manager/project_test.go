@@ -39,27 +39,27 @@ func TestDiagnosticsTrackOpenText(t *testing.T) {
 	// Arrange
 	state := seededProject(t)
 	uri := URI(filepath.Join(state.Root, "checkout.py"))
-	document := Document{URI: uri, Version: 1, Text: state.text("checkout.py")}
+	state.Documents[URI(filepath.Join(state.Root, "pricing.py"))] = Document{Text: PriceAPI}
+	document := Document{URI: uri, Version: 1, Text: strings.Replace(state.text("checkout.py"), "    return invoice_total(250, 2)", "    amount = invoice_total(250, 2)\n    return amount", 1)}
 	// Act
 	before := state.diagnostics(document)
-	document.Text = strings.Replace(document.Text, `"250"`, `250`, 1)
+	document.Text = strings.Replace(document.Text, "return amount", `return amount["cents"]`, 1)
 	after := state.diagnostics(document)
 	// Assert
 	require.Len(t, before, 1)
-	require.Equal(t, Range{Start: Position{Line: 4, Character: 25}, End: Position{Line: 4, Character: 30}}, before[0]["range"])
+	require.Equal(t, Range{Start: Position{Line: 5, Character: 11}, End: Position{Line: 5, Character: 17}}, before[0]["range"])
 	require.Empty(t, after)
 	require.NotNil(t, after)
 }
 
-// An open document overrides disk text when calculating type information.
-func TestSignatureUsesSynchronizedText(t *testing.T) {
+// Definition lookup follows the synchronized import rather than the old disk text.
+func TestDefinitionUsesSynchronizedImport(t *testing.T) {
 	// Arrange
 	state := seededProject(t)
-	uri := URI(filepath.Join(state.Root, "pricing.py"))
-	state.Documents[uri] = Document{URI: uri, Version: 2, Text: "def total(price: str, quantity: int) -> str:\n    return price * quantity\n"}
+	uri := URI(filepath.Join(state.Root, "checkout.py"))
+	state.Documents[uri] = Document{URI: uri, Version: 2, Text: strings.Replace(state.text("checkout.py"), "from pricing", "from discounts", 1)}
 	// Act
-	signature := state.signature()
+	location := state.definition()
 	// Assert
-	require.Equal(t, "str", signature[2])
-	require.Equal(t, "str", signature[3])
+	require.Equal(t, Location{URI: URI(filepath.Join(state.Root, "discounts.py")), Range: Range{Start: Position{Line: 0, Character: 4}, End: Position{Line: 0, Character: 9}}}, location)
 }
