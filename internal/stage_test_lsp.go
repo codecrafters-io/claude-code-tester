@@ -110,13 +110,13 @@ func testLSP(stageHarness *test_case_harness.TestCaseHarness, slug string) error
 		// The course owns startup and framing. The submitted agent owns document messages.
 		oldTransport, hadTransport := os.LookupEnv("CODECRAFTERS_LSP_URL")
 		var setupProxy *httptest.Server
-		var configurationRequests atomic.Int64
+		var configurationBeforeModel atomic.Bool
 		transport, err := lsp_transport.Start(filepath.Join(project, ".lsp.json"))
 		if err != nil {
 			return err
 		}
 		connectionURL := transport.URL
-		if slug == "cx7" {
+		if slug == "dz5" || slug == "iy3" {
 			// Observe setup's configuration call without changing the supplied helper.
 			target, err := url.Parse(transport.URL)
 			if err != nil {
@@ -125,8 +125,8 @@ func testLSP(stageHarness *test_case_harness.TestCaseHarness, slug string) error
 			}
 			proxy := httputil.NewSingleHostReverseProxy(target)
 			setupProxy = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				if r.Method == http.MethodPost && r.URL.Path == "/configuration" {
-					configurationRequests.Add(1)
+				if r.Method == http.MethodPost && r.URL.Path == "/configuration" && len(recorder.RequestBodies()) == 0 {
+					configurationBeforeModel.Store(true)
 				}
 				proxy.ServeHTTP(w, r)
 			}))
@@ -151,8 +151,8 @@ func testLSP(stageHarness *test_case_harness.TestCaseHarness, slug string) error
 		if result.ExitCode != 0 {
 			return fmt.Errorf("%s: program exited %d; stdout %q; stderr %q", testCase.Name, result.ExitCode, result.Stdout, result.Stderr)
 		}
-		if slug == "cx7" && configurationRequests.Load() == 0 {
-			return fmt.Errorf("%s: connect with the supplied client and call configuration with {}", testCase.Name)
+		if (slug == "dz5" || slug == "iy3") && !configurationBeforeModel.Load() {
+			return fmt.Errorf("%s: connect with the supplied client and call configuration with {} before the first model request", testCase.Name)
 		}
 		if err := lsp_manager.Check(testCase, slug, config, recorder.RequestBodies()); err != nil {
 			return fmt.Errorf("%s: %w", testCase.Name, err)
@@ -161,8 +161,11 @@ func testLSP(stageHarness *test_case_harness.TestCaseHarness, slug string) error
 			stageHarness.Logger.Successf("Migrated pricing.total and its callers; unrelated preview.total is unchanged")
 			stageHarness.Logger.Successf("Project tests passed through Bash: checkout 500 cents, reporting 600 cents")
 		}
-		if slug == "cx7" {
-			stageHarness.Logger.Successf("Connected to the helper and advertised LSP; navigation is next")
+		if slug == "dz5" {
+			stageHarness.Logger.Successf("Connected the supplied LSP client and read configuration; tool advertisement is next")
+		}
+		if slug == "iy3" {
+			stageHarness.Logger.Successf("Advertised LSP; definition lookup is next")
 		}
 		if slug == "gz6" && testCase.Config.Definition == "" {
 			stageHarness.Logger.Successf("Resolved invoice_total to pricing.total; preview.total is unrelated")

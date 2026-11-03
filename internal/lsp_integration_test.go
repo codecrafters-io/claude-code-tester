@@ -56,9 +56,11 @@ func TestLSPRejectsBrokenClients(t *testing.T) {
 	reference, err := os.ReadFile("test_helpers/scenarios/lsp_stages/users_code_pass_all/app/main.py")
 	require.NoError(t, err)
 	cases := []struct{ name, slug, from, to, want string }{
-		{"setup-without-configuration-request", "cx7", `self.languages = self.transport.call("configuration", {})["extensionToLanguage"]`, `self.languages = {".py": "python"}`, "call configuration with {}"},
-		{"setup-without-lsp-tool", "cx7", `"tools": TOOLS`, `"tools": [tool for tool in TOOLS if tool["function"]["name"] != "LSP"]`, "advertise the supplied LSP tool"},
-		{"setup-incomplete-tool-schema", "cx7", `"required": ["operation", "filePath", "line", "character"]`, `"required": ["operation", "filePath", "line"]`, "required character of type integer"},
+		{"connection-without-configuration-request", "dz5", `self.languages = self.transport.call("configuration", {})["extensionToLanguage"]`, `self.languages = {".py": "python"}`, "call configuration with {}"},
+		{"advertisement-without-configuration-request", "iy3", `self.languages = self.transport.call("configuration", {})["extensionToLanguage"]`, `self.languages = {".py": "python"}`, "call configuration with {}"},
+		{"advertisement-without-lsp-tool", "iy3", `"tools": TOOLS`, `"tools": [tool for tool in TOOLS if tool["function"]["name"] != "LSP"]`, "advertise the supplied LSP tool"},
+		{"advertisement-incomplete-tool-schema", "iy3", `"required": ["operation", "filePath", "line", "character"]`, `"required": ["operation", "filePath", "line"]`, "required character of type integer"},
+		{"advertisement-missing-from-later-request", "iy3", `"tools": TOOLS`, `"tools": TOOLS if len(messages) == 2 else [tool for tool in TOOLS if tool["function"]["name"] != "LSP"]`, "advertise the supplied LSP tool"},
 		{"tool-coordinates-not-converted", "gz6", `"line": arguments["line"] - 1`, `"line": arguments["line"]`, "expected goToDefinition"},
 		{"definition-read-not-returned", "gz6", `result = Path(arguments["file_path"]).read_text(encoding="utf-8")`, `result = "File access disabled"`, "read pricing.py and return its complete contents"},
 		{"discarded-definition", "gz6", "        return result\n\n", "        return None\n\n", "server result did not reach"},
@@ -114,8 +116,8 @@ func TestLSPIsolatesLegacyModelTraffic(t *testing.T) {
 	require.Contains(t, output, "Test passed")
 }
 
-// Setup passes before the agent implements any navigation operations.
-func TestLSPSetupWithoutNavigation(t *testing.T) {
+// Tool advertisement passes before the agent implements navigation.
+func TestLSPAdvertisementWithoutNavigation(t *testing.T) {
 	// Arrange
 	binary := lspFixtureBinary(t)
 	reference, err := os.ReadFile("test_helpers/scenarios/lsp_stages/users_code_pass_all/app/main.py")
@@ -123,10 +125,42 @@ func TestLSPSetupWithoutNavigation(t *testing.T) {
 	source := strings.Replace(string(reference), "    def tool(self, arguments):", "    def tool(self, arguments):\n        raise AssertionError(\"Navigation is not implemented\")", 1)
 	directory := lspScenario(t, source)
 	// Act
-	output, err := runLSPScenario(t, binary, directory, "cx7")
+	output, err := runLSPScenario(t, binary, directory, "iy3")
 	// Assert
 	require.NoError(t, err, output)
-	require.Contains(t, output, "Connected to the helper and advertised LSP; navigation is next")
+	require.Contains(t, output, "Advertised LSP; definition lookup is next")
+}
+
+// Connecting the client passes before the agent advertises an LSP tool.
+func TestLSPConnectionWithoutToolAdvertisement(t *testing.T) {
+	// Arrange
+	binary := lspFixtureBinary(t)
+	reference, err := os.ReadFile("test_helpers/scenarios/lsp_stages/users_code_pass_all/app/main.py")
+	require.NoError(t, err)
+	source := strings.Replace(string(reference), `"tools": TOOLS`, `"tools": [tool for tool in TOOLS if tool["function"]["name"] != "LSP"]`, 1)
+	directory := lspScenario(t, source)
+	// Act
+	output, err := runLSPScenario(t, binary, directory, "dz5")
+	// Assert
+	require.NoError(t, err, output)
+	require.Contains(t, output, "Connected the supplied LSP client and read configuration; tool advertisement is next")
+}
+
+// A configuration call after the first model response cannot satisfy startup.
+func TestLSPConfigurationBeforeModelRequest(t *testing.T) {
+	// Arrange
+	binary := lspFixtureBinary(t)
+	reference, err := os.ReadFile("test_helpers/scenarios/lsp_stages/users_code_pass_all/app/main.py")
+	require.NoError(t, err)
+	source := strings.Replace(string(reference), `self.languages = self.transport.call("configuration", {})["extensionToLanguage"]`, `self.languages = {".py": "python"}`, 1)
+	source = strings.Replace(source, "        messages.append(message)", `        server.transport.call("configuration", {})
+        messages.append(message)`, 1)
+	directory := lspScenario(t, source)
+	// Act
+	output, err := runLSPScenario(t, binary, directory, "dz5")
+	// Assert
+	require.Error(t, err, output)
+	require.Contains(t, output, "before the first model request")
 }
 
 // The capstone passes without implementing diagnostic collection in the agent.

@@ -137,40 +137,47 @@ func checkSetupTools(requests []string) error {
 	if len(requests) == 0 {
 		return fmt.Errorf("the user's prompt never reached the LLM")
 	}
-	var request struct {
-		Tools []struct {
-			Function struct {
-				Name       string `json:"name"`
-				Parameters struct {
-					Properties map[string]json.RawMessage `json:"properties"`
-					Required   []string                   `json:"required"`
-				} `json:"parameters"`
-			} `json:"function"`
-		} `json:"tools"`
-	}
-	if err := json.Unmarshal([]byte(requests[0]), &request); err != nil {
-		return err
-	}
-	for _, tool := range request.Tools {
-		parameters := tool.Function.Parameters
-		if tool.Function.Name != "LSP" && parameters.Properties["operation"] == nil {
-			continue
+	for _, body := range requests {
+		var request struct {
+			Tools []struct {
+				Function struct {
+					Name       string `json:"name"`
+					Parameters struct {
+						Properties map[string]json.RawMessage `json:"properties"`
+						Required   []string                   `json:"required"`
+					} `json:"parameters"`
+				} `json:"function"`
+			} `json:"tools"`
 		}
-		for name, kind := range map[string]string{"operation": "string", "filePath": "string", "line": "integer", "character": "integer"} {
-			var property struct {
-				Type string   `json:"type"`
-				Enum []string `json:"enum"`
-			}
-			if json.Unmarshal(parameters.Properties[name], &property) != nil || property.Type != kind || !slices.Contains(parameters.Required, name) {
-				return fmt.Errorf("advertise the supplied LSP schema with required %s of type %s", name, kind)
-			}
-			if name == "operation" && !slices.Contains(property.Enum, "goToDefinition") {
-				return fmt.Errorf("the LSP operation enum must include goToDefinition")
-			}
+		if err := json.Unmarshal([]byte(body), &request); err != nil {
+			return err
 		}
-		return nil
+		advertised := false
+		for _, tool := range request.Tools {
+			parameters := tool.Function.Parameters
+			if tool.Function.Name != "LSP" && parameters.Properties["operation"] == nil {
+				continue
+			}
+			for name, kind := range map[string]string{"operation": "string", "filePath": "string", "line": "integer", "character": "integer"} {
+				var property struct {
+					Type string   `json:"type"`
+					Enum []string `json:"enum"`
+				}
+				if json.Unmarshal(parameters.Properties[name], &property) != nil || property.Type != kind || !slices.Contains(parameters.Required, name) {
+					return fmt.Errorf("advertise the supplied LSP schema with required %s of type %s", name, kind)
+				}
+				if name == "operation" && !slices.Contains(property.Enum, "goToDefinition") {
+					return fmt.Errorf("the LSP operation enum must include goToDefinition")
+				}
+			}
+			advertised = true
+			break
+		}
+		if !advertised {
+			return fmt.Errorf("advertise the supplied LSP tool in every model request")
+		}
 	}
-	return fmt.Errorf("advertise the supplied LSP tool")
+	return nil
 }
 
 // A Read must return the complete file contents in its own tool result.
@@ -191,7 +198,7 @@ func checkRead(root, name, text string, tools []call) error {
 }
 
 func Check(c Case, slug string, config Config, requests []string) error {
-	if slug == "cx7" {
+	if slug == "iy3" {
 		if err := checkSetupTools(requests); err != nil {
 			return err
 		}

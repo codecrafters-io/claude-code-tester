@@ -20,9 +20,13 @@ func Cases(slug string) []Case {
 	definition := Action{Operation: "goToDefinition", File: "checkout.py", Line: 4, Character: 11}
 	references := query("findReferences")
 	switch slug {
-	case "cx7":
+	case "dz5", "iy3":
+		name := "client-connected"
+		if slug == "iy3" {
+			name = "lsp-tool-advertised"
+		}
 		return []Case{
-			{Name: "connected-tool-advertised", Prompt: "Use only Read to inspect checkout.py and pricing.py. Explain how checkout uses the pricing function.", Actions: []Action{{Operation: "read", File: "checkout.py"}, {Operation: "read", File: "pricing.py"}}},
+			{Name: name, Prompt: "Use only Read to inspect checkout.py and pricing.py. Explain how checkout uses the pricing function.", Actions: []Action{{Operation: "read", File: "checkout.py"}, {Operation: "read", File: "pricing.py"}}},
 		}
 	case "gz6":
 		prompt := "Use LSP goToDefinition on checkout.py at line 5, character 12. Read the returned implementation and explain which total is called; preview.total is unrelated."

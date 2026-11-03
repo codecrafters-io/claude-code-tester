@@ -17,14 +17,15 @@ Code" challenge.
 
 ## LSP extension
 
-Five graded stages connect an LSP tool and diagnostic feedback to the existing
-agent loop:
+Six graded stages add navigation and synchronized edits to the existing agent
+loop:
 
-1. cx7: Set up the LSP connection.
-2. gz6: Find the implementation.
-3. rb6: Find the affected callers.
-4. bn2: Keep the analysis current.
-5. ql9: Catch an error after editing.
+1. dz5: Connect the LSP client and read configuration.
+2. iy3: Advertise the LSP tool without implementing navigation yet.
+3. gz6: Find the implementation.
+4. rb6: Find the affected callers.
+5. bn2: Keep the analysis current.
+6. ql9: Change an API across files.
 
 The supplied transport starts the configured server, handles JSON-RPC framing
 and initialization, and queues notifications while requests are running. The
@@ -32,12 +33,13 @@ tester provides CODECRAFTERS_LSP_URL to the submitted program. The native starte
 clients retrieve extensionToLanguage through the configuration action and call
 request, notify, and notifications through that local URL. Document language IDs
 come from configuration rather than a Python default.
-Every LSP case supplies a connection. Setup checks the configuration request
-and model-facing schema; learners construct the supplied client directly.
-It uses Read to inspect the example and passes before navigation is implemented.
+Every LSP case supplies a connection. The connection stage checks configuration
+before the first model request and uses Read to inspect the example; it passes
+without an advertised LSP tool. The advertisement stage checks the schema in
+every model request and passes before navigation is implemented.
 The local HTTP facade is course scaffolding; the server still speaks stdio LSP.
 Learners construct document messages, track versions, return tool results and
-choose how diagnostic feedback reaches the model. The helper never runs an agent.
+keep the server current after edits. The helper never runs an agent.
 
 The reference agent uses Python's standard library. The controlled stdio fixture
 runs from the tester binary, so grading doesn't require installing Pyright.
@@ -47,26 +49,23 @@ make test_lsp
 make test_lsp_offline
 ```
 
-These commands cover 16 graded cases and ten deliberately broken clients:
-missing configuration requests, missing LSP advertisement,
-incomplete tool schemas, wrong coordinates, lost definition results, omitted declaration context,
-unsynchronized writes, discarded unversioned reports, reused cached feedback and
-false clean diagnostics on timeout. Separate transport tests cover fragmented
-startup, notifications during requests, failed initialization and process cleanup.
+These commands cover 16 graded cases and deliberately broken clients, including
+missing or late configuration, missing LSP advertisement, incomplete schemas,
+wrong coordinates, lost results, omitted declaration context, and unsynchronized
+edits. Separate transport tests cover fragmented startup, notifications during
+requests, failed initialization, and process cleanup.
 
-The exercise migrates pricing.total from integer cents to a Price TypedDict.
-A controlled partial caller edit still returns Price as int. The scripted model
-requires the preceding Write's error before selecting the repair; the repaired
-Write must receive an empty diagnostic publication. Logs show both the error and
-clearing. This is a fixed demonstration, not a guarantee that a live model will
-make an error. Final files, protocol traffic and matching tool results are checked.
+The capstone migrates pricing.total from integer cents to a Price TypedDict,
+updates checkout and reporting, repeats navigation, and runs the project tests
+through Bash. It requires no diagnostic collection. Final files, protocol
+traffic, and matching tool results are checked.
 
 Navigation operations are goToDefinition and findReferences, with filePath and
 one-based UTF-16 coordinates. Protocol positions are zero-based. Configuration
 uses the product's named command/args/extensionToLanguage map. Plugin management,
-hover stages and rename are outside the extension. Stage IDs use the first five
-slugs supplied from the backend generator on 2 November 2026; retired ls1/ir2/hv2
-IDs are not reallocated.
+hover stages and rename are outside the extension. The two setup IDs dz5/iy3 come from the slugs supplied on 3 November 2026.
+Later stages retain gz6/rb6/bn2/ql9. The combined setup ID cx7 and retired
+ls1/ir2/hv2 IDs are not reallocated.
 
 Regenerate recorded output when prompts or cases change:
 
