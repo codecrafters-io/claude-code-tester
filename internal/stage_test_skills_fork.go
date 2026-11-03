@@ -34,7 +34,7 @@ func testSkillsFork(stageHarness *test_case_harness.TestCaseHarness) error {
 	forkedSkill := skills_manager.Skill{
 		Name:               names[0],
 		Description:        topics[0].Description,
-		Body:               skills_manager.RespondWithTokenBody(tokens[0]),
+		Body:               skills_manager.AnswerBody(topics[0], tokens[0]),
 		RunInForkedContext: true,
 	}
 
@@ -42,7 +42,7 @@ func testSkillsFork(stageHarness *test_case_harness.TestCaseHarness) error {
 	catalogOnlySkill := skills_manager.Skill{
 		Name:        names[1],
 		Description: topics[1].Description,
-		Body:        skills_manager.RespondWithTokenBody(tokens[1]),
+		Body:        skills_manager.AnswerBody(topics[1], tokens[1]),
 	}
 
 	skills_manager.Seed(workspaceManager, []skills_manager.Skill{forkedSkill, catalogOnlySkill}, stageLogger)
@@ -78,7 +78,7 @@ func testSkillsFork(stageHarness *test_case_harness.TestCaseHarness) error {
 // Code relays the subagent's reply to the user instead of back to the model.
 func forkAssertion(question string) request_assertion.SomeRequestAssertion {
 	return request_assertion.SomeRequestAssertion{
-		ExpectedValues:   []string{skills_manager.RespondWithTokenBodyMarker},
+		ExpectedValues:   []string{skills_manager.AnswerBodyMarker},
 		UnexpectedValues: []string{question},
 	}
 }

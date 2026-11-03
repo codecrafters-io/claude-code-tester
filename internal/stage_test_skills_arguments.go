@@ -33,13 +33,17 @@ func testSkillsArguments(stageHarness *test_case_harness.TestCaseHarness) error 
 		Body:        fmt.Sprintf("Respond with exactly: $ARGUMENTS\n\n%s", noExtraTextInstruction),
 	}
 
-	// Positional placeholders are zero-based, and $1 comes before $0 on purpose:
-	// substituting in the order the arguments arrive, rather than by index,
-	// produces the wrong answer here.
+	// Positional placeholders are zero-based, and the second argument comes
+	// before the first on purpose: substituting in the order the arguments
+	// arrive, rather than by index, produces the wrong answer here.
+	//
+	// The long form sits beside the shorthand because it contains $ARGUMENTS.
+	// A program that substitutes $ARGUMENTS first turns $ARGUMENTS[1] into
+	// "mango pear[1]", which only a body using both forms can catch.
 	positionalSkill := skills_manager.Skill{
 		Name:        names[1],
 		Description: topics[1].Description,
-		Body:        fmt.Sprintf("Respond with exactly: $1 $0\n\n%s", noExtraTextInstruction),
+		Body:        fmt.Sprintf("Respond with exactly: $ARGUMENTS[1] $0\n\n%s", noExtraTextInstruction),
 	}
 
 	skills_manager.Seed(workspaceManager, []skills_manager.Skill{argumentsSkill, positionalSkill}, stageLogger)
@@ -63,9 +67,9 @@ func testSkillsArguments(stageHarness *test_case_harness.TestCaseHarness) error 
 		return err
 	}
 
-	// Assertion 2: $0 and $1 resolve positionally, in the order the body asks for.
+	// Assertion 2: $ARGUMENTS[1] and $0 resolve positionally, in the order the body asks for.
 	positionalArguments := skills_manager.RandomTokens(2)
-	stageLogger.Infof("Checking that $0 and $1 are substituted positionally")
+	stageLogger.Infof("Checking that $ARGUMENTS[1] and $0 are substituted positionally")
 
 	// The pair in the order the body asks for, which a submission that
 	// substitutes by arrival rather than by index never produces.

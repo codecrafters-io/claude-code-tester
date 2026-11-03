@@ -66,8 +66,10 @@ func testSkillsScript(stageHarness *test_case_harness.TestCaseHarness) error {
 	scriptTestCase := test_cases.NonInteractiveTestCase{
 		InputPrompt:      fmt.Sprintf("/%s", skill.Name),
 		ExpectedExitCode: 0,
-		StdoutAssertion: string_assertion.ExactMatchAssertion{
-			ExpectedValue: expectedChecksum,
+		// The checksum can only come from running the script, so its presence is
+		// the verdict. Insisting on nothing else fails submissions over prose.
+		StdoutAssertion: string_assertion.ContainsAllAssertion{
+			ExpectedValues: []string{expectedChecksum},
 		},
 	}
 

@@ -17,7 +17,7 @@ func TestForkAssertionSeparatesForkingFromInlineSubmissions(t *testing.T) {
 
 	catalog := `"role":"system","content":"You have access to the following skills:\n\n- apple: ...\n- grape: ..."`
 	asked := fmt.Sprintf(`"role":"user","content":"%s"`, question)
-	body := fmt.Sprintf(`"role":"user","content":"Respond with exactly one word: %s\n\n%s."`, token, skills_manager.RespondWithTokenBodyMarker)
+	body := fmt.Sprintf(`"role":"user","content":"%s\n\nThe database migration status is %s."`, skills_manager.AnswerBodyMarker, token)
 
 	testCases := map[string]struct {
 		requestBodies []string

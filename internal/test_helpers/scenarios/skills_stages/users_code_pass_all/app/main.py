@@ -222,12 +222,10 @@ def render_invocation(skill, arguments):
     body = substitute_arguments(skill["body"], arguments)
 
     # The body names bundled files relative to the skill's own folder, so the
-    # model needs to be told where that folder is.
-    return (
-        f"Skill: {skill['name']} (located at {skill['dir']})\n"
-        f"Paths in the instructions below are relative to that folder.\n\n"
-        f"{body}"
-    )
+    # model needs to be told where that folder is. This is Claude Code's own
+    # wording: a statement of where the folder is, not an instruction, so the
+    # model doesn't go reading the folder for instructions it already has.
+    return f"Base directory for this skill: {os.path.abspath(skill['dir'])}\n\n{body}"
 
 
 def run_skill_tool(client, arguments, skills):

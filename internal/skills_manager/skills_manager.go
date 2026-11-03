@@ -79,6 +79,20 @@ func RespondWithTokenBody(token string) string {
 // carrying the body apart from one carrying only the result.
 const RespondWithTokenBodyMarker = "Do not add any other text, punctuation, or formatting"
 
+// AnswerBody returns a body that answers topic's Question, with token as the
+// fact the question asks for.
+func AnswerBody(topic Topic, token string) string {
+	return fmt.Sprintf("%s\n\n"+topic.AnswerFormat, AnswerBodyMarker, token)
+}
+
+// AnswerBodyMarker is the part of AnswerBody that never shows up in the answer,
+// which is what lets the fork stage tell a request carrying the body apart from
+// one carrying only the result.
+//
+// It has no apostrophes or other characters a JSON encoder might escape, since
+// the assertion matches it against raw request bodies.
+const AnswerBodyMarker = "Use this fact to answer:"
+
 // StackedLine pairs a skill's token with the argument its invocation carried.
 //
 // Asserting on the pair rather than the token alone is what makes one value
