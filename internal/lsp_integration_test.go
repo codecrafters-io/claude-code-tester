@@ -60,6 +60,7 @@ func TestLSPRejectsBrokenClients(t *testing.T) {
 		{"setup-without-lsp-tool", "cx7", `"tools": TOOLS`, `"tools": [tool for tool in TOOLS if tool["function"]["name"] != "LSP"]`, "advertise the supplied LSP tool"},
 		{"setup-incomplete-tool-schema", "cx7", `"required": ["operation", "filePath", "line", "character"]`, `"required": ["operation", "filePath", "line"]`, "required character of type integer"},
 		{"tool-coordinates-not-converted", "gz6", `"line": arguments["line"] - 1`, `"line": arguments["line"]`, "expected goToDefinition"},
+		{"definition-read-not-returned", "gz6", `result = Path(arguments["file_path"]).read_text(encoding="utf-8")`, `result = "File access disabled"`, "read pricing.py and return its complete contents"},
 		{"discarded-definition", "gz6", "        return result\n\n", "        return None\n\n", "server result did not reach"},
 		{"references-declaration-omitted", "rb6", `{"includeDeclaration": True}`, `{"includeDeclaration": False}`, "includeDeclaration: true"},
 		{"unsynchronized-write", "bn2", `self.send("textDocument/didChange", {`, `self.send("textDocument/didNotChange", {`, "stale text"},

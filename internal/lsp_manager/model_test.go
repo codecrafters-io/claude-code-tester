@@ -59,3 +59,31 @@ func TestScriptedModelRequestsBash(t *testing.T) {
 	require.Equal(t, "Bash", function.Name)
 	require.JSONEq(t, `{"command":"python3 -m unittest -v test_invoice.py"}`, function.Arguments)
 }
+
+// The scripted follow-up uses the definition's current line after a formatted edit.
+func TestScriptedModelFindsMovedDefinition(t *testing.T) {
+	// Arrange
+	// Python ast.parse("# Pricing API\n" + PriceAPI) locates total at line 9.
+	actions := []Action{
+		{Operation: "write", File: "pricing.py", Content: "# Pricing API\n" + PriceAPI},
+		{Operation: "findReferences", File: "pricing.py", AtDefinition: true},
+	}
+	body := `{"messages":[{"role":"tool"}],"tools":[{"function":{"name":"LSP","parameters":{"properties":{"operation":{}}}}}]}`
+	request := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(body))
+	response := httptest.NewRecorder()
+	// Act
+	ScriptedModel(actions).ServeHTTP(response, request)
+	// Assert
+	require.Equal(t, http.StatusOK, response.Code)
+	var payload struct {
+		Choices []struct {
+			Message struct {
+				ToolCalls []struct {
+					Function struct{ Arguments string } `json:"function"`
+				} `json:"tool_calls"`
+			} `json:"message"`
+		} `json:"choices"`
+	}
+	require.NoError(t, json.Unmarshal(response.Body.Bytes(), &payload))
+	require.JSONEq(t, `{"operation":"findReferences","filePath":"pricing.py","line":9,"character":5}`, payload.Choices[0].Message.ToolCalls[0].Function.Arguments)
+}

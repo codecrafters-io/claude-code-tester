@@ -11,11 +11,12 @@ import (
 )
 
 type Action struct {
-	Operation string
-	File      string
-	Line      int
-	Character int
-	Content   string
+	Operation    string
+	File         string
+	Line         int
+	Character    int
+	Content      string
+	AtDefinition bool
 }
 
 func (a Action) arguments() map[string]any {
@@ -84,6 +85,26 @@ func ScriptedModel(actions []Action) http.Handler {
 			if name == "" {
 				http.Error(writer, "Advertise the requested LSP, Read, Write, or Bash tool", 400)
 				return
+			}
+			if action.AtDefinition {
+				found := false
+				for previous := step - 1; previous >= 0; previous-- {
+					written := actions[previous]
+					if written.Operation != "write" || written.File != action.File {
+						continue
+					}
+					match := signaturePattern.FindStringSubmatchIndex(written.Content)
+					if match != nil {
+						current := position(written.Content, match[2])
+						action.Line, action.Character = current.Line, current.Character
+						found = true
+					}
+					break
+				}
+				if !found {
+					http.Error(writer, "No definition in the preceding scripted write", 500)
+					return
+				}
 			}
 			arguments := action.arguments()
 			// Accept the base course's path spelling as well as file_path.

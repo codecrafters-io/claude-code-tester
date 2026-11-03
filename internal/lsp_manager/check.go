@@ -173,6 +173,23 @@ func checkSetupTools(requests []string) error {
 	return fmt.Errorf("advertise the supplied LSP tool")
 }
 
+// A Read must return the complete file contents in its own tool result.
+func checkRead(root, name, text string, tools []call) error {
+	for _, tool := range tools {
+		file, _ := tool.Arguments["file_path"].(string)
+		if file == "" {
+			file, _ = tool.Arguments["path"].(string)
+		}
+		if !filepath.IsAbs(file) {
+			file = filepath.Join(root, file)
+		}
+		if tool.Arguments["content"] == nil && filepath.Clean(file) == filepath.Join(root, name) && (tool.Result == text || ContainsJSON(tool.Result, text)) {
+			return nil
+		}
+	}
+	return fmt.Errorf("read %s and return its complete contents to the model", name)
+}
+
 func Check(c Case, slug string, config Config, requests []string) error {
 	if slug == "cx7" {
 		if err := checkSetupTools(requests); err != nil {
@@ -240,9 +257,25 @@ func Check(c Case, slug string, config Config, requests []string) error {
 		}
 	}
 	var queryMessages []Message
+	var queryTexts []string
+	documents := map[string]string{}
 	for _, message := range received {
+		var params struct {
+			TextDocument   Document `json:"textDocument"`
+			ContentChanges []struct {
+				Text string `json:"text"`
+			} `json:"contentChanges"`
+		}
+		json.Unmarshal(message.Params, &params)
+		if message.Method == "textDocument/didOpen" {
+			documents[params.TextDocument.URI] = params.TextDocument.Text
+		}
+		if message.Method == "textDocument/didChange" && len(params.ContentChanges) == 1 {
+			documents[params.TextDocument.URI] = params.ContentChanges[0].Text
+		}
 		if len(message.ID) > 0 && strings.HasPrefix(message.Method, "textDocument/") {
 			queryMessages = append(queryMessages, message)
+			queryTexts = append(queryTexts, documents[params.TextDocument.URI])
 		}
 	}
 	var expectedQueries []Action
@@ -280,7 +313,16 @@ func Check(c Case, slug string, config Config, requests []string) error {
 		action := Action{Operation: operation, File: file, Line: int(line) - 1, Character: int(character) - 1}
 		if len(matchedQueries) < len(expectedQueries) {
 			expected := expectedQueries[len(matchedQueries)]
-			samePosition := action.Operation == expected.Operation && filepath.Clean(file) == filepath.Join(config.Root, expected.File) && action.Line == expected.Line && action.Character == expected.Character
+			samePosition := action.Line == expected.Line && action.Character == expected.Character
+			if expected.AtDefinition {
+				match := signaturePattern.FindStringSubmatchIndex(queryTexts[index])
+				samePosition = false
+				if match != nil {
+					location := textRange(queryTexts[index], match[2], match[3])
+					samePosition = action.Line == location.Start.Line && action.Character >= location.Start.Character && action.Character < location.End.Character
+				}
+			}
+			samePosition = samePosition && action.Operation == expected.Operation && filepath.Clean(file) == filepath.Join(config.Root, expected.File)
 			currentType := len(c.WantDefinitions) == 0 || len(matchedQueries) < len(c.WantDefinitions) && strings.Contains(tool.Result, c.WantDefinitions[len(matchedQueries)])
 			if samePosition && currentType {
 				matchedQueries = append(matchedQueries, tool)
@@ -363,6 +405,18 @@ func Check(c Case, slug string, config Config, requests []string) error {
 		return checkMigration(c, config.Root, allCalls)
 	}
 
+	files := c.Files
+	if files == nil {
+		files = Project(false)
+	}
+	for _, action := range c.Actions {
+		if action.Operation == "read" {
+			if err := checkRead(config.Root, action.File, files[action.File], allCalls); err != nil {
+				return err
+			}
+		}
+	}
+
 	// Check the final text of every successful scripted write, including unopened files.
 	final := map[string]string{}
 	for _, action := range c.Actions {
@@ -382,14 +436,11 @@ func Check(c Case, slug string, config Config, requests []string) error {
 
 // The capstone checks behavior rather than requiring one spelling of the migration.
 func checkMigration(c Case, root string, tools []call) error {
-	firstWrite, lastWrite := len(tools), -1
-	writes := map[string]bool{}
+	lastWrite := -1
+	writes := map[string]int{}
 	for index, tool := range tools {
 		if tool.Arguments["content"] == nil {
 			continue
-		}
-		if index < firstWrite {
-			firstWrite = index
 		}
 		lastWrite = index
 		file, _ := tool.Arguments["file_path"].(string)
@@ -399,27 +450,17 @@ func checkMigration(c Case, root string, tools []call) error {
 		if !filepath.IsAbs(file) {
 			file = filepath.Join(root, file)
 		}
-		writes[filepath.Clean(file)] = true
+		if _, exists := writes[filepath.Clean(file)]; !exists {
+			writes[filepath.Clean(file)] = index
+		}
 	}
 	for _, name := range []string{"pricing.py", "checkout.py", "reports.py"} {
-		if !writes[filepath.Join(root, name)] {
+		firstWrite, written := writes[filepath.Join(root, name)]
+		if !written {
 			return fmt.Errorf("use Write to migrate %s", name)
 		}
-		read := false
-		for _, tool := range tools[:firstWrite] {
-			file, _ := tool.Arguments["file_path"].(string)
-			if file == "" {
-				file, _ = tool.Arguments["path"].(string)
-			}
-			if !filepath.IsAbs(file) {
-				file = filepath.Join(root, file)
-			}
-			if tool.Arguments["content"] == nil && filepath.Clean(file) == filepath.Join(root, name) && (tool.Result == c.Files[name] || ContainsJSON(tool.Result, c.Files[name])) {
-				read = true
-			}
-		}
-		if !read {
-			return fmt.Errorf("read %s and return its contents before editing", name)
+		if err := checkRead(root, name, c.Files[name], tools[:firstWrite]); err != nil {
+			return fmt.Errorf("before editing %s: %w", name, err)
 		}
 	}
 	for name, original := range c.Files {

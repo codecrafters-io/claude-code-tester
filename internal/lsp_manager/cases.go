@@ -61,17 +61,20 @@ func Cases(slug string) []Case {
 		checkout := Action{Operation: "write", File: "checkout.py", Content: strings.Replace(files["checkout.py"], "invoice_total(250, 2)", `invoice_total(250, 2)["cents"]`, 1)}
 		reports := Action{Operation: "write", File: "reports.py", Content: strings.ReplaceAll(strings.ReplaceAll(files["reports.py"], "total(250, 2)", `total(250, 2)["cents"]`), "total(100, 1)", `total(100, 1)["cents"]`)}
 		updatedReferences := references
-		updatedReferences.Line = 7
-		prompt := `Change pricing.total to return a Price TypedDict with a cents field. Use LSP goToDefinition on checkout.py at line 5, character 12 and findReferences on pricing.py at line 1, character 5. Read the implementation and affected callers. Update checkout.py and reports.py so they still return integer cents. Don't modify test_invoice.py. Leave preview.total and other unrelated files unchanged. After editing, repeat definition lookup on checkout.py and findReferences on pricing.py at line 8, character 5 to check the current code. Run python3 -m unittest -v test_invoice.py and report the result.`
+		updatedReferences.AtDefinition = true
+		prompt := `Change pricing.total to return a Price TypedDict with a cents field. Use LSP goToDefinition on checkout.py at line 5, character 12 and findReferences on pricing.py at line 1, character 5. Read the implementation and affected callers. Update checkout.py and reports.py so they still return integer cents. Don't modify test_invoice.py. Leave preview.total and other unrelated files unchanged. After editing, repeat definition lookup on checkout.py and findReferences at pricing.total's current definition to check the current code. Run python3 -m unittest -v test_invoice.py and report the result.`
 		actions := []Action{
 			definition, {Operation: "read", File: "pricing.py"}, references,
 			{Operation: "read", File: "checkout.py"}, {Operation: "read", File: "reports.py"},
 			api, checkout, reports, definition, updatedReferences,
 			{Operation: "bash", Content: "python3 -m unittest -v test_invoice.py"},
 		}
+		formatted := append([]Action(nil), actions...)
+		formatted[5].Content = "# Pricing API\n" + PriceAPI
 		return []Case{
 			{Name: "api-migration-across-files", Prompt: prompt, Actions: actions, Files: files},
 			{Name: "migration-without-diagnostic-publications", Prompt: prompt, Actions: actions, Files: files, Config: Config{MissingDiagnostics: true}},
+			{Name: "migration-with-shifted-definition", Prompt: prompt, Actions: formatted, Files: files},
 		}
 	}
 	return nil
