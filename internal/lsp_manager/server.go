@@ -17,7 +17,6 @@ type Config struct {
 	Log                    string `json:"log"`
 	Fragmented             bool   `json:"fragmented"`
 	Fault                  string `json:"fault,omitempty"`
-	Definition             string `json:"definition,omitempty"`
 	EmptyReferences        bool   `json:"emptyReferences,omitempty"`
 	StaleDiagnostics       bool   `json:"staleDiagnostics,omitempty"`
 	MissingDiagnostics     bool   `json:"missingDiagnostics,omitempty"`
@@ -187,14 +186,7 @@ func Serve(config Config, input io.Reader, output io.Writer) error {
 				}
 				switch message.Method {
 				case "textDocument/definition":
-					if config.Definition == "error" {
-						protocolError = map[string]any{"code": -32603, "message": "Definition unavailable"}
-					} else if config.Definition != "null" {
-						result = state.definition()
-						if config.Definition == "array" {
-							result = []any{result, Location{URI: URI(filepath.Join(config.Root, "pricing.pyi")), Range: Range{Start: Position{Line: 2, Character: 4}, End: Position{Line: 2, Character: 9}}}}
-						}
-					}
+					result = state.definition()
 				case "textDocument/references":
 					if config.EmptyReferences {
 						result = []Location{}

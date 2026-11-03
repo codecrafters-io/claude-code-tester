@@ -427,7 +427,7 @@ func Check(c Case, slug string, config Config, requests []string) error {
 	// Check the final text of every successful scripted write, including unopened files.
 	final := map[string]string{}
 	for _, action := range c.Actions {
-		if action.Operation == "write" && action.File != "." {
+		if action.Operation == "write" {
 			final[action.File] = action.Content
 		}
 	}

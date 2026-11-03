@@ -30,13 +30,8 @@ func Cases(slug string) []Case {
 		}
 	case "gz6":
 		prompt := "Use LSP goToDefinition on checkout.py at line 5, character 12. Read the returned implementation and explain which total is called; preview.total is unrelated."
-		overloaded := Project(false)
-		overloaded["pricing.pyi"] = "\n\ndef total(price: int, quantity: int) -> int: ...\n"
 		return []Case{
-			{Name: "resolve-and-read-implementation", Prompt: prompt, Actions: []Action{definition, {Operation: "read", File: "pricing.py"}}, Config: Config{Fragmented: true}},
-			{Name: "multiple-definitions", Prompt: prompt, Actions: []Action{definition}, Files: overloaded, Config: Config{Definition: "array"}},
-			{Name: "missing-definition", Prompt: prompt, Actions: []Action{definition}, Config: Config{Definition: "null"}},
-			{Name: "definition-error", Prompt: prompt, Actions: []Action{definition}, Config: Config{Definition: "error"}},
+			{Name: "resolve-and-read-implementation", Prompt: prompt, Actions: []Action{definition, {Operation: "read", File: "pricing.py"}}},
 		}
 	case "rb6":
 		prompt := "Use LSP findReferences on pricing.py at line 1, character 5. Identify every affected caller before changing its return type. Preserve the returned locations; preview.total and comments are unrelated."
@@ -57,7 +52,6 @@ func Cases(slug string) []Case {
 			{Name: "definition-follows-edited-import", Prompt: prompt, Actions: []Action{definition, write, definition}, WantDefinitions: []string{"pricing.py", "discounts.py"}},
 			{Name: "successive-document-versions", Prompt: prompt + " Restore the pricing import using Write and repeat the lookup.", Actions: []Action{definition, write, definition, restore, definition}, WantDefinitions: []string{"pricing.py", "discounts.py", "pricing.py"}},
 			{Name: "write-before-open", Prompt: "Use Write to change checkout.py's import from pricing to discounts, then look up invoice_total at line 5, character 12.", Actions: []Action{write, definition}, WantDefinitions: []string{"discounts.py"}},
-			{Name: "failed-write-keeps-analysis", Prompt: "Look up invoice_total in checkout.py at line 5, character 12. Try Write on the directory . with content invalid. Repeat the lookup.", Actions: []Action{definition, {Operation: "write", File: ".", Content: "invalid"}, definition}, WantDefinitions: []string{"pricing.py", "pricing.py"}},
 		}
 	case "ql9":
 		files["test_invoice.py"] = InvoiceTests

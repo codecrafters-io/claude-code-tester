@@ -94,7 +94,7 @@ var testerDefinition = tester_definition.TesterDefinition{
 		{
 			Slug:     "gz6",
 			TestFunc: testLSPDefinition,
-			Timeout:  145 * time.Second,
+			Timeout:  100 * time.Second,
 		},
 		{
 			Slug:     "rb6",

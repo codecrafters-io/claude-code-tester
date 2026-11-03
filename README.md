@@ -22,7 +22,7 @@ loop:
 
 1. dz5: Connect the LSP client and read configuration.
 2. iy3: Advertise the LSP tool without implementing navigation yet.
-3. gz6: Find the implementation.
+3. gz6: Find the implementation with one successful definition lookup and Read.
 4. rb6: Find the affected callers.
 5. bn2: Keep the analysis current.
 6. ql9: Change an API across files.
@@ -37,6 +37,12 @@ Every LSP case supplies a connection. The connection stage checks configuration
 before the first model request and uses Read to inspect the example; it passes
 without an advertised LSP tool. The advertisement stage checks the schema in
 every model request and passes before navigation is implemented.
+The definition exercise supplies valid Python files and a single location. It
+does not grade multiple definitions, missing definitions, or server-error tool
+results. Reference lookup later introduces location arrays and empty results.
+Synchronization grades successful writes, including repeated versions and writes
+before opening a file; write failures and synchronization recovery are outside
+that exercise.
 The local HTTP facade is course scaffolding; the server still speaks stdio LSP.
 Learners construct document messages, track versions, return tool results and
 keep the server current after edits. The helper never runs an agent.
@@ -49,7 +55,7 @@ make test_lsp
 make test_lsp_offline
 ```
 
-These commands cover 16 graded cases and deliberately broken clients, including
+These commands cover 12 graded cases and deliberately broken clients, including
 missing or late configuration, missing LSP advertisement, incomplete schemas,
 wrong coordinates, lost results, omitted declaration context, and unsynchronized
 edits. Separate transport tests cover fragmented startup, notifications during

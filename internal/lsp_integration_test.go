@@ -91,6 +91,49 @@ func TestLSPRejectsBrokenClients(t *testing.T) {
 	}
 }
 
+// Definition lookup passes with an agent that handles only successful locations.
+func TestLSPDefinitionNeedsOnlySuccessfulLocation(t *testing.T) {
+	// Arrange
+	binary := lspFixtureBinary(t)
+	reference, err := os.ReadFile("test_helpers/scenarios/lsp_stages/users_code_pass_all/app/main.py")
+	require.NoError(t, err)
+	request := `result = self.request("textDocument/" + methods[operation], params)`
+	require.Contains(t, string(reference), request)
+	source := strings.Replace(string(reference), request, request+`
+        assert isinstance(result, dict) and "uri" in result and "range" in result`, 1)
+	errorHandler := `            except Exception as error:
+                result = {"error": str(error)}`
+	require.Contains(t, source, errorHandler)
+	source = strings.Replace(source, errorHandler, `            except Exception as error:
+                raise AssertionError("This agent only supports successful tool calls") from error`, 1)
+	directory := lspScenario(t, source)
+	// Act
+	output, err := runLSPScenario(t, binary, directory, "gz6")
+	// Assert
+	require.NoError(t, err, output)
+	require.Contains(t, output, "Resolved invoice_total to pricing.total")
+}
+
+// Synchronization passes without converting failed tool calls into error results.
+func TestLSPSynchronizationNeedsOnlySuccessfulWrites(t *testing.T) {
+	// Arrange
+	binary := lspFixtureBinary(t)
+	reference, err := os.ReadFile("test_helpers/scenarios/lsp_stages/users_code_pass_all/app/main.py")
+	require.NoError(t, err)
+	errorHandler := `            except Exception as error:
+                result = {"error": str(error)}`
+	require.Contains(t, string(reference), errorHandler)
+	source := strings.Replace(string(reference), errorHandler, `            except Exception as error:
+                raise AssertionError("This agent only supports successful tool calls") from error`, 1)
+	directory := lspScenario(t, source)
+	// Act
+	output, err := runLSPScenario(t, binary, directory, "bn2")
+	// Assert
+	require.NoError(t, err, output)
+	require.Contains(t, output, "Case successive-document-versions passed")
+	require.Contains(t, output, "Case write-before-open passed")
+}
+
 // A legacy model server on port 10000 cannot contaminate LSP stage recordings.
 func TestLSPIsolatesLegacyModelTraffic(t *testing.T) {
 	// Arrange

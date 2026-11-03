@@ -167,7 +167,7 @@ func testLSP(stageHarness *test_case_harness.TestCaseHarness, slug string) error
 		if slug == "iy3" {
 			stageHarness.Logger.Successf("Advertised LSP; definition lookup is next")
 		}
-		if slug == "gz6" && testCase.Config.Definition == "" {
+		if slug == "gz6" {
 			stageHarness.Logger.Successf("Resolved invoice_total to pricing.total; preview.total is unrelated")
 		}
 		if slug == "rb6" && !testCase.Config.EmptyReferences {
