@@ -47,26 +47,30 @@ The local HTTP facade is course scaffolding; the server still speaks stdio LSP.
 Learners construct document messages, track versions, return tool results and
 keep the server current after edits. The helper never runs an agent.
 
-LSP grading uses scripted model tool calls by default. The submitted agent still
-sends model requests and executes its real tool handlers. The reference agent
-uses Python's standard library, and the controlled stdio fixture runs from the
-tester binary, so grading needs neither model credentials nor Pyright.
+LSP grading forwards model requests to OpenRouter. The model chooses tool calls
+and edits using the submitted agent's tool descriptions, prompt guidance, and
+feedback. The tester records the conversation and checks protocol, tool results,
+and final behavior. It does not generate model responses. The controlled stdio
+LSP fixture runs from the tester binary, so grading needs model credentials but
+no Pyright installation.
 
 ```sh
 make test_lsp
-make test_lsp_offline
+make test_lsp_with_users_code
 ```
 
-These commands cover 12 graded cases and deliberately broken clients, including
-missing or late configuration, missing LSP advertisement, incomplete schemas,
-wrong coordinates, lost results, omitted declaration context, and unsynchronized
-edits. Separate transport tests cover fragmented startup, notifications during
-requests, failed initialization, and process cleanup.
+`make test_lsp` runs offline protocol, checker, and reference-client unit tests.
+`make test_lsp_with_users_code` runs all 14 graded cases with the live model and
+requires CODECRAFTERS_SECRET_OPENROUTER_API_KEY. Separate transport tests cover
+fragmented startup, notifications during requests, failed initialization, and
+process cleanup.
 
 The capstone migrates pricing.total from integer cents to a Price TypedDict,
 updates checkout and reporting, repeats navigation, and runs the project tests
-through Bash. It requires no diagnostic collection. Final files, protocol
-traffic, and matching tool results are checked.
+through Bash. Every successful Write must return current diagnostic feedback or
+an explicit diagnostic timeout. Final files, protocol traffic, and matching tool
+results are checked. The shifted-definition case starts with an extra source
+line; the model chooses the resulting edits.
 
 Navigation operations are goToDefinition and findReferences, with filePath and
 one-based UTF-16 coordinates. Protocol positions are zero-based. Configuration
@@ -81,11 +85,11 @@ Regenerate recorded output when prompts or cases change:
 make record_lsp_fixtures
 ```
 
-Keep live-model checks separate from learner grading. Configure
-CODECRAFTERS_SECRET_OPENROUTER_API_KEY and run `make test_lsp_with_users_code`
-to opt in with CODECRAFTERS_LSP_LIVE=1. These checks exercise tool descriptions,
-planning, recovery, and sequences chosen by the model. Scripted checks establish
-tool integration; they do not establish live-model reliability or learner pacing.
+Configure CODECRAFTERS_SECRET_OPENROUTER_API_KEY and run
+`make test_lsp_with_users_code` to exercise learner grading with the reference
+agent. There is no scripted-model mode or live-model opt-in flag. Repeated
+live-model reliability checks and learner pacing trials remain release gates;
+offline unit tests do not establish those results.
 
 ### Independent implementation checks
 
@@ -120,12 +124,11 @@ behavioral correctness.
 ## CI and repository conventions
 
 `make test` runs the entire suite without Go's test cache, as Redis's tester
-does. `make test_offline` runs protocol checks, fixture comparisons, and unit
-tests. `make test_live` runs the existing `TestStages` scenarios against
-OpenRouter, explicitly enabling live-model calls for LSP as well. Both groups
-run as separate CI jobs, so an invalid model credential cannot hide an offline
-protocol regression. No live tests are skipped or allowed
-to fail.
+does. `make test_offline` runs protocol, checker, transport, and reference-client
+unit tests. `make test_live` runs the existing `TestStages` scenarios, including
+LSP fixture comparisons, against OpenRouter. Both groups run as separate CI jobs,
+so an invalid model credential cannot hide an offline protocol regression.
+No live tests are skipped or allowed to fail.
 
 The base and Skills Python scenarios pin Python 3.14 through `.python-version`,
 matching the course starter. This prevents uv from selecting Python 3.15 when

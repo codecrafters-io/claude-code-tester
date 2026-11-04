@@ -95,3 +95,108 @@ func TestMigrationRejectsReadAfterFirstWrite(t *testing.T) {
 	// Assert
 	require.ErrorContains(t, err, "before editing pricing.py")
 }
+
+// Equivalent Price construction passes without requiring a predetermined source spelling.
+func TestMigrationAcceptsEquivalentImplementation(t *testing.T) {
+	// Arrange
+	c, root, tools := migratedProject(t)
+	text := strings.Replace(PriceAPI, `return {"cents": price * quantity}`, `return dict(cents=price * quantity)`, 1)
+	require.NoError(t, os.WriteFile(filepath.Join(root, "pricing.py"), []byte(text), 0644))
+	// Act
+	err := checkMigration(c, root, tools)
+	// Assert
+	require.NoError(t, err)
+}
+
+// A caller left on the old API fails even when the recorded Bash output claims success.
+func TestMigrationRejectsFabricatedTestOutput(t *testing.T) {
+	// Arrange
+	c, root, tools := migratedProject(t)
+	require.NoError(t, os.WriteFile(filepath.Join(root, "reports.py"), []byte(c.Files["reports.py"]), 0644))
+	// Act
+	err := checkMigration(c, root, tools)
+	// Assert
+	require.ErrorContains(t, err, "migration behavior check failed")
+}
+
+// An unrelated file edit fails the migration check.
+func TestMigrationRejectsUnrelatedEdits(t *testing.T) {
+	// Arrange
+	c, root, tools := migratedProject(t)
+	require.NoError(t, os.WriteFile(filepath.Join(root, "preview.py"), []byte("# unrelated edit\n"), 0644))
+	// Act
+	err := checkMigration(c, root, tools)
+	// Assert
+	require.ErrorContains(t, err, "unrelated file preview.py must remain unchanged")
+}
+
+// A successful Bash exit code alone cannot replace its actual test output.
+func TestMigrationRejectsMissingTestOutput(t *testing.T) {
+	// Arrange
+	c, root, tools := migratedProject(t)
+	tools[len(tools)-1].Result = `{"exit_code":0}`
+	// Act
+	err := checkMigration(c, root, tools)
+	// Assert
+	require.ErrorContains(t, err, "return the passing test output")
+}
+
+// A placeholder reaches the model only when it answers its own tool call.
+func TestPlaceholderRequiresMatchingCallID(t *testing.T) {
+	// Arrange
+	request := `{"messages":[{"role":"assistant","tool_calls":[{"id":"provider-call","function":{"arguments":"{\"operation\":\"goToDefinition\"}"}}]},{"role":"tool","tool_call_id":"unrelated-call","content":"LSP is not implemented yet"}]}`
+	// Act
+	err := checkPlaceholderResponse(calls([]string{request}))
+	// Assert
+	require.ErrorContains(t, err, "with the matching tool_call_id")
+}
+
+// Both plain-text and JSON-wrapped placeholders satisfy advertisement before navigation exists.
+func TestPlaceholderAcceptsUnimplementedNavigation(t *testing.T) {
+	for _, result := range []string{"LSP is not implemented yet", `"LSP is not implemented yet"`} {
+		t.Run(result, func(t *testing.T) {
+			// Arrange
+			tools := []call{{Arguments: map[string]any{"operation": "goToDefinition"}, Result: result}}
+			// Act
+			err := checkPlaceholderResponse(tools)
+			// Assert
+			require.NoError(t, err)
+		})
+	}
+}
+
+// Read must return the source contents rather than an unrelated success message.
+func TestReadRejectsMissingSource(t *testing.T) {
+	// Arrange
+	tools := []call{{Arguments: map[string]any{"file_path": "pricing.py"}, Result: "File access disabled"}}
+	// Act
+	err := checkRead(t.TempDir(), "pricing.py", Project(false)["pricing.py"], tools)
+	// Assert
+	require.ErrorContains(t, err, "read pricing.py and return its complete contents")
+}
+
+// Every request must advertise the complete LSP schema.
+func TestSetupRequiresCompleteSchemaInEveryRequest(t *testing.T) {
+	const valid = `{"tools":[{"function":{"name":"LSP","parameters":{"properties":{"operation":{"type":"string","enum":["goToDefinition"]},"filePath":{"type":"string"},"line":{"type":"integer"},"character":{"type":"integer"}},"required":["operation","filePath","line","character"]}}}]}`
+	for _, variant := range []struct {
+		name     string
+		requests []string
+		want     string
+	}{
+		{"complete", []string{valid, valid}, ""},
+		{"missing-tool", []string{`{"tools":[]}`}, "advertise the supplied LSP tool"},
+		{"missing-later-tool", []string{valid, `{"tools":[]}`}, "advertise the supplied LSP tool"},
+		{"incomplete-schema", []string{strings.Replace(valid, `"required":["operation","filePath","line","character"]`, `"required":["operation","filePath","line"]`, 1)}, "required character of type integer"},
+	} {
+		t.Run(variant.name, func(t *testing.T) {
+			// Arrange / Act
+			err := checkSetupTools(variant.requests)
+			// Assert
+			if variant.want == "" {
+				require.NoError(t, err)
+			} else {
+				require.ErrorContains(t, err, variant.want)
+			}
+		})
+	}
+}

@@ -17,12 +17,12 @@ build:
 test:
 	TESTER_DIR=$(shell pwd) go test -count=1 -v ./...
 
-# Keep deterministic protocol checks visible when live-model credentials fail.
+# Keep offline protocol checks visible when live-model credentials fail.
 test_offline:
 	TESTER_DIR=$(shell pwd) go test -count=1 -v -skip '^TestStages$$' ./...
 
 test_live:
-	CODECRAFTERS_LSP_LIVE=1 TESTER_DIR=$(shell pwd) go test -count=1 -v -run '^TestStages$$' ./internal
+	TESTER_DIR=$(shell pwd) go test -count=1 -v -run '^TestStages$$' ./internal
 
 test_without_local_caching:
 	go clean -testcache
@@ -110,25 +110,21 @@ define LSP_STAGES
 [{\"slug\":\"dz5\",\"tester_log_prefix\":\"stage-1\",\"title\":\"Stage #1: Connect the LSP client\"},{\"slug\":\"iy3\",\"tester_log_prefix\":\"stage-2\",\"title\":\"Stage #2: Advertise the LSP tool\"},{\"slug\":\"gz6\",\"tester_log_prefix\":\"stage-3\",\"title\":\"Stage #3: Find the implementation\"},{\"slug\":\"rb6\",\"tester_log_prefix\":\"stage-4\",\"title\":\"Stage #4: Find the affected callers\"},{\"slug\":\"bn2\",\"tester_log_prefix\":\"stage-5\",\"title\":\"Stage #5: Keep the analysis current\"},{\"slug\":\"ql9\",\"tester_log_prefix\":\"stage-6\",\"title\":\"Stage #6: Repair edits with diagnostics\"}]
 endef
 
-.PHONY: test_lsp_offline test_lsp_with_users_code record_lsp_fixtures
-
-# Uses the same stage checks with a deterministic model, without API credentials.
-test_lsp_offline: build
-	CODECRAFTERS_LSP_LIVE= OPENROUTER_BASE_URL=http://localhost:10000/api/v1 OPENROUTER_API_KEY=dummy-api-key $(MAKE) run_lsp_reference
+.PHONY: test_lsp_with_users_code record_lsp_fixtures
 
 # Uses the existing OpenRouter proxy and CODECRAFTERS_SECRET_OPENROUTER_API_KEY.
 test_lsp_with_users_code: build
-	CODECRAFTERS_LSP_LIVE=1 OPENROUTER_BASE_URL=http://localhost:10000/api/v1 OPENROUTER_API_KEY=dummy-api-key $(MAKE) run_lsp_reference
+	OPENROUTER_BASE_URL=http://localhost:10000/api/v1 OPENROUTER_API_KEY=dummy-api-key $(MAKE) run_lsp_reference
 
 run_lsp_reference:
 	$(call run_test,internal/test_helpers/scenarios/lsp_stages/users_code_pass_all,$(LSP_STAGES))
 
 record_lsp_fixtures:
-	CODECRAFTERS_RECORD_FIXTURES=true TESTER_DIR=$(shell pwd) go test -count=1 -run '^TestLSPStagesOffline$$' ./internal
+	CODECRAFTERS_RECORD_FIXTURES=true TESTER_DIR=$(shell pwd) go test -count=1 -run '^TestStages/lsp_stages_users_code_pass_all$$' ./internal
 
 .PHONY: test_lsp test_lsp_with_pyright run_lsp_reference
 
-# Recorded stage fixtures, negative clients, YAML registration and fixture unit tests.
+# Offline checker, reference-client, protocol, transport, and registration tests.
 test_lsp:
 	TESTER_DIR=$(shell pwd) go test -count=1 -run '^Test(LSP|StagesMatchYAML)' ./internal
 	go test -count=1 ./internal/lsp_manager ./internal/lsp_transport ./proxy_server

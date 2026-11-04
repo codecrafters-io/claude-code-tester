@@ -101,3 +101,17 @@ func TestEmptyReferencesIsAnArray(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "[]", string(encoded))
 }
+
+// Product operation names map to the protocol methods captured from the pinned CLI.
+func TestProtocolMethodsMatchClaudeCode(t *testing.T) {
+	// Arrange
+	methods := map[string]string{"goToDefinition": "textDocument/definition", "findReferences": "textDocument/references"}
+	for operation, expected := range methods {
+		t.Run(operation, func(t *testing.T) {
+			// Act
+			actual := protocolMethod(operation)
+			// Assert
+			require.Equal(t, expected, actual)
+		})
+	}
+}

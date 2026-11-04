@@ -103,3 +103,14 @@ func position(text string, offset int) Position {
 func textRange(text string, start, end int) Range {
 	return Range{Start: position(text, start), End: position(text, end)}
 }
+
+func protocolMethod(operation string) string {
+	switch operation {
+	case "goToDefinition":
+		return "textDocument/definition"
+	case "findReferences":
+		return "textDocument/references"
+	default:
+		return "textDocument/" + operation
+	}
+}

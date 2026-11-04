@@ -299,12 +299,7 @@ func Check(c Case, slug string, config Config, requests []string) error {
 	if slug == "iy3" && len(queryMessages) == 0 {
 		return checkPlaceholderResponse(allCalls)
 	}
-	var expectedQueries []Action
-	for _, action := range c.Actions {
-		if action.Operation != "write" && action.Operation != "read" && action.Operation != "bash" {
-			expectedQueries = append(expectedQueries, action)
-		}
-	}
+	expectedQueries := c.Queries
 	if len(queryMessages) < len(expectedQueries) {
 		return fmt.Errorf("expected %d LSP queries, got %d", len(expectedQueries), len(queryMessages))
 	}
@@ -342,7 +337,7 @@ func Check(c Case, slug string, config Config, requests []string) error {
 		}
 		line, _ := tool.Arguments["line"].(float64)
 		character, _ := tool.Arguments["character"].(float64)
-		action := Action{Operation: operation, File: file, Line: int(line) - 1, Character: int(character) - 1}
+		action := Query{Operation: operation, File: file, Line: int(line) - 1, Character: int(character) - 1}
 		for expectedIndex, expected := range expectedQueries {
 			if matchedQueries[expectedIndex].ID != "" || slug != "ql9" && expectedIndex != matchedCount {
 				continue
@@ -470,22 +465,13 @@ func Check(c Case, slug string, config Config, requests []string) error {
 	if files == nil {
 		files = Project(false)
 	}
-	for _, action := range c.Actions {
-		if action.Operation == "read" {
-			if err := checkRead(config.Root, action.File, files[action.File], allCalls); err != nil {
-				return err
-			}
+	for _, name := range c.ReadFiles {
+		if err := checkRead(config.Root, name, files[name], allCalls); err != nil {
+			return err
 		}
 	}
 
-	// Check the final text of every successful scripted write, including unopened files.
-	final := map[string]string{}
-	for _, action := range c.Actions {
-		if action.Operation == "write" {
-			final[action.File] = action.Content
-		}
-	}
-	for name, want := range final {
+	for name, want := range c.FinalFiles {
 		data, err := os.ReadFile(filepath.Join(config.Root, name))
 		if err != nil || string(data) != want {
 			return fmt.Errorf("final file %s does not match the requested edit", name)
@@ -566,4 +552,35 @@ assert unittest.TextTestRunner(verbosity=2).run(suite).wasSuccessful()
 		return fmt.Errorf("migration behavior check failed: %s: %w", output, err)
 	}
 	return nil
+}
+
+// ToolResults retains IDs and result boundaries. Searching concatenated API
+// bodies would incorrectly accept a stale result from an older tool call.
+func ToolResults(requests []string) map[string]string {
+	results := map[string]string{}
+	for _, body := range requests {
+		var request struct {
+			Messages []struct {
+				Role    string          `json:"role"`
+				ID      string          `json:"tool_call_id"`
+				Content json.RawMessage `json:"content"`
+			} `json:"messages"`
+		}
+		if json.Unmarshal([]byte(body), &request) != nil {
+			continue
+		}
+		for _, message := range request.Messages {
+			if message.Role != "tool" {
+				continue
+			}
+			var content string
+			if json.Unmarshal(message.Content, &content) != nil {
+				content = string(message.Content)
+			}
+			if _, exists := results[message.ID]; !exists {
+				results[message.ID] = content
+			}
+		}
+	}
+	return results
 }

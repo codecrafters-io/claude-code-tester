@@ -88,19 +88,9 @@ func testLSP(stageHarness *test_case_harness.TestCaseHarness, slug string) error
 		}
 		stageHarness.Logger.Infof("Wrote .lsp.json: %s", configuration)
 
-		var recorder *proxy_server.RequestRecorder
-		var closeModel func()
-		var modelURL string
-		if os.Getenv("CODECRAFTERS_LSP_LIVE") != "1" {
-			recorder, modelURL, closeModel, err = lsp_manager.StartScriptedModel(testCase.Actions)
-			if err != nil {
-				return err
-			}
-		} else {
-			recorder, modelURL, closeModel, err = proxy_server.StartIsolatedProxyServer(stageHarness)
-			if err != nil {
-				return err
-			}
+		recorder, modelURL, closeModel, err := proxy_server.StartIsolatedProxyServer(stageHarness)
+		if err != nil {
+			return err
 		}
 		stageHarness.RegisterTeardownFunc(closeModel)
 		if err := os.Setenv("OPENROUTER_BASE_URL", modelURL); err != nil {
