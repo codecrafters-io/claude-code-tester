@@ -165,7 +165,7 @@ func testLSP(stageHarness *test_case_harness.TestCaseHarness, slug string) error
 			stageHarness.Logger.Successf("Connected the supplied LSP client and read configuration; tool advertisement is next")
 		}
 		if slug == "iy3" {
-			stageHarness.Logger.Successf("Advertised LSP; definition lookup is next")
+			stageHarness.Logger.Successf("Advertised LSP and returned a matching tool response; definition lookup is next")
 		}
 		if slug == "gz6" {
 			stageHarness.Logger.Successf("Resolved invoice_total to pricing.total; preview.total is unrelated")

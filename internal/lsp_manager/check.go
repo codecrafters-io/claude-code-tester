@@ -180,6 +180,16 @@ func checkSetupTools(requests []string) error {
 	return nil
 }
 
+// Stage 2 accepts a placeholder sent back to the model under its original call ID.
+func checkPlaceholderResponse(tools []call) error {
+	for _, tool := range tools {
+		if tool.Arguments["operation"] == "goToDefinition" && (tool.Result == "LSP is not implemented yet" || ContainsJSON(tool.Result, "LSP is not implemented yet")) {
+			return nil
+		}
+	}
+	return fmt.Errorf("return LSP is not implemented yet to the model with the matching tool_call_id")
+}
+
 // A Read must return the complete file contents in its own tool result.
 func checkRead(root, name, text string, tools []call) error {
 	for _, tool := range tools {
@@ -285,6 +295,10 @@ func Check(c Case, slug string, config Config, requests []string) error {
 			queryTexts = append(queryTexts, documents[params.TextDocument.URI])
 		}
 	}
+	allCalls := calls(requests)
+	if slug == "iy3" && len(queryMessages) == 0 {
+		return checkPlaceholderResponse(allCalls)
+	}
 	var expectedQueries []Action
 	for _, action := range c.Actions {
 		if action.Operation != "write" && action.Operation != "read" && action.Operation != "bash" {
@@ -295,7 +309,6 @@ func Check(c Case, slug string, config Config, requests []string) error {
 		return fmt.Errorf("expected %d LSP queries, got %d", len(expectedQueries), len(queryMessages))
 	}
 	queryCalls := []call{}
-	allCalls := calls(requests)
 	for _, tool := range allCalls {
 		if operation, ok := tool.Arguments["operation"].(string); ok && operation != "" {
 			queryCalls = append(queryCalls, tool)

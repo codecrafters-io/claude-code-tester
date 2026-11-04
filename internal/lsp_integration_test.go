@@ -58,7 +58,7 @@ func TestLSPRejectsBrokenClients(t *testing.T) {
 	cases := []struct{ name, slug, from, to, want string }{
 		{"connection-without-configuration-request", "dz5", `self.languages = self.transport.call("configuration", {})["extensionToLanguage"]`, `self.languages = {".py": "python"}`, "call configuration with {}"},
 		{"advertisement-without-configuration-request", "iy3", `self.languages = self.transport.call("configuration", {})["extensionToLanguage"]`, `self.languages = {".py": "python"}`, "call configuration with {}"},
-		{"advertisement-without-lsp-tool", "iy3", `"tools": TOOLS`, `"tools": [tool for tool in TOOLS if tool["function"]["name"] != "LSP"]`, "advertise the supplied LSP tool"},
+		{"advertisement-without-lsp-tool", "iy3", `"tools": TOOLS`, `"tools": [tool for tool in TOOLS if tool["function"]["name"] != "LSP"]`, "Advertise the requested LSP"},
 		{"advertisement-incomplete-tool-schema", "iy3", `"required": ["operation", "filePath", "line", "character"]`, `"required": ["operation", "filePath", "line"]`, "required character of type integer"},
 		{"advertisement-missing-from-later-request", "iy3", `"tools": TOOLS`, `"tools": TOOLS if len(messages) == 2 else [tool for tool in TOOLS if tool["function"]["name"] != "LSP"]`, "advertise the supplied LSP tool"},
 		{"tool-coordinates-not-converted", "gz6", `"line": arguments["line"] - 1`, `"line": arguments["line"]`, "expected goToDefinition"},
@@ -165,13 +165,57 @@ func TestLSPAdvertisementWithoutNavigation(t *testing.T) {
 	binary := lspFixtureBinary(t)
 	reference, err := os.ReadFile("test_helpers/scenarios/lsp_stages/users_code_pass_all/app/main.py")
 	require.NoError(t, err)
-	source := strings.Replace(string(reference), "    def tool(self, arguments):", "    def tool(self, arguments):\n        raise AssertionError(\"Navigation is not implemented\")", 1)
+	source := strings.Replace(string(reference), "    def tool(self, arguments):", "    def tool(self, arguments):\n        return \"LSP is not implemented yet\"", 1)
 	directory := lspScenario(t, source)
 	// Act
 	output, err := runLSPScenario(t, binary, directory, "iy3")
 	// Assert
 	require.NoError(t, err, output)
-	require.Contains(t, output, "Advertised LSP; definition lookup is next")
+	require.Contains(t, output, "Advertised LSP and returned a matching tool response; definition lookup is next")
+}
+
+// The lesson's plain-text placeholder reaches the model without JSON wrapping.
+func TestLSPAdvertisementWithPlainTextPlaceholder(t *testing.T) {
+	// Arrange
+	binary := lspFixtureBinary(t)
+	reference, err := os.ReadFile("test_helpers/scenarios/lsp_stages/users_code_pass_all/app/main.py")
+	require.NoError(t, err)
+	source := strings.Replace(string(reference), "    def tool(self, arguments):", "    def tool(self, arguments):\n        return \"LSP is not implemented yet\"", 1)
+	source = strings.Replace(source, `"content": json.dumps(result)`, `"content": result`, 1)
+	directory := lspScenario(t, source)
+	// Act
+	output, err := runLSPScenario(t, binary, directory, "iy3")
+	// Assert
+	require.NoError(t, err, output)
+	require.Contains(t, output, "returned a matching tool response")
+}
+
+// Invalid placeholder responses fail even when the tool is advertised correctly.
+func TestLSPRejectsBrokenPlaceholderResponses(t *testing.T) {
+	// Arrange
+	binary := lspFixtureBinary(t)
+	reference, err := os.ReadFile("test_helpers/scenarios/lsp_stages/users_code_pass_all/app/main.py")
+	require.NoError(t, err)
+	placeholder := strings.Replace(string(reference), "    def tool(self, arguments):", "    def tool(self, arguments):\n        return \"LSP is not implemented yet\"", 1)
+	cases := []struct{ name, from, to string }{
+		{"wrong-call-id", `"tool_call_id": call["id"]`, `"tool_call_id": "unrelated_call"`},
+		{"wrong-response", `return "LSP is not implemented yet"`, `return "Unknown tool"`},
+		{"missing-follow-up-request", `messages.append({"role": "tool", "tool_call_id": call["id"], "content": json.dumps(result)})`, `return "Stopped before returning the tool response"`},
+		{"unhandled-call", `return "LSP is not implemented yet"`, `raise RuntimeError("Unknown tool")`},
+	}
+	for _, testCase := range cases {
+		t.Run(testCase.name, func(t *testing.T) {
+			// Arrange
+			require.Contains(t, placeholder, testCase.from)
+			source := strings.Replace(placeholder, testCase.from, testCase.to, 1)
+			directory := lspScenario(t, source)
+			// Act
+			output, err := runLSPScenario(t, binary, directory, "iy3")
+			// Assert
+			require.Error(t, err, output)
+			require.Contains(t, output, "with the matching tool_call_id")
+		})
+	}
 }
 
 // Connecting the client passes before the agent advertises an LSP tool.

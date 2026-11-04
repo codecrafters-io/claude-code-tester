@@ -13,17 +13,17 @@
 [tester::#DZ5] Test passed.
 
 [tester::#IY3] Running tests for Stage #IY3 (iy3)
-[tester::#IY3] Case: lsp-tool-advertised
+[tester::#IY3] Case: lsp-tool-call-and-response
 [tester::#IY3] Wrote checkout.py: "from pricing import total as invoice_total\n\n\ndef checkout_total() -> int:\n    return invoice_total(250, 2)\n"
 [tester::#IY3] Wrote discounts.py: "def total(price: int, quantity: int) -> int:\n    return price * quantity - 50\n"
 [tester::#IY3] Wrote preview.py: "# The word total in this comment should stay as it is.\ndef total(label: str) -> str:\n    return \"Preview total: \" + label\n"
 [tester::#IY3] Wrote pricing.py: "def total(price: int, quantity: int) -> int:\n    return price * quantity\n"
 [tester::#IY3] Wrote reports.py: "from pricing import total\n\n\ndef report_total() -> int:\n    return total(250, 2) + total(100, 1)\n"
 [tester::#IY3] Wrote .lsp.json: {"python":{"args":["--lsp-fixture","/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/codecrafters-lsp-control-2648412747/server.json"],"command":"/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/TestLSPStagesOffline1355083012/001/lsp-tester","extensionToLanguage":{".py":"python"}}}
-[tester::#IY3] $ ./your_program.sh -p 'Use only Read to inspect checkout.py and pricing.py. Explain how checkout uses the pricing function.'
+[tester::#IY3] $ ./your_program.sh -p 'Use LSP goToDefinition on checkout.py at line 5, character 12. If navigation is not implemented yet, report the tool response without retrying.'
 [your_program] Done.
-[tester::#IY3] Advertised LSP; definition lookup is next
-[tester::#IY3] Case lsp-tool-advertised passed protocol, tool-result and file checks
+[tester::#IY3] Advertised LSP and returned a matching tool response; definition lookup is next
+[tester::#IY3] Case lsp-tool-call-and-response passed protocol, tool-result and file checks
 [tester::#IY3] Test passed.
 
 [tester::#GZ6] Running tests for Stage #GZ6 (gz6)
