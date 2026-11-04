@@ -65,7 +65,7 @@ class LanguageServer:
 
 
 TOOLS = [
-    {"type": "function", "function": {"name": "LSP", "description": "Find definitions and references of a symbol at a given file position.", "parameters": {
+    {"type": "function", "function": {"name": "LSP", "description": "Find definitions and references of a symbol at a given file position. Input positions are one-based UTF-16; returned ranges are zero-based. Add 1 to each returned coordinate before reusing it as input.", "parameters": {
         "type": "object", "properties": {
             "operation": {"type": "string", "enum": ["goToDefinition", "findReferences"]},
             "filePath": {"type": "string"}, "line": {"type": "integer", "minimum": 1}, "character": {"type": "integer", "minimum": 1},

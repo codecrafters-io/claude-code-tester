@@ -44,7 +44,7 @@ func runLSPScenario(t *testing.T, binary, directory, slug string) (string, error
 	t.Helper()
 	stages, _ := json.Marshal([]map[string]string{{"slug": slug, "tester_log_prefix": "lsp-test", "title": "LSP regression"}})
 	command := exec.Command(binary)
-	command.Env = append(os.Environ(), "CODECRAFTERS_LSP_OFFLINE=1", "CODECRAFTERS_REPOSITORY_DIR="+directory, "CODECRAFTERS_TEST_CASES_JSON="+string(stages), "CODECRAFTERS_LSP_FIXTURE_BINARY="+binary)
+	command.Env = append(os.Environ(), "CODECRAFTERS_LSP_LIVE=", "CODECRAFTERS_REPOSITORY_DIR="+directory, "CODECRAFTERS_TEST_CASES_JSON="+string(stages), "CODECRAFTERS_LSP_FIXTURE_BINARY="+binary)
 	output, err := command.CombinedOutput()
 	return string(output), err
 }
@@ -297,4 +297,83 @@ func TestLSPMigrationRejectsFabricatedTestOutput(t *testing.T) {
 	// Assert
 	require.Error(t, err, output)
 	require.Contains(t, output, "migration behavior check failed")
+}
+
+// Definition and reference lookups can run in either order within each migration phase.
+func TestLSPMigrationAcceptsEitherNavigationOrder(t *testing.T) {
+	// Arrange
+	binary := lspFixtureBinary(t)
+	reference, err := os.ReadFile("test_helpers/scenarios/lsp_stages/users_code_pass_all/app/main.py")
+	require.NoError(t, err)
+	for _, steps := range []string{"[0, 2]", "[8, 9]", "[0, 2, 8, 9]"} {
+		t.Run(steps, func(t *testing.T) {
+			// Arrange
+			replacement := `        for tool in message.get("tool_calls", []):
+            step = int(tool["id"].rsplit("_", 1)[1])
+            if step in ` + steps + `:
+                if step in (0, 8):
+                    line = 1 if step == 0 else next(i + 1 for i, text in enumerate(Path("pricing.py").read_text().splitlines()) if text.startswith("def total("))
+                    args = {"operation": "findReferences", "filePath": "pricing.py", "line": line, "character": 5}
+                else:
+                    args = {"operation": "goToDefinition", "filePath": "checkout.py", "line": 5, "character": 12}
+                tool["function"]["arguments"] = json.dumps(args)
+        messages.append(message)`
+			source := strings.Replace(string(reference), "        messages.append(message)", replacement, 1)
+			directory := lspScenario(t, source)
+			// Act
+			output, err := runLSPScenario(t, binary, directory, "ql9")
+			// Assert
+			require.NoError(t, err, output)
+			require.Contains(t, output, "Case migration-with-shifted-definition passed")
+		})
+	}
+}
+
+// A zero-based result line cannot be reused directly as a one-based tool input.
+func TestLSPMigrationRejectsZeroBasedFollowup(t *testing.T) {
+	// Arrange
+	binary := lspFixtureBinary(t)
+	reference, err := os.ReadFile("test_helpers/scenarios/lsp_stages/users_code_pass_all/app/main.py")
+	require.NoError(t, err)
+	source := strings.Replace(string(reference), "        messages.append(message)", `        for tool in message.get("tool_calls", []):
+            if tool["id"] == "lsp_call_9":
+                args = json.loads(tool["function"]["arguments"])
+                args["line"] -= 1
+                tool["function"]["arguments"] = json.dumps(args)
+        messages.append(message)`, 1)
+	directory := lspScenario(t, source)
+	// Act
+	output, err := runLSPScenario(t, binary, directory, "ql9")
+	// Assert
+	require.Error(t, err, output)
+	require.Contains(t, output, "missing findReferences on pricing.py at the current definition")
+	require.Contains(t, output, "tool inputs are one-based; returned ranges are zero-based")
+}
+
+// Lookups before the final file edit cannot satisfy the post-edit navigation check.
+func TestLSPMigrationRequiresNavigationAfterAllEdits(t *testing.T) {
+	// Arrange
+	binary := lspFixtureBinary(t)
+	reference, err := os.ReadFile("test_helpers/scenarios/lsp_stages/users_code_pass_all/app/main.py")
+	require.NoError(t, err)
+	replacement := `        for tool in message.get("tool_calls", []):
+            step = int(tool["id"].rsplit("_", 1)[1])
+            if step == 7:
+                tool["function"]["name"] = "LSP"
+                tool["function"]["arguments"] = json.dumps({"operation": "goToDefinition", "filePath": "checkout.py", "line": 5, "character": 12})
+            elif step == 8:
+                line = next(i + 1 for i, text in enumerate(Path("pricing.py").read_text().splitlines()) if text.startswith("def total("))
+                tool["function"]["arguments"] = json.dumps({"operation": "findReferences", "filePath": "pricing.py", "line": line, "character": 5})
+            elif step == 9:
+                tool["function"]["name"] = "Write"
+                content = Path("reports.py").read_text().replace("total(250, 2)", 'total(250, 2)["cents"]').replace("total(100, 1)", 'total(100, 1)["cents"]')
+                tool["function"]["arguments"] = json.dumps({"file_path": "reports.py", "content": content})
+        messages.append(message)`
+	source := strings.Replace(string(reference), "        messages.append(message)", replacement, 1)
+	directory := lspScenario(t, source)
+	// Act
+	output, err := runLSPScenario(t, binary, directory, "ql9")
+	// Assert
+	require.Error(t, err, output)
+	require.Contains(t, output, "missing goToDefinition on checkout.py at line 5, character 12 after editing")
 }

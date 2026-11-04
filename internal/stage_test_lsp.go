@@ -91,8 +91,8 @@ func testLSP(stageHarness *test_case_harness.TestCaseHarness, slug string) error
 		var recorder *proxy_server.RequestRecorder
 		var closeModel func()
 		var modelURL string
-		if os.Getenv("CODECRAFTERS_LSP_OFFLINE") == "1" {
-			recorder, modelURL, closeModel, err = lsp_manager.StartOfflineModel(testCase.Actions)
+		if os.Getenv("CODECRAFTERS_LSP_LIVE") != "1" {
+			recorder, modelURL, closeModel, err = lsp_manager.StartScriptedModel(testCase.Actions)
 			if err != nil {
 				return err
 			}

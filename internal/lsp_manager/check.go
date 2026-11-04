@@ -317,7 +317,19 @@ func Check(c Case, slug string, config Config, requests []string) error {
 	if len(queryCalls) != len(queryMessages) {
 		return fmt.Errorf("every LSP query must answer a model tool call, got %d tool calls and %d queries", len(queryCalls), len(queryMessages))
 	}
-	matchedQueries := []call{}
+	matchedQueries := make([]call, len(expectedQueries))
+	matchedCount := 0
+	callPositions := map[string]int{}
+	firstWrite, lastWrite := len(allCalls), -1
+	for index, tool := range allCalls {
+		callPositions[tool.ID] = index
+		if tool.Arguments["content"] != nil {
+			if firstWrite == len(allCalls) {
+				firstWrite = index
+			}
+			lastWrite = index
+		}
+	}
 	for index, message := range queryMessages {
 		tool := queryCalls[index]
 		operation, _ := tool.Arguments["operation"].(string)
@@ -331,8 +343,16 @@ func Check(c Case, slug string, config Config, requests []string) error {
 		line, _ := tool.Arguments["line"].(float64)
 		character, _ := tool.Arguments["character"].(float64)
 		action := Action{Operation: operation, File: file, Line: int(line) - 1, Character: int(character) - 1}
-		if len(matchedQueries) < len(expectedQueries) {
-			expected := expectedQueries[len(matchedQueries)]
+		for expectedIndex, expected := range expectedQueries {
+			if matchedQueries[expectedIndex].ID != "" || slug != "ql9" && expectedIndex != matchedCount {
+				continue
+			}
+			if slug == "ql9" {
+				position := callPositions[tool.ID]
+				if expected.AfterEdits && position <= lastWrite || !expected.AfterEdits && position >= firstWrite {
+					continue
+				}
+			}
 			samePosition := action.Line == expected.Line && action.Character == expected.Character
 			if expected.AtDefinition {
 				match := signaturePattern.FindStringSubmatchIndex(queryTexts[index])
@@ -343,9 +363,11 @@ func Check(c Case, slug string, config Config, requests []string) error {
 				}
 			}
 			samePosition = samePosition && action.Operation == expected.Operation && filepath.Clean(file) == filepath.Join(config.Root, expected.File)
-			currentType := len(c.WantDefinitions) == 0 || len(matchedQueries) < len(c.WantDefinitions) && strings.Contains(tool.Result, c.WantDefinitions[len(matchedQueries)])
+			currentType := len(c.WantDefinitions) == 0 || expectedIndex < len(c.WantDefinitions) && strings.Contains(tool.Result, c.WantDefinitions[expectedIndex])
 			if samePosition && currentType {
-				matchedQueries = append(matchedQueries, tool)
+				matchedQueries[expectedIndex] = tool
+				matchedCount++
+				break
 			}
 		}
 		var params struct {
@@ -412,8 +434,24 @@ func Check(c Case, slug string, config Config, requests []string) error {
 			return fmt.Errorf("server still has stale text for %s; after a successful Write, send didChange for an open file or didOpen with its new contents", filepath.Base(path))
 		}
 	}
-	if len(matchedQueries) != len(expectedQueries) {
-		return fmt.Errorf("missing the requested LSP operations in the model conversation")
+	if matchedCount != len(expectedQueries) {
+		for index, expected := range expectedQueries {
+			if matchedQueries[index].ID != "" {
+				continue
+			}
+			position := fmt.Sprintf("at line %d, character %d", expected.Line+1, expected.Character+1)
+			if expected.AtDefinition {
+				position = "at the current definition (tool inputs are one-based; returned ranges are zero-based)"
+			}
+			phase := ""
+			if slug == "ql9" {
+				phase = " before editing"
+				if expected.AfterEdits {
+					phase = " after editing"
+				}
+			}
+			return fmt.Errorf("missing %s on %s %s%s in the model conversation", expected.Operation, expected.File, position, phase)
+		}
 	}
 	if slug == "ql9" {
 		// Recompute locations from disk so a cached closed file cannot pass with stale ranges.

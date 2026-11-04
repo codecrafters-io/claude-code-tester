@@ -47,8 +47,10 @@ The local HTTP facade is course scaffolding; the server still speaks stdio LSP.
 Learners construct document messages, track versions, return tool results and
 keep the server current after edits. The helper never runs an agent.
 
-The reference agent uses Python's standard library. The controlled stdio fixture
-runs from the tester binary, so grading doesn't require installing Pyright.
+LSP grading uses scripted model tool calls by default. The submitted agent still
+sends model requests and executes its real tool handlers. The reference agent
+uses Python's standard library, and the controlled stdio fixture runs from the
+tester binary, so grading needs neither model credentials nor Pyright.
 
 ```sh
 make test_lsp
@@ -79,10 +81,11 @@ Regenerate recorded output when prompts or cases change:
 make record_lsp_fixtures
 ```
 
-For live-model trials, configure CODECRAFTERS_SECRET_OPENROUTER_API_KEY and run
-`make test_lsp_with_users_code`. Live-model reliability, 100-run live flakiness
-checks and learner pacing trials remain release gates. Offline scripted checks
-do not establish those results.
+Keep live-model checks separate from learner grading. Configure
+CODECRAFTERS_SECRET_OPENROUTER_API_KEY and run `make test_lsp_with_users_code`
+to opt in with CODECRAFTERS_LSP_LIVE=1. These checks exercise tool descriptions,
+planning, recovery, and sequences chosen by the model. Scripted checks establish
+tool integration; they do not establish live-model reliability or learner pacing.
 
 ### Independent implementation checks
 
@@ -119,8 +122,9 @@ behavioral correctness.
 `make test` runs the entire suite without Go's test cache, as Redis's tester
 does. `make test_offline` runs protocol checks, fixture comparisons, and unit
 tests. `make test_live` runs the existing `TestStages` scenarios against
-OpenRouter. Both groups run as separate CI jobs, so an invalid model credential
-cannot hide an offline protocol regression. No live tests are skipped or allowed
+OpenRouter, explicitly enabling live-model calls for LSP as well. Both groups
+run as separate CI jobs, so an invalid model credential cannot hide an offline
+protocol regression. No live tests are skipped or allowed
 to fail.
 
 The base and Skills Python scenarios pin Python 3.14 through `.python-version`,

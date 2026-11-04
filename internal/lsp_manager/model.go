@@ -17,6 +17,7 @@ type Action struct {
 	Character    int
 	Content      string
 	AtDefinition bool
+	AfterEdits   bool
 }
 
 func (a Action) arguments() map[string]any {
@@ -120,11 +121,11 @@ func ScriptedModel(actions []Action) http.Handler {
 			finish = "tool_calls"
 		}
 		writer.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(writer).Encode(map[string]any{"id": "lsp-offline", "object": "chat.completion", "choices": []any{map[string]any{"index": 0, "message": message, "finish_reason": finish}}})
+		json.NewEncoder(writer).Encode(map[string]any{"id": "lsp-scripted", "object": "chat.completion", "choices": []any{map[string]any{"index": 0, "message": message, "finish_reason": finish}}})
 	})
 }
 
-func StartOfflineModel(actions []Action) (*proxy_server.RequestRecorder, string, func(), error) {
+func StartScriptedModel(actions []Action) (*proxy_server.RequestRecorder, string, func(), error) {
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		return nil, "", nil, err

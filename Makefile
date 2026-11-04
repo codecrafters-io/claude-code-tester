@@ -22,7 +22,7 @@ test_offline:
 	TESTER_DIR=$(shell pwd) go test -count=1 -v -skip '^TestStages$$' ./...
 
 test_live:
-	TESTER_DIR=$(shell pwd) go test -count=1 -v -run '^TestStages$$' ./internal
+	CODECRAFTERS_LSP_LIVE=1 TESTER_DIR=$(shell pwd) go test -count=1 -v -run '^TestStages$$' ./internal
 
 test_without_local_caching:
 	go clean -testcache
@@ -114,11 +114,11 @@ endef
 
 # Uses the same stage checks with a deterministic model, without API credentials.
 test_lsp_offline: build
-	CODECRAFTERS_LSP_OFFLINE=1 OPENROUTER_BASE_URL=http://localhost:10000/api/v1 OPENROUTER_API_KEY=dummy-api-key $(MAKE) run_lsp_reference
+	CODECRAFTERS_LSP_LIVE= OPENROUTER_BASE_URL=http://localhost:10000/api/v1 OPENROUTER_API_KEY=dummy-api-key $(MAKE) run_lsp_reference
 
 # Uses the existing OpenRouter proxy and CODECRAFTERS_SECRET_OPENROUTER_API_KEY.
 test_lsp_with_users_code: build
-	OPENROUTER_BASE_URL=http://localhost:10000/api/v1 OPENROUTER_API_KEY=dummy-api-key $(MAKE) run_lsp_reference
+	CODECRAFTERS_LSP_LIVE=1 OPENROUTER_BASE_URL=http://localhost:10000/api/v1 OPENROUTER_API_KEY=dummy-api-key $(MAKE) run_lsp_reference
 
 run_lsp_reference:
 	$(call run_test,internal/test_helpers/scenarios/lsp_stages/users_code_pass_all,$(LSP_STAGES))

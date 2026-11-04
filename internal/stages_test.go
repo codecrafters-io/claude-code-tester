@@ -108,11 +108,12 @@ func normalizeTesterOutput(testerOutput []byte) []byte {
 
 var lspStageSlugs = []string{"dz5", "iy3", "gz6", "rb6", "bn2", "ql9"}
 
-// All LSP stages pass through the real reference-agent loop without a paid model.
+// Default LSP grading runs the reference-agent loop without model credentials.
 func TestLSPStagesOffline(t *testing.T) {
 	// Arrange
 	t.Setenv("CODECRAFTERS_RANDOM_SEED", "1234567890")
-	t.Setenv("CODECRAFTERS_LSP_OFFLINE", "1")
+	t.Setenv("CODECRAFTERS_LSP_LIVE", "")
+	t.Setenv("CODECRAFTERS_SECRET_OPENROUTER_API_KEY", "")
 	t.Setenv("CODECRAFTERS_LSP_FIXTURE_BINARY", lspFixtureBinary(t))
 	t.Setenv("OPENROUTER_BASE_URL", "http://localhost:10000/api/v1")
 	t.Setenv("OPENROUTER_API_KEY", "dummy-api-key")
