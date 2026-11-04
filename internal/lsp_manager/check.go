@@ -460,7 +460,10 @@ func Check(c Case, slug string, config Config, requests []string) error {
 		if !resultReachedModel(matchedQueries[len(matchedQueries)-1].Result, expected) {
 			return fmt.Errorf("follow-up references contain stale locations; synchronize edited closed files such as reports.py with didOpen")
 		}
-		return checkMigration(c, config.Root, allCalls)
+		if err := checkMigration(c, config.Root, allCalls); err != nil {
+			return err
+		}
+		return checkWriteDiagnostics(config, events, allCalls)
 	}
 
 	files := c.Files

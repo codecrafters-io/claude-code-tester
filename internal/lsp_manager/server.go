@@ -205,6 +205,21 @@ func Serve(config Config, input io.Reader, output io.Writer) error {
 			}
 			if (message.Method == "textDocument/didOpen" || message.Method == "textDocument/didChange") && !config.MissingDiagnostics {
 				document := state.Documents[uri]
+				if config.StaleDiagnostics {
+					if err := notify("window/logMessage", map[string]any{"type": 3, "message": "Analyzing changed document"}); err != nil {
+						return err
+					}
+					if err := notify("textDocument/publishDiagnostics", map[string]any{"uri": URI(filepath.Join(config.Root, "preview.py")), "diagnostics": []any{}}); err != nil {
+						return err
+					}
+					if clientVersionSupport && document.Version > 1 {
+						if err := notify("textDocument/publishDiagnostics", map[string]any{"uri": uri, "version": document.Version - 1, "diagnostics": []any{}}); err != nil {
+							return err
+						}
+					}
+					// Separate batches expose clients that accept the first stale or unrelated report.
+					time.Sleep(25 * time.Millisecond)
+				}
 				publication := map[string]any{"uri": uri, "diagnostics": state.diagnostics(document)}
 				if !config.UnversionedDiagnostics && clientVersionSupport {
 					publication["version"] = document.Version

@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+import time
 from lsp_client import LSPClient
 import urllib.request
 
@@ -14,6 +15,7 @@ class LanguageServer:
     def __init__(self):
         self.transport = LSPClient()
         self.documents = {}
+        self.cursor = 0
         self.languages = self.transport.call("configuration", {})["extensionToLanguage"]
 
     def send(self, method, params):
@@ -39,6 +41,7 @@ class LanguageServer:
     def write(self, path, content):
         path = Path(path).resolve()
         uri = path.as_uri()
+        self.cursor = self.transport.notifications(self.cursor, 0)["cursor"]
         path.write_text(content, encoding="utf-8")
         if uri in self.documents:
             self.documents[uri] += 1
@@ -48,7 +51,33 @@ class LanguageServer:
             })
         elif path.suffix in self.languages:
             self.open(path)
-        return {"written": str(path)}
+        result = {"written": str(path)}
+        if uri in self.documents:
+            try:
+                result["diagnostics"] = self.wait_for_diagnostics(uri)
+            except TimeoutError as error:
+                result["diagnosticsError"] = str(error)
+        return result
+
+    def wait_for_diagnostics(self, uri):
+        deadline = time.monotonic() + 2
+        while time.monotonic() < deadline:
+            remaining_ms = max(1, int((deadline - time.monotonic()) * 1000))
+            batch = self.transport.notifications(self.cursor, min(200, remaining_ms))
+            self.cursor = batch["cursor"]
+            current = None
+            for notification in batch["notifications"]:
+                if notification["method"] != "textDocument/publishDiagnostics":
+                    continue
+                params = notification["params"]
+                if params["uri"] != uri:
+                    continue
+                if params.get("version", self.documents[uri]) != self.documents[uri]:
+                    continue
+                current = params
+            if current is not None:
+                return current
+        raise TimeoutError("Timed out waiting for language-server diagnostics")
 
     def tool(self, arguments):
         operation = arguments["operation"]
@@ -85,7 +114,7 @@ TOOLS = [
 
 
 def run_agent(prompt, server):
-    messages = [{"role": "system", "content": "Use the LSP tool for code navigation. Tool positions are one-based UTF-16. Use Write for edits."},
+    messages = [{"role": "system", "content": "Use the LSP tool for code navigation. Tool positions are one-based UTF-16. Use Write for edits and inspect its diagnostic feedback to repair type errors."},
                 {"role": "user", "content": prompt}]
     for _ in range(50):
         payload = {"model": "anthropic/claude-haiku-4.5", "messages": messages, "tools": TOOLS}

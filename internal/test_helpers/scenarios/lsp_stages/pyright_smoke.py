@@ -46,13 +46,22 @@ def inside():
     assert "discounts.py" in json.dumps(moved),moved
     server.write("checkout.py", original)
     server.write("pricing.py",PRICE_API)
+    incomplete = original.replace("    return invoice_total(250, 2)", "    amount = invoice_total(250, 2)\n    return amount")
+    feedback = server.write("checkout.py", incomplete)
+    assert "diagnosticsError" not in feedback, feedback
+    issues = feedback["diagnostics"]["diagnostics"]
+    assert any(issue.get("severity") == 1 and "Price" in issue["message"] for issue in issues), feedback
+    print("Pyright: caller type error reached Write's diagnostic feedback")
     report = Path("reports.py").read_text().replace("total(250, 2)",'total(250, 2)["cents"]').replace("total(100, 1)",'total(100, 1)["cents"]')
     # Shift lines as well as the second call column so stale indexed text cannot pass.
     report = "\n\n" + report
     assert not any(uri.endswith("/reports.py") for uri in server.documents)
     server.write("reports.py", report)
     checkout = original.replace("invoice_total(250, 2)", 'invoice_total(250, 2)["cents"]')
-    server.write("checkout.py", checkout)
+    feedback = server.write("checkout.py", checkout)
+    assert "diagnosticsError" not in feedback, feedback
+    assert feedback["diagnostics"]["diagnostics"] == [], feedback
+    print("Pyright: repaired caller returned a new, empty diagnostic report")
     current = server.tool({"operation":"goToDefinition","filePath":"checkout.py","line":5,"character":12})
     assert "pricing.py" in json.dumps(current), current
     locations = current if isinstance(current, list) else [current]
@@ -74,7 +83,7 @@ def inside():
     assert total(37, 4) == {"cents": 148}
     assert type(checkout_total()) is int and checkout_total() == 500
     assert type(report_total()) is int and report_total() == 600
-    print("Pyright: definition, references, edited-import synchronization and API migration passed")
+    print("Pyright: definition, references, edited-import synchronization, diagnostic feedback and API migration passed")
 
 
 def main():

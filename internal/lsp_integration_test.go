@@ -30,10 +30,10 @@ func lspScenario(t *testing.T, source string) string {
 	return directory
 }
 
-// Reference-agent document opening uses the helper's configured language mapping.
-func TestLSPConfiguredDocumentLanguage(t *testing.T) {
+// Reference-agent feedback and document opening obey the client contract.
+func TestLSPReferenceClientBehavior(t *testing.T) {
 	// Arrange
-	command := exec.Command("python3", "-m", "unittest", "discover", "-s", "test_helpers/scenarios/lsp_stages/users_code_pass_all/app", "-p", "test_language.py")
+	command := exec.Command("python3", "-m", "unittest", "discover", "-s", "test_helpers/scenarios/lsp_stages/users_code_pass_all/app", "-p", "test_*.py")
 	// Act
 	output, err := command.CombinedOutput()
 	// Assert
@@ -63,7 +63,9 @@ func TestLSPRejectsBrokenClients(t *testing.T) {
 		{"advertisement-missing-from-later-request", "iy3", `"tools": TOOLS`, `"tools": TOOLS if len(messages) == 2 else [tool for tool in TOOLS if tool["function"]["name"] != "LSP"]`, "advertise the supplied LSP tool"},
 		{"tool-coordinates-not-converted", "gz6", `"line": arguments["line"] - 1`, `"line": arguments["line"]`, "expected goToDefinition"},
 		{"definition-read-not-returned", "gz6", `result = Path(arguments["file_path"]).read_text(encoding="utf-8")`, `result = "File access disabled"`, "read pricing.py and return its complete contents"},
-		{"discarded-definition", "gz6", "        return result\n\n", "        return None\n\n", "server result did not reach"},
+		{"discarded-definition", "gz6", `result = self.request("textDocument/" + methods[operation], params)
+        return result`, `result = self.request("textDocument/" + methods[operation], params)
+        return None`, "server result did not reach"},
 		{"references-declaration-omitted", "rb6", `{"includeDeclaration": True}`, `{"includeDeclaration": False}`, "includeDeclaration: true"},
 		{"unsynchronized-write", "bn2", `self.send("textDocument/didChange", {`, `self.send("textDocument/didNotChange", {`, "stale text"},
 		{"capstone-unsynchronized-write", "ql9", `self.send("textDocument/didChange", {`, `self.send("textDocument/didNotChange", {`, "stale text"},
@@ -250,20 +252,38 @@ func TestLSPConfigurationBeforeModelRequest(t *testing.T) {
 	require.Contains(t, output, "before the first model request")
 }
 
-// The capstone passes without implementing diagnostic collection in the agent.
-func TestLSPMigrationWithoutDiagnostics(t *testing.T) {
+// Stage 5 still passes when Write returns no diagnostic feedback.
+func TestLSPSynchronizationWithoutDiagnostics(t *testing.T) {
 	// Arrange
 	binary := lspFixtureBinary(t)
 	reference, err := os.ReadFile("test_helpers/scenarios/lsp_stages/users_code_pass_all/app/main.py")
 	require.NoError(t, err)
-	require.NotContains(t, string(reference), "publishDiagnostics")
-	directory := lspScenario(t, string(reference))
+	feedback := `result["diagnostics"] = self.wait_for_diagnostics(uri)`
+	require.Contains(t, string(reference), feedback)
+	source := strings.Replace(string(reference), feedback, `pass`, 1)
+	directory := lspScenario(t, source)
+	// Act
+	output, err := runLSPScenario(t, binary, directory, "bn2")
+	// Assert
+	require.NoError(t, err, output)
+	require.Contains(t, output, "Case write-before-open passed")
+}
+
+// Stage 6 rejects a Stage 5 agent that never returns diagnostic feedback.
+func TestLSPMigrationRequiresDiagnostics(t *testing.T) {
+	// Arrange
+	binary := lspFixtureBinary(t)
+	reference, err := os.ReadFile("test_helpers/scenarios/lsp_stages/users_code_pass_all/app/main.py")
+	require.NoError(t, err)
+	feedback := `result["diagnostics"] = self.wait_for_diagnostics(uri)`
+	require.Contains(t, string(reference), feedback)
+	source := strings.Replace(string(reference), feedback, `pass`, 1)
+	directory := lspScenario(t, source)
 	// Act
 	output, err := runLSPScenario(t, binary, directory, "ql9")
 	// Assert
-	require.NoError(t, err, output)
-	require.Contains(t, output, "migration-without-diagnostic-publications")
-	require.Contains(t, output, "Project tests passed through Bash")
+	require.Error(t, err, output)
+	require.Contains(t, output, "must return current diagnostics")
 }
 
 // Equivalent source code passes the capstone's behavior checks.
@@ -305,13 +325,13 @@ func TestLSPMigrationAcceptsEitherNavigationOrder(t *testing.T) {
 	binary := lspFixtureBinary(t)
 	reference, err := os.ReadFile("test_helpers/scenarios/lsp_stages/users_code_pass_all/app/main.py")
 	require.NoError(t, err)
-	for _, steps := range []string{"[0, 2]", "[8, 9]", "[0, 2, 8, 9]"} {
+	for _, steps := range []string{"[0, 2]", "[9, 10]", "[0, 2, 9, 10]"} {
 		t.Run(steps, func(t *testing.T) {
 			// Arrange
 			replacement := `        for tool in message.get("tool_calls", []):
             step = int(tool["id"].rsplit("_", 1)[1])
             if step in ` + steps + `:
-                if step in (0, 8):
+                if step in (0, 9):
                     line = 1 if step == 0 else next(i + 1 for i, text in enumerate(Path("pricing.py").read_text().splitlines()) if text.startswith("def total("))
                     args = {"operation": "findReferences", "filePath": "pricing.py", "line": line, "character": 5}
                 else:
@@ -336,7 +356,7 @@ func TestLSPMigrationRejectsZeroBasedFollowup(t *testing.T) {
 	reference, err := os.ReadFile("test_helpers/scenarios/lsp_stages/users_code_pass_all/app/main.py")
 	require.NoError(t, err)
 	source := strings.Replace(string(reference), "        messages.append(message)", `        for tool in message.get("tool_calls", []):
-            if tool["id"] == "lsp_call_9":
+            if tool["id"] == "lsp_call_10":
                 args = json.loads(tool["function"]["arguments"])
                 args["line"] -= 1
                 tool["function"]["arguments"] = json.dumps(args)
@@ -358,13 +378,13 @@ func TestLSPMigrationRequiresNavigationAfterAllEdits(t *testing.T) {
 	require.NoError(t, err)
 	replacement := `        for tool in message.get("tool_calls", []):
             step = int(tool["id"].rsplit("_", 1)[1])
-            if step == 7:
+            if step == 8:
                 tool["function"]["name"] = "LSP"
                 tool["function"]["arguments"] = json.dumps({"operation": "goToDefinition", "filePath": "checkout.py", "line": 5, "character": 12})
-            elif step == 8:
+            elif step == 9:
                 line = next(i + 1 for i, text in enumerate(Path("pricing.py").read_text().splitlines()) if text.startswith("def total("))
                 tool["function"]["arguments"] = json.dumps({"operation": "findReferences", "filePath": "pricing.py", "line": line, "character": 5})
-            elif step == 9:
+            elif step == 10:
                 tool["function"]["name"] = "Write"
                 content = Path("reports.py").read_text().replace("total(250, 2)", 'total(250, 2)["cents"]').replace("total(100, 1)", 'total(100, 1)["cents"]')
                 tool["function"]["arguments"] = json.dumps({"file_path": "reports.py", "content": content})
@@ -376,4 +396,34 @@ func TestLSPMigrationRequiresNavigationAfterAllEdits(t *testing.T) {
 	// Assert
 	require.Error(t, err, output)
 	require.Contains(t, output, "missing goToDefinition on checkout.py at line 5, character 12 after editing")
+}
+
+// Incorrect feedback selection fails the diagnostic case it violates.
+func TestLSPRejectsBrokenDiagnosticFeedback(t *testing.T) {
+	// Arrange
+	binary := lspFixtureBinary(t)
+	reference, err := os.ReadFile("test_helpers/scenarios/lsp_stages/users_code_pass_all/app/main.py")
+	require.NoError(t, err)
+	cases := []struct{ name, from, to, want string }{
+		{"discarded-error", `current = params`, `current = dict(params, diagnostics=[])`, "must return current diagnostics"},
+		{"wrong-file", `if params["uri"] != uri:`, `if False:`, "must return current diagnostics"},
+		{"stale-version", `if params.get("version", self.documents[uri]) != self.documents[uri]:`, `if False:`, "must return current diagnostics"},
+		{"old-error-after-repair", `return current`, `if current["diagnostics"]:
+                    self.old_report = current
+                return getattr(self, "old_report", current)`, "must return current diagnostics"},
+		{"timeout-fabricates-clean-report", `result["diagnosticsError"] = str(error)`, `result["diagnostics"] = {"uri": uri, "diagnostics": []}`, "must report diagnosticsError"},
+	}
+	for _, testCase := range cases {
+		t.Run(testCase.name, func(t *testing.T) {
+			// Arrange
+			require.Contains(t, string(reference), testCase.from)
+			source := strings.Replace(string(reference), testCase.from, testCase.to, 1)
+			directory := lspScenario(t, source)
+			// Act
+			output, err := runLSPScenario(t, binary, directory, "ql9")
+			// Assert
+			require.Error(t, err, output)
+			require.Contains(t, output, testCase.want)
+		})
+	}
 }
