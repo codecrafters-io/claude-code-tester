@@ -282,6 +282,8 @@ func TestCheckMigrationFollowsMovedCheckoutCall(t *testing.T) {
 			} else {
 				require.ErrorContains(t, err, "missing goToDefinition on checkout.py at the current invoice_total call")
 				require.ErrorContains(t, err, "after editing")
+				require.ErrorContains(t, err, fmt.Sprintf("queried line %d, character %d", variant.line, variant.character))
+				require.ErrorContains(t, err, fmt.Sprintf("current invoice_total call: line %d, characters 14-26", strings.Count(variant.prefix, "\n")+5))
 			}
 		})
 	}

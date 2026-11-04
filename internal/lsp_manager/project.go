@@ -107,6 +107,16 @@ func (p *projectState) references(includeDeclaration bool) []Location {
 	return result
 }
 
+// Only resolve positions on this fixture's pricing symbol and its references.
+func (p *projectState) hasSymbolAt(uri string, position Position) bool {
+	for _, location := range p.references(true) {
+		if location.URI == uri && position.Line == location.Range.Start.Line && position.Character >= location.Range.Start.Character && position.Character < location.Range.End.Character {
+			return true
+		}
+	}
+	return false
+}
+
 func (p *projectState) definition() any {
 	target := "pricing.py"
 	if strings.Contains(p.text("checkout.py"), "from discounts import") {

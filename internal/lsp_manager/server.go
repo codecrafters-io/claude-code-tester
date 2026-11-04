@@ -186,9 +186,11 @@ func Serve(config Config, input io.Reader, output io.Writer) error {
 				}
 				switch message.Method {
 				case "textDocument/definition":
-					result = state.definition()
+					if state.hasSymbolAt(uri, params.Position) {
+						result = state.definition()
+					}
 				case "textDocument/references":
-					if config.EmptyReferences {
+					if config.EmptyReferences || !state.hasSymbolAt(uri, params.Position) {
 						result = []Location{}
 					} else {
 						locations := state.references(params.Context.IncludeDeclaration)

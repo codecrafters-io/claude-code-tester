@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/codecrafters-io/claude-code-tester/internal/lsp_manager"
@@ -162,4 +163,51 @@ func TestTransportRequiresLanguageMapping(t *testing.T) {
 	// Assert
 	require.ErrorContains(t, err, "expected extensionToLanguage")
 	require.Nil(t, transport)
+}
+
+// A lookup at the old call position stops resolving after an edit moves the call.
+func TestTransportDefinitionUsesCurrentCallPosition(t *testing.T) {
+	// Arrange
+	path, config := configuration(t, "")
+	transport, err := lsp_transport.Start(path)
+	require.NoError(t, err)
+	t.Cleanup(transport.Close)
+	text := lsp_manager.Project(false)["checkout.py"]
+	uri := lsp_manager.URI(filepath.Join(config.Root, "checkout.py"))
+	call(t, transport.URL, "notify", map[string]any{"method": "textDocument/didOpen", "params": map[string]any{"textDocument": map[string]any{"uri": uri, "languageId": "python", "version": 1, "text": text}}})
+	text = strings.Replace(text, "return invoice_total(250, 2)", `return (invoice_total(250, 2)["cents"])`, 1)
+	require.NoError(t, os.WriteFile(filepath.Join(config.Root, "checkout.py"), []byte(text), 0644))
+	call(t, transport.URL, "notify", map[string]any{"method": "textDocument/didChange", "params": map[string]any{"textDocument": map[string]any{"uri": uri, "version": 2}, "contentChanges": []any{map[string]any{"text": text}}}})
+
+	// Act
+	stale := call(t, transport.URL, "request", map[string]any{"method": "textDocument/definition", "params": map[string]any{"textDocument": map[string]any{"uri": uri}, "position": map[string]int{"line": 4, "character": 11}}})
+	current := call(t, transport.URL, "request", map[string]any{"method": "textDocument/definition", "params": map[string]any{"textDocument": map[string]any{"uri": uri}, "position": map[string]int{"line": 4, "character": 12}}})
+
+	// Assert
+	require.JSONEq(t, `null`, string(stale))
+	require.Contains(t, string(current), "pricing.py")
+}
+
+// References at the old definition position stop resolving after the definition moves.
+func TestTransportReferencesUseCurrentDefinitionPosition(t *testing.T) {
+	// Arrange
+	path, config := configuration(t, "")
+	transport, err := lsp_transport.Start(path)
+	require.NoError(t, err)
+	t.Cleanup(transport.Close)
+	text := lsp_manager.Project(false)["pricing.py"]
+	uri := lsp_manager.URI(filepath.Join(config.Root, "pricing.py"))
+	call(t, transport.URL, "notify", map[string]any{"method": "textDocument/didOpen", "params": map[string]any{"textDocument": map[string]any{"uri": uri, "languageId": "python", "version": 1, "text": text}}})
+	require.NoError(t, os.WriteFile(filepath.Join(config.Root, "pricing.py"), []byte(lsp_manager.PriceAPI), 0644))
+	call(t, transport.URL, "notify", map[string]any{"method": "textDocument/didChange", "params": map[string]any{"textDocument": map[string]any{"uri": uri, "version": 2}, "contentChanges": []any{map[string]any{"text": lsp_manager.PriceAPI}}}})
+
+	// Act
+	stale := call(t, transport.URL, "request", map[string]any{"method": "textDocument/references", "params": map[string]any{"textDocument": map[string]any{"uri": uri}, "position": map[string]int{"line": 0, "character": 4}, "context": map[string]bool{"includeDeclaration": true}}})
+	current := call(t, transport.URL, "request", map[string]any{"method": "textDocument/references", "params": map[string]any{"textDocument": map[string]any{"uri": uri}, "position": map[string]int{"line": 7, "character": 4}, "context": map[string]bool{"includeDeclaration": true}}})
+
+	// Assert
+	require.JSONEq(t, `[]`, string(stale))
+	var locations []lsp_manager.Location
+	require.NoError(t, json.Unmarshal(current, &locations))
+	require.Len(t, locations, 6)
 }

@@ -310,6 +310,7 @@ func Check(c Case, slug string, config Config, requests []string) error {
 		return fmt.Errorf("every LSP query must answer a model tool call, got %d tool calls and %d queries", len(queryCalls), len(queryMessages))
 	}
 	matchedQueries := make([]call, len(expectedQueries))
+	queryDetails := make([][]string, len(expectedQueries))
 	matchedCount := 0
 	callPositions := map[string]int{}
 	firstWrite, lastWrite := len(allCalls), -1
@@ -357,6 +358,7 @@ func Check(c Case, slug string, config Config, requests []string) error {
 			if expected.AtCall {
 				text := queryTexts[index]
 				samePosition = false
+				var positions []string
 				for _, match := range wordPattern.FindAllStringIndex(text, -1) {
 					if text[match[0]:match[1]] != "invoice_total" || !strings.HasPrefix(strings.TrimSpace(text[match[1]:]), "(") {
 						continue
@@ -366,10 +368,16 @@ func Check(c Case, slug string, config Config, requests []string) error {
 						continue
 					}
 					location := textRange(text, match[0], match[1])
+					positions = append(positions, fmt.Sprintf("line %d, characters %d-%d", location.Start.Line+1, location.Start.Character+1, location.End.Character))
 					if action.Line == location.Start.Line && action.Character >= location.Start.Character && action.Character < location.End.Character {
 						samePosition = true
-						break
 					}
+				}
+				if action.Operation == expected.Operation && filepath.Clean(file) == filepath.Join(config.Root, expected.File) {
+					if len(positions) == 0 {
+						positions = []string{"none in synchronized source"}
+					}
+					queryDetails[expectedIndex] = append(queryDetails[expectedIndex], fmt.Sprintf("queried line %d, character %d; current invoice_total call: %s", action.Line+1, action.Character+1, strings.Join(positions, ", ")))
 				}
 			}
 			samePosition = samePosition && action.Operation == expected.Operation && filepath.Clean(file) == filepath.Join(config.Root, expected.File)
@@ -463,7 +471,11 @@ func Check(c Case, slug string, config Config, requests []string) error {
 					phase = " after editing"
 				}
 			}
-			return fmt.Errorf("missing %s on %s %s%s in the model conversation", expected.Operation, expected.File, position, phase)
+			detail := ""
+			if len(queryDetails[index]) > 0 {
+				detail = "; " + strings.Join(queryDetails[index], "; ") + " (one-based tool coordinates)"
+			}
+			return fmt.Errorf("missing %s on %s %s%s in the model conversation%s", expected.Operation, expected.File, position, phase, detail)
 		}
 	}
 	if slug == "ql9" {
