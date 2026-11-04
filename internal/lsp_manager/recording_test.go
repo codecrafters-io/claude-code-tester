@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -241,6 +242,47 @@ func TestCheckMigrationNamesMissingLookupAndPhase(t *testing.T) {
 			// Assert
 			require.ErrorContains(t, err, "missing "+variant.operation)
 			require.ErrorContains(t, err, variant.phase)
+		})
+	}
+}
+
+// Post-edit definition lookups target the current call rather than its original coordinates.
+func TestCheckMigrationFollowsMovedCheckoutCall(t *testing.T) {
+	for _, variant := range []struct {
+		name      string
+		prefix    string
+		line      int
+		character int
+		valid     bool
+	}{
+		{"moved-column", "", 5, 14, true},
+		{"inside-call-name", "", 5, 19, true},
+		{"moved-line-and-column", "\n\n", 7, 14, true},
+		{"old-column", "", 5, 12, false},
+		{"old-line", "\n\n", 5, 14, false},
+		{"alias-import", "", 1, 30, false},
+		{"comment", "# invoice_total(250, 2)\n", 1, 3, false},
+	} {
+		t.Run(variant.name, func(t *testing.T) {
+			// Arrange
+			c, root, tools := migrationCalls(t)
+			source := variant.prefix + strings.Replace(c.Files["checkout.py"],
+				"    return invoice_total(250, 2)",
+				"    result = invoice_total(250, 2)\n    return result[\"cents\"]", 1)
+			tools[5].Arguments["content"] = source
+			require.NoError(t, os.WriteFile(filepath.Join(root, "checkout.py"), []byte(source), 0644))
+			tools[8] = navigation("goToDefinition", "checkout.py", variant.line)
+			tools[8].Arguments["character"] = variant.character
+			config, requests := checkRecording(t, c, root, tools)
+			// Act
+			err := Check(c, "ql9", config, requests)
+			// Assert
+			if variant.valid {
+				require.NoError(t, err)
+			} else {
+				require.ErrorContains(t, err, "missing goToDefinition on checkout.py at the current invoice_total call")
+				require.ErrorContains(t, err, "after editing")
+			}
 		})
 	}
 }

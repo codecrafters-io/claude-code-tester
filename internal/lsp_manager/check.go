@@ -354,6 +354,24 @@ func Check(c Case, slug string, config Config, requests []string) error {
 					samePosition = action.Line == location.Start.Line && action.Character >= location.Start.Character && action.Character < location.End.Character
 				}
 			}
+			if expected.AtCall {
+				text := queryTexts[index]
+				samePosition = false
+				for _, match := range wordPattern.FindAllStringIndex(text, -1) {
+					if text[match[0]:match[1]] != "invoice_total" || !strings.HasPrefix(strings.TrimSpace(text[match[1]:]), "(") {
+						continue
+					}
+					lineStart := strings.LastIndex(text[:match[0]], "\n") + 1
+					if strings.Contains(text[lineStart:match[0]], "#") {
+						continue
+					}
+					location := textRange(text, match[0], match[1])
+					if action.Line == location.Start.Line && action.Character >= location.Start.Character && action.Character < location.End.Character {
+						samePosition = true
+						break
+					}
+				}
+			}
 			samePosition = samePosition && action.Operation == expected.Operation && filepath.Clean(file) == filepath.Join(config.Root, expected.File)
 			currentType := len(c.WantDefinitions) == 0 || expectedIndex < len(c.WantDefinitions) && strings.Contains(tool.Result, c.WantDefinitions[expectedIndex])
 			if samePosition && currentType {
@@ -432,6 +450,9 @@ func Check(c Case, slug string, config Config, requests []string) error {
 				continue
 			}
 			position := fmt.Sprintf("at line %d, character %d", expected.Line+1, expected.Character+1)
+			if expected.AtCall {
+				position = "at the current invoice_total call"
+			}
 			if expected.AtDefinition {
 				position = "at the current definition (tool inputs are one-based; returned ranges are zero-based)"
 			}
