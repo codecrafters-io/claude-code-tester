@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -208,4 +209,38 @@ func TestCheckMigrationAcceptsShiftedStartingDefinition(t *testing.T) {
 	err := Check(c, "ql9", config, requests)
 	// Assert
 	require.NoError(t, err)
+}
+
+// Missing navigation reports the required operation and phase instead of only a query count.
+func TestCheckMigrationNamesMissingLookupAndPhase(t *testing.T) {
+	for _, variant := range []struct {
+		name      string
+		omit      []int
+		operation string
+		phase     string
+	}{
+		{"only-initial-lookups", []int{8, 9}, "goToDefinition on checkout.py", "after editing"},
+		{"missing-follow-up-definition", []int{8}, "goToDefinition on checkout.py", "after editing"},
+		{"missing-follow-up-references", []int{9}, "findReferences on pricing.py", "after editing"},
+		{"missing-initial-definition", []int{0}, "goToDefinition on checkout.py", "before editing"},
+		{"missing-initial-references", []int{1}, "findReferences on pricing.py", "before editing"},
+		{"only-follow-up-lookups", []int{0, 1}, "goToDefinition on checkout.py", "before editing"},
+	} {
+		t.Run(variant.name, func(t *testing.T) {
+			// Arrange
+			c, root, tools := migrationCalls(t)
+			var remaining []call
+			for index, tool := range tools {
+				if !slices.Contains(variant.omit, index) {
+					remaining = append(remaining, tool)
+				}
+			}
+			config, requests := checkRecording(t, c, root, remaining)
+			// Act
+			err := Check(c, "ql9", config, requests)
+			// Assert
+			require.ErrorContains(t, err, "missing "+variant.operation)
+			require.ErrorContains(t, err, variant.phase)
+		})
+	}
 }

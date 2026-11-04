@@ -64,7 +64,7 @@ func Cases(slug string) []Case {
 		updatedDefinition.AfterEdits = true
 		updatedReferences := references
 		updatedReferences.AfterEdits = true
-		prompt := `Change pricing.total to return a Price TypedDict with an integer cents field. Update checkout.py and reports.py so their results stay unchanged. Use LSP to find the implementation and callers, and recheck them after editing. Use Write's diagnostic feedback to fix type errors. Report any diagnostic timeout. Leave tests and unrelated files unchanged. Run python3 -m unittest -v test_invoice.py and report the result.`
+		prompt := `Change pricing.total to return a Price TypedDict with an integer cents field. Update checkout.py and reports.py so their results stay unchanged. Before any Write edits, use LSP goToDefinition on checkout.py at line 5, character 12, and LSP findReferences on the returned pricing.total definition. After all Write edits, repeat LSP goToDefinition at the same checkout.py position and LSP findReferences at the updated pricing.total definition. Use the returned definition position for findReferences, converting its zero-based range to one-based tool inputs. Both post-edit LSP queries are required even if diagnostics are clean and the project tests pass. Use diagnostic feedback from Write to fix type errors. Report any diagnostic timeout. Leave tests and unrelated files unchanged. Run python3 -m unittest -v test_invoice.py and report the result.`
 		queries := []Query{definition, references, updatedDefinition, updatedReferences}
 		shifted := Project(false)
 		shifted["test_invoice.py"] = InvoiceTests

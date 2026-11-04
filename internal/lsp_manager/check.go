@@ -300,9 +300,6 @@ func Check(c Case, slug string, config Config, requests []string) error {
 		return checkPlaceholderResponse(allCalls)
 	}
 	expectedQueries := c.Queries
-	if len(queryMessages) < len(expectedQueries) {
-		return fmt.Errorf("expected %d LSP queries, got %d", len(expectedQueries), len(queryMessages))
-	}
 	queryCalls := []call{}
 	for _, tool := range allCalls {
 		if operation, ok := tool.Arguments["operation"].(string); ok && operation != "" {
