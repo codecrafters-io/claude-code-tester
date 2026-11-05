@@ -180,14 +180,19 @@ func checkSetupTools(requests []string) error {
 	return nil
 }
 
-// Stage 2 accepts a placeholder sent back to the model under its original call ID.
+// The first stage accepts any placeholder sent back to the model under its
+// original call ID. The text is the learner's choice, so only its presence counts.
 func checkPlaceholderResponse(tools []call) error {
 	for _, tool := range tools {
-		if tool.Arguments["operation"] == "goToDefinition" && (tool.Result == "LSP is not implemented yet" || ContainsJSON(tool.Result, "LSP is not implemented yet")) {
-			return nil
+		if tool.Arguments["operation"] != "goToDefinition" {
+			continue
 		}
+		if strings.TrimSpace(tool.Result) == "" {
+			return fmt.Errorf("the model's LSP call %s got no tool result; send a tool message with tool_call_id %q", tool.ID, tool.ID)
+		}
+		return nil
 	}
-	return fmt.Errorf("return LSP is not implemented yet to the model with the matching tool_call_id")
+	return fmt.Errorf("the model never called the LSP tool with operation goToDefinition; check that every request advertises the LSP tool")
 }
 
 // A Read must return the complete file contents in its own tool result.
@@ -306,8 +311,11 @@ func Check(c Case, slug string, config Config, requests []string) error {
 			queryCalls = append(queryCalls, tool)
 		}
 	}
-	if len(queryCalls) != len(queryMessages) {
-		return fmt.Errorf("every LSP query must answer a model tool call, got %d tool calls and %d queries", len(queryCalls), len(queryMessages))
+	if len(queryMessages) < len(queryCalls) {
+		return fmt.Errorf("the model made %d LSP tool call(s), but your program sent %d request(s) to the language server; each LSP call should send one request, such as textDocument/definition, with the request action", len(queryCalls), len(queryMessages))
+	}
+	if len(queryMessages) > len(queryCalls) {
+		return fmt.Errorf("your program sent %d request(s) to the language server, but the model made only %d LSP tool call(s); send one request per LSP call", len(queryMessages), len(queryCalls))
 	}
 	matchedQueries := make([]call, len(expectedQueries))
 	queryDetails := make([][]string, len(expectedQueries))
