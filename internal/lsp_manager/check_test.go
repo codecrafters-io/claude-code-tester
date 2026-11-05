@@ -50,6 +50,41 @@ func TestCheckAcceptsEOFClosingAfterInitialization(t *testing.T) {
 	require.NoError(t, err)
 }
 
+// An initialized server log with no document traffic, for checks on tool-call accounting.
+func initializedLog(t *testing.T, extra ...Message) Config {
+	t.Helper()
+	config := Config{Root: t.TempDir(), Log: filepath.Join(t.TempDir(), "events.jsonl")}
+	require.NoError(t, appendEvent(config.Log, "received", Message{Method: "initialize", ID: json.RawMessage(`1`)}, ""))
+	require.NoError(t, appendEvent(config.Log, "sent", Message{ID: json.RawMessage(`1`), Result: json.RawMessage(`{"capabilities":{}}`)}, ""))
+	require.NoError(t, appendEvent(config.Log, "received", Message{Method: "initialized"}, ""))
+	for _, message := range extra {
+		require.NoError(t, appendEvent(config.Log, "received", message, ""))
+	}
+	require.NoError(t, appendEvent(config.Log, "ended", Message{}, ""))
+	return config
+}
+
+// An LSP tool call that never reaches the server says which request is missing.
+func TestCheckNamesAMissingServerRequest(t *testing.T) {
+	// Arrange
+	config := initializedLog(t)
+	request := `{"messages":[{"role":"assistant","tool_calls":[{"id":"lsp-call","function":{"arguments":"{\"operation\":\"goToDefinition\",\"filePath\":\"checkout.py\",\"line\":5,\"character\":12}"}}]}]}`
+	// Act
+	err := Check(Case{}, "gz6", config, []string{request})
+	// Assert
+	require.ErrorContains(t, err, "the model made 1 LSP tool call(s), but your program sent 0 request(s) to the language server")
+}
+
+// A request the model never asked for is reported as an extra request.
+func TestCheckNamesAnExtraServerRequest(t *testing.T) {
+	// Arrange
+	config := initializedLog(t, Message{Method: "textDocument/definition", ID: json.RawMessage(`2`)})
+	// Act
+	err := Check(Case{}, "gz6", config, []string{`{"messages":[]}`})
+	// Assert
+	require.ErrorContains(t, err, "your program sent 1 request(s) to the language server, but the model made only 0 LSP tool call(s)")
+}
+
 func migratedProject(t *testing.T) (Case, string, []call) {
 	t.Helper()
 	c := Cases("ql9")[0]
@@ -148,12 +183,13 @@ func TestPlaceholderRequiresMatchingCallID(t *testing.T) {
 	// Act
 	err := checkPlaceholderResponse(calls([]string{request}))
 	// Assert
-	require.ErrorContains(t, err, "with the matching tool_call_id")
+	require.ErrorContains(t, err, `got no tool result; send a tool message with tool_call_id "provider-call"`)
 }
 
-// Both plain-text and JSON-wrapped placeholders satisfy advertisement before navigation exists.
+// Any non-empty placeholder satisfies advertisement before navigation exists,
+// in plain text or JSON-wrapped, whatever its wording.
 func TestPlaceholderAcceptsUnimplementedNavigation(t *testing.T) {
-	for _, result := range []string{"LSP is not implemented yet", `"LSP is not implemented yet"`} {
+	for _, result := range []string{"LSP is not implemented yet", `"LSP is not implemented yet"`, "LSP is not implemented", "TODO"} {
 		t.Run(result, func(t *testing.T) {
 			// Arrange
 			tools := []call{{Arguments: map[string]any{"operation": "goToDefinition"}, Result: result}}
@@ -163,6 +199,16 @@ func TestPlaceholderAcceptsUnimplementedNavigation(t *testing.T) {
 			require.NoError(t, err)
 		})
 	}
+}
+
+// A run where the model never calls the tool points at the advertisement.
+func TestPlaceholderRequiresAnLSPCall(t *testing.T) {
+	// Arrange
+	tools := []call{{ID: "read-call", Arguments: map[string]any{"file_path": "checkout.py"}, Result: "contents"}}
+	// Act
+	err := checkPlaceholderResponse(tools)
+	// Assert
+	require.ErrorContains(t, err, "never called the LSP tool")
 }
 
 // Read must return the source contents rather than an unrelated success message.

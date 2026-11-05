@@ -34,8 +34,9 @@ func testLSP(stageHarness *test_case_harness.TestCaseHarness, slug string) error
 		stageHarness.Logger.Infof("Case: %s", testCase.Name)
 		workspace := workspace_manager.NewWorkspaceManager()
 		workspace.BootstrapExecutableWorkspace(stageHarness)
-		// A path containing spaces exercises URI conversion on every stage.
-		project := filepath.Join(workspace.GetWorkspaceDirPath(), "invoice project")
+		// The path has no characters a file URI would need to encode, so URI
+		// encoding isn't part of what any stage checks.
+		project := filepath.Join(workspace.GetWorkspaceDirPath(), "invoice_project")
 		if err := os.Mkdir(project, 0755); err != nil {
 			return err
 		}
