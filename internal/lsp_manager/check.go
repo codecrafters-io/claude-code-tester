@@ -312,7 +312,6 @@ func Check(c Case, slug string, config Config, requests []string) error {
 		return fmt.Errorf("your program sent %d request(s) to the language server, but the model made only %d LSP tool call(s); send one request per LSP call", len(queryMessages), len(queryCalls))
 	}
 	matchedQueries := make([]call, len(expectedQueries))
-	queryDetails := make([][]string, len(expectedQueries))
 	matchedCount := 0
 	callPositions := map[string]int{}
 	firstWrite, lastWrite := len(allCalls), -1
@@ -355,31 +354,6 @@ func Check(c Case, slug string, config Config, requests []string) error {
 				if match != nil {
 					location := textRange(queryTexts[index], match[2], match[3])
 					samePosition = action.Line == location.Start.Line && action.Character >= location.Start.Character && action.Character < location.End.Character
-				}
-			}
-			if expected.AtCall {
-				text := queryTexts[index]
-				samePosition = false
-				var positions []string
-				for _, match := range wordPattern.FindAllStringIndex(text, -1) {
-					if text[match[0]:match[1]] != "invoice_total" || !strings.HasPrefix(strings.TrimSpace(text[match[1]:]), "(") {
-						continue
-					}
-					lineStart := strings.LastIndex(text[:match[0]], "\n") + 1
-					if strings.Contains(text[lineStart:match[0]], "#") {
-						continue
-					}
-					location := textRange(text, match[0], match[1])
-					positions = append(positions, fmt.Sprintf("line %d, characters %d-%d", location.Start.Line+1, location.Start.Character+1, location.End.Character))
-					if action.Line == location.Start.Line && action.Character >= location.Start.Character && action.Character < location.End.Character {
-						samePosition = true
-					}
-				}
-				if action.Operation == expected.Operation && filepath.Clean(file) == filepath.Join(config.Root, expected.File) {
-					if len(positions) == 0 {
-						positions = []string{"none in synchronized source"}
-					}
-					queryDetails[expectedIndex] = append(queryDetails[expectedIndex], fmt.Sprintf("queried line %d, character %d; current invoice_total call: %s", action.Line+1, action.Character+1, strings.Join(positions, ", ")))
 				}
 			}
 			samePosition = samePosition && action.Operation == expected.Operation && filepath.Clean(file) == filepath.Join(config.Root, expected.File)
@@ -458,11 +432,8 @@ func Check(c Case, slug string, config Config, requests []string) error {
 				continue
 			}
 			position := fmt.Sprintf("at line %d, character %d", expected.Line+1, expected.Character+1)
-			if expected.AtCall {
-				position = "at the current invoice_total call"
-			}
 			if expected.AtDefinition {
-				position = "at the current definition (tool inputs are one-based; returned ranges are zero-based)"
+				position = "at the current definition of total (1-based, as the definition lookup returns it)"
 			}
 			phase := ""
 			if slug == "ql9" {
@@ -470,10 +441,6 @@ func Check(c Case, slug string, config Config, requests []string) error {
 				if expected.AfterEdits {
 					phase = " after editing"
 				}
-			}
-			detail := ""
-			if len(queryDetails[index]) > 0 {
-				detail = "; " + strings.Join(queryDetails[index], "; ") + " (one-based tool coordinates)"
 			}
 			made := "none"
 			if len(queryCalls) > 0 {
@@ -491,7 +458,7 @@ func Check(c Case, slug string, config Config, requests []string) error {
 			if len(queryCalls) == 0 {
 				hint = fmt.Sprintf(". If the model replied without calling the tool, check that the LSP tool's operation enum includes %s", expected.Operation)
 			}
-			return fmt.Errorf("missing %s on %s %s%s in the model conversation%s; the model's LSP calls were: %s%s", expected.Operation, expected.File, position, phase, detail, made, hint)
+			return fmt.Errorf("missing %s on %s %s%s in the model conversation; the model's LSP calls were: %s%s", expected.Operation, expected.File, position, phase, made, hint)
 		}
 	}
 	if slug == "ql9" {
@@ -530,7 +497,7 @@ func Check(c Case, slug string, config Config, requests []string) error {
 // The capstone checks behavior rather than requiring one spelling of the migration.
 func checkMigration(c Case, root string, tools []call) error {
 	lastWrite := -1
-	writes := map[string]int{}
+	writes := map[string]bool{}
 	for index, tool := range tools {
 		if tool.Arguments["content"] == nil {
 			continue
@@ -543,17 +510,11 @@ func checkMigration(c Case, root string, tools []call) error {
 		if !filepath.IsAbs(file) {
 			file = filepath.Join(root, file)
 		}
-		if _, exists := writes[filepath.Clean(file)]; !exists {
-			writes[filepath.Clean(file)] = index
-		}
+		writes[filepath.Clean(file)] = true
 	}
 	for _, name := range []string{"pricing.py", "checkout.py", "reports.py"} {
-		firstWrite, written := writes[filepath.Join(root, name)]
-		if !written {
+		if !writes[filepath.Join(root, name)] {
 			return fmt.Errorf("use Write to migrate %s", name)
-		}
-		if err := checkRead(root, name, c.Files[name], tools[:firstWrite]); err != nil {
-			return fmt.Errorf("before editing %s: %w", name, err)
 		}
 	}
 	for name, original := range c.Files {

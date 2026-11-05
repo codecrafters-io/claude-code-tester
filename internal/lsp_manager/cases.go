@@ -8,7 +8,6 @@ type Query struct {
 	Line         int
 	Character    int
 	AtDefinition bool
-	AtCall       bool
 	AfterEdits   bool
 }
 
@@ -53,13 +52,10 @@ func Cases(slug string) []Case {
 	case "ql9":
 		files["test_invoice.py"] = InvoiceTests
 		references.AtDefinition = true
-		updatedDefinition := definition
-		updatedDefinition.AfterEdits = true
-		updatedDefinition.AtCall = true
 		updatedReferences := references
 		updatedReferences.AfterEdits = true
-		prompt := `Change pricing.total to return a Price TypedDict with an integer cents field. Update checkout.py and reports.py so their results stay unchanged. Before any Write edits, use LSP goToDefinition on checkout.py at line 5, character 12, and LSP findReferences on the returned pricing.total definition. After all Write edits, repeat LSP goToDefinition on the invoice_total call in checkout.py at its current line and character, and LSP findReferences at the updated pricing.total definition, using the position it returns. Both post-edit LSP queries are required even if the project tests pass. Fix the type errors your tools report. Leave tests and unrelated files unchanged. Run python3 -m unittest -v test_invoice.py and report the result.`
-		queries := []Query{definition, references, updatedDefinition, updatedReferences}
+		prompt := `Change pricing.total to return a Price TypedDict with an integer cents field. Update checkout.py and reports.py so their results stay unchanged. Before any Write edits, use LSP goToDefinition on checkout.py at line 5, character 12, and LSP findReferences on the returned pricing.total definition. After all Write edits, repeat LSP findReferences at the updated pricing.total definition. That query is required even if the project tests pass. Fix the type errors your tools report. Leave tests and unrelated files unchanged. Run python3 -m unittest -v test_invoice.py and report the result.`
+		queries := []Query{definition, references, updatedReferences}
 		shifted := Project(false)
 		shifted["test_invoice.py"] = InvoiceTests
 		shifted["pricing.py"] = "# Pricing API\n" + shifted["pricing.py"]

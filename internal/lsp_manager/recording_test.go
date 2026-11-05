@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"slices"
 	"sort"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -259,8 +258,7 @@ func TestCheckMigrationNamesMissingLookupAndPhase(t *testing.T) {
 		operation string
 		phase     string
 	}{
-		{"only-initial-lookups", []int{8, 9}, "goToDefinition on checkout.py", "after editing"},
-		{"missing-follow-up-definition", []int{8}, "goToDefinition on checkout.py", "after editing"},
+		{"only-initial-lookups", []int{8, 9}, "findReferences on pricing.py", "after editing"},
 		{"missing-follow-up-references", []int{9}, "findReferences on pricing.py", "after editing"},
 		{"missing-initial-definition", []int{0}, "goToDefinition on checkout.py", "before editing"},
 		{"missing-initial-references", []int{1}, "findReferences on pricing.py", "before editing"},
@@ -285,45 +283,29 @@ func TestCheckMigrationNamesMissingLookupAndPhase(t *testing.T) {
 	}
 }
 
-// Post-edit definition lookups target the current call rather than its original coordinates.
-func TestCheckMigrationFollowsMovedCheckoutCall(t *testing.T) {
+// A post-edit definition lookup is the model's choice of position, so it isn't graded.
+func TestCheckMigrationDoesNotGradeFollowUpDefinition(t *testing.T) {
 	for _, variant := range []struct {
-		name      string
-		prefix    string
-		line      int
-		character int
-		valid     bool
+		name string
+		line int
+		omit bool
 	}{
-		{"moved-column", "", 5, 14, true},
-		{"inside-call-name", "", 5, 19, true},
-		{"moved-line-and-column", "\n\n", 7, 14, true},
-		{"old-column", "", 5, 12, false},
-		{"old-line", "\n\n", 5, 14, false},
-		{"alias-import", "", 1, 30, false},
-		{"comment", "# invoice_total(250, 2)\n", 1, 3, false},
+		{"omitted", 0, true},
+		{"stale-position", 1, false},
 	} {
 		t.Run(variant.name, func(t *testing.T) {
 			// Arrange
 			c, root, tools := migrationCalls(t)
-			source := variant.prefix + strings.Replace(c.Files["checkout.py"],
-				"    return invoice_total(250, 2)",
-				"    result = invoice_total(250, 2)\n    return result[\"cents\"]", 1)
-			tools[5].Arguments["content"] = source
-			require.NoError(t, os.WriteFile(filepath.Join(root, "checkout.py"), []byte(source), 0644))
-			tools[8] = navigation("goToDefinition", "checkout.py", variant.line)
-			tools[8].Arguments["character"] = variant.character
+			if variant.omit {
+				tools = append(append([]call{}, tools[:8]...), tools[9:]...)
+			} else {
+				tools[8] = navigation("goToDefinition", "checkout.py", variant.line)
+			}
 			config, requests := checkRecording(t, c, root, tools)
 			// Act
 			err := Check(c, "ql9", config, requests)
 			// Assert
-			if variant.valid {
-				require.NoError(t, err)
-			} else {
-				require.ErrorContains(t, err, "missing goToDefinition on checkout.py at the current invoice_total call")
-				require.ErrorContains(t, err, "after editing")
-				require.ErrorContains(t, err, fmt.Sprintf("queried line %d, character %d", variant.line, variant.character))
-				require.ErrorContains(t, err, fmt.Sprintf("current invoice_total call: line %d, characters 14-26", strings.Count(variant.prefix, "\n")+5))
-			}
+			require.NoError(t, err)
 		})
 	}
 }

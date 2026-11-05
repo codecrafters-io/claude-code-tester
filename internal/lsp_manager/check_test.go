@@ -122,25 +122,20 @@ func migratedProject(t *testing.T) (Case, string, []call) {
 	return c, root, tools
 }
 
-// Each file can be read immediately before its own first edit.
-func TestMigrationAcceptsReadBeforeEachFilesWrite(t *testing.T) {
+// Whether the model reads a file before editing it is its choice, so it isn't graded.
+func TestMigrationAcceptsWritesWithoutEarlierReads(t *testing.T) {
 	// Arrange
 	c, root, tools := migratedProject(t)
+	var writesOnly []call
+	for _, tool := range tools {
+		if tool.Arguments["content"] != nil || tool.Arguments["command"] != nil {
+			writesOnly = append(writesOnly, tool)
+		}
+	}
 	// Act
-	err := checkMigration(c, root, tools)
+	err := checkMigration(c, root, writesOnly)
 	// Assert
 	require.NoError(t, err)
-}
-
-// Reading a file only after its first edit does not satisfy the pre-edit Read.
-func TestMigrationRejectsReadAfterFirstWrite(t *testing.T) {
-	// Arrange
-	c, root, tools := migratedProject(t)
-	tools[0], tools[1] = tools[1], tools[0]
-	// Act
-	err := checkMigration(c, root, tools)
-	// Assert
-	require.ErrorContains(t, err, "before editing pricing.py")
 }
 
 // Equivalent Price construction passes without requiring a predetermined source spelling.
