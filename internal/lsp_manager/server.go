@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 )
@@ -231,6 +232,25 @@ func Serve(config Config, input io.Reader, output io.Writer) error {
 				}
 				if config.StaleDiagnostics && clientVersionSupport && document.Version > 1 {
 					if err := notify("textDocument/publishDiagnostics", map[string]any{"uri": uri, "version": document.Version - 1, "diagnostics": []map[string]any{{"message": "Stale diagnostic must be ignored"}}}); err != nil {
+						return err
+					}
+				}
+				// Like Pyright, re-check every other open document: changing pricing.py can break
+				// checkout.py even though checkout.py was not written.
+				var others []string
+				for other := range state.Documents {
+					if other != uri {
+						others = append(others, other)
+					}
+				}
+				sort.Strings(others)
+				for _, other := range others {
+					document := state.Documents[other]
+					publication := map[string]any{"uri": other, "diagnostics": state.diagnostics(document)}
+					if !config.UnversionedDiagnostics && clientVersionSupport {
+						publication["version"] = document.Version
+					}
+					if err := notify("textDocument/publishDiagnostics", publication); err != nil {
 						return err
 					}
 				}

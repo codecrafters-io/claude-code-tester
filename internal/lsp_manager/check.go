@@ -127,12 +127,6 @@ func equalNode(actual, expected any) bool {
 	}
 }
 
-// Preserve structured result boundaries, including null and complete location arrays.
-func resultReachedModel(content string, raw json.RawMessage) bool {
-	var expected any
-	return json.Unmarshal(raw, &expected) == nil && ContainsJSON(content, expected)
-}
-
 func checkSetupTools(requests []string) error {
 	if len(requests) == 0 {
 		return fmt.Errorf("the user's prompt never reached the LLM")
@@ -422,10 +416,8 @@ func Check(c Case, slug string, config Config, requests []string) error {
 			if !strings.Contains(tool.Result, failure.Message) {
 				return fmt.Errorf("the server's error did not reach the model for %s", tool.ID)
 			}
-		} else {
-			if !resultReachedModel(tool.Result, response.Result) {
-				return fmt.Errorf("server result did not reach the matching tool call %s: expected %s, got %s", tool.ID, response.Result, tool.Result)
-			}
+		} else if err := checkFormattedResult(tool.Result, response.Result, config.Root); err != nil {
+			return fmt.Errorf("%s result for tool call %s: %w", action.Operation, tool.ID, err)
 		}
 	}
 	// Every open document must reflect the final contents on disk. Restarting or
@@ -506,13 +498,13 @@ func Check(c Case, slug string, config Config, requests []string) error {
 		// Recompute locations from disk so a cached closed file cannot pass with stale ranges.
 		current := projectState{Root: config.Root, Documents: map[string]Document{}}
 		expected, _ := json.Marshal(current.references(true))
-		if !resultReachedModel(matchedQueries[len(matchedQueries)-1].Result, expected) {
-			return fmt.Errorf("follow-up references contain stale locations; synchronize edited closed files such as reports.py with didOpen")
+		if err := checkFormattedResult(matchedQueries[len(matchedQueries)-1].Result, expected, config.Root); err != nil {
+			return fmt.Errorf("follow-up references don't match the edited files (%v); synchronize edited closed files such as reports.py with didOpen", err)
 		}
 		if err := checkMigration(c, config.Root, allCalls); err != nil {
 			return err
 		}
-		return checkWriteDiagnostics(config, events, allCalls)
+		return checkDiagnosticsReachedModel(config, events, requests)
 	}
 
 	files := c.Files

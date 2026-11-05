@@ -32,48 +32,51 @@ def inside():
         if time.monotonic() >= deadline:
             raise RuntimeError("Pyright workspace discovery did not finish")
     definition = server.tool({"operation":"goToDefinition","filePath":"checkout.py","line":5,"character":12})
-    assert "pricing.py" in json.dumps(definition),definition
+    assert definition.startswith("Defined in pricing.py:1:5"), definition
     references = server.tool({"operation":"findReferences","filePath":"pricing.py","line":1,"character":5})
-    assert "checkout.py" in json.dumps(references),references
-    assert "reports.py" in json.dumps(references),references
-    assert "preview.py" not in json.dumps(references),references
-    checkout_locations = [item["range"]["start"] for item in references if item["uri"].endswith("/checkout.py")]
-    assert {"line": 0, "character": 20} in checkout_locations, checkout_locations
+    assert "checkout.py:\n  Line 1:21" in references, references
+    assert "reports.py:" in references, references
+    assert "preview.py" not in references, references
     original = Path("checkout.py").read_text()
     imported = original.replace("from pricing","from discounts")
     server.write("checkout.py", imported)
     moved = server.tool({"operation":"goToDefinition","filePath":"checkout.py","line":5,"character":12})
-    assert "discounts.py" in json.dumps(moved),moved
+    assert moved.startswith("Defined in discounts.py:"), moved
     server.write("checkout.py", original)
+    reported = []
+
+    def collect(done):
+        deadline = time.monotonic() + 10
+        while not done():
+            if time.monotonic() >= deadline:
+                raise AssertionError(f"Diagnostics did not settle; reported {reported}")
+            reported.append(server.new_diagnostics())
+            time.sleep(0.2)
+
+    # Only pricing.py is written; Pyright re-checks the open checkout.py and reports its error.
     server.write("pricing.py",PRICE_API)
-    incomplete = original.replace("    return invoice_total(250, 2)", "    amount = invoice_total(250, 2)\n    return amount")
-    feedback = server.write("checkout.py", incomplete)
-    assert "diagnosticsError" not in feedback, feedback
-    issues = feedback["diagnostics"]["diagnostics"]
-    assert any(issue.get("severity") == 1 and "Price" in issue["message"] for issue in issues), feedback
-    print("Pyright: caller type error reached Write's diagnostic feedback")
+    collect(lambda: any("checkout.py:" in block and "Price" in block for block in reported))
+    block = next(block for block in reported if "checkout.py:" in block)
+    assert "[Line 5:12]" in block, block
+    print("Pyright: an error in the unwritten caller reached the model with a 1-based position")
     report = Path("reports.py").read_text().replace("total(250, 2)",'total(250, 2)["cents"]').replace("total(100, 1)",'total(100, 1)["cents"]')
     # Shift lines as well as the second call column so stale indexed text cannot pass.
     report = "\n\n" + report
     assert not any(uri.endswith("/reports.py") for uri in server.documents)
     server.write("reports.py", report)
     checkout = original.replace("invoice_total(250, 2)", 'invoice_total(250, 2)["cents"]')
-    feedback = server.write("checkout.py", checkout)
-    assert "diagnosticsError" not in feedback, feedback
-    assert feedback["diagnostics"]["diagnostics"] == [], feedback
-    print("Pyright: repaired caller returned a new, empty diagnostic report")
+    checkout_uri = Path("checkout.py").resolve().as_uri()
+    server.write("checkout.py", checkout)
+    collect(lambda: server.shown.get(checkout_uri) == set())
+    print("Pyright: the repaired caller's diagnostics cleared")
     current = server.tool({"operation":"goToDefinition","filePath":"checkout.py","line":5,"character":12})
-    assert "pricing.py" in json.dumps(current), current
-    locations = current if isinstance(current, list) else [current]
-    assert any(location["range"]["start"]["line"] == 7 for location in locations), current
+    assert current.startswith("Defined in pricing.py:8:5"), current
     references = server.tool({"operation":"findReferences","filePath":"pricing.py","line":8,"character":5})
-    assert "checkout.py" in json.dumps(references), references
-    assert "reports.py" in json.dumps(references), references
-    assert "preview.py" not in json.dumps(references), references
-    report_locations = [item["range"]["start"] for item in references if item["uri"].endswith("/reports.py")]
-    assert {"line": 6, "character": 11} in report_locations, report_locations
-    assert {"line": 6, "character": 36} in report_locations, report_locations
-    assert all(position["line"] in (2, 6) for position in report_locations), report_locations
+    assert "checkout.py:" in references, references
+    assert "preview.py" not in references, references
+    report_lines = references.split("reports.py:\n")[1].split("\n\n")[0].split("\n")
+    assert "  Line 7:12" in report_lines and "  Line 7:37" in report_lines, references
+    assert all(line.startswith(("  Line 3:", "  Line 7:")) for line in report_lines), references
     print("Pyright: closed-file references moved to line 7, columns 12 and 37")
     command = subprocess.run([sys.executable, "-B", "-m", "unittest", "-v", "test_invoice.py"], capture_output=True, text=True, check=True)
     print(command.stderr, end="")
@@ -83,7 +86,7 @@ def inside():
     assert total(37, 4) == {"cents": 148}
     assert type(checkout_total()) is int and checkout_total() == 500
     assert type(report_total()) is int and report_total() == 600
-    print("Pyright: definition, references, edited-import synchronization, diagnostic feedback and API migration passed")
+    print("Pyright: definition, references, edited-import synchronization, new diagnostics and API migration passed")
 
 
 def main():

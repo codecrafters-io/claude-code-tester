@@ -150,11 +150,11 @@ func testLSP(stageHarness *test_case_harness.TestCaseHarness, slug string) error
 		}
 		if slug == "ql9" {
 			stageHarness.Logger.Successf("Migrated pricing.total and its callers; unrelated preview.total is unchanged")
-			stageHarness.Logger.Successf("Returned current diagnostic feedback for each Write, or an explicit feedback timeout")
+			stageHarness.Logger.Successf("Reported new diagnostics to the model, including errors in callers that were not written")
 			stageHarness.Logger.Successf("Project tests passed through Bash: checkout 500 cents, reporting 600 cents")
 		}
 		if slug == "iy3" {
-			stageHarness.Logger.Successf("Advertised LSP and returned a matching tool response; definition lookup is next")
+			stageHarness.Logger.Successf("Advertised LSP and returned a matching tool response")
 		}
 		if slug == "gz6" {
 			stageHarness.Logger.Successf("Resolved invoice_total to pricing.total; preview.total is unrelated")

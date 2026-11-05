@@ -58,18 +58,17 @@ func Cases(slug string) []Case {
 		updatedDefinition.AtCall = true
 		updatedReferences := references
 		updatedReferences.AfterEdits = true
-		prompt := `Change pricing.total to return a Price TypedDict with an integer cents field. Update checkout.py and reports.py so their results stay unchanged. Before any Write edits, use LSP goToDefinition on checkout.py at line 5, character 12, and LSP findReferences on the returned pricing.total definition. After all Write edits, repeat LSP goToDefinition on the invoice_total call in checkout.py at its current line and character, and LSP findReferences at the updated pricing.total definition. Use the returned definition position for findReferences, converting its zero-based range to one-based tool inputs. Both post-edit LSP queries are required even if diagnostics are clean and the project tests pass. Use diagnostic feedback from Write to fix type errors. Report any diagnostic timeout. Leave tests and unrelated files unchanged. Run python3 -m unittest -v test_invoice.py and report the result.`
+		prompt := `Change pricing.total to return a Price TypedDict with an integer cents field. Update checkout.py and reports.py so their results stay unchanged. Before any Write edits, use LSP goToDefinition on checkout.py at line 5, character 12, and LSP findReferences on the returned pricing.total definition. After all Write edits, repeat LSP goToDefinition on the invoice_total call in checkout.py at its current line and character, and LSP findReferences at the updated pricing.total definition, using the position it returns. Both post-edit LSP queries are required even if the project tests pass. Fix the type errors your tools report. Leave tests and unrelated files unchanged. Run python3 -m unittest -v test_invoice.py and report the result.`
 		queries := []Query{definition, references, updatedDefinition, updatedReferences}
 		shifted := Project(false)
 		shifted["test_invoice.py"] = InvoiceTests
 		shifted["pricing.py"] = "# Pricing API\n" + shifted["pricing.py"]
 		return []Case{
 			{Name: "api-migration-across-files", Prompt: prompt, Queries: queries, Files: files},
-			// A stale versioned report arrives around an unversioned current one, so an agent must both
-			// ignore older versions and accept a report without a version.
-			{Name: "stale-and-unversioned-diagnostics", Prompt: prompt, Queries: queries, Files: files, Config: Config{StaleDiagnostics: true, UnversionedDiagnostics: true}},
-			// Moving the definition and withholding reports are independent, so one run checks both.
-			{Name: "no-diagnostics-with-shifted-definition", Prompt: prompt, Queries: queries, Files: shifted, Config: Config{MissingDiagnostics: true}},
+			// Stale versioned reports arrive around an unversioned current one, so an agent must both
+			// ignore older versions and accept a report without a version. The definition also sits
+			// below a comment, so the follow-up references must use the position the lookup returns.
+			{Name: "stale-and-unversioned-diagnostics-with-shifted-definition", Prompt: prompt, Queries: queries, Files: shifted, Config: Config{StaleDiagnostics: true, UnversionedDiagnostics: true}},
 		}
 	}
 	return nil
