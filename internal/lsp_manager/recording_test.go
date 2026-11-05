@@ -202,7 +202,9 @@ func TestCheckRejectsUnsynchronizedText(t *testing.T) {
 func TestCheckMigrationAcceptsShiftedStartingDefinition(t *testing.T) {
 	// Arrange
 	_, root, tools := migrationCalls(t)
-	c := Cases("ql9")[4]
+	c := Cases("ql9")[2]
+	// This test grades the shifted position, so it uses normal diagnostics.
+	c.Config = Config{}
 	tools[1].Arguments["line"] = 2
 	tools[2].Result = c.Files["pricing.py"]
 	config, requests := checkRecording(t, c, root, tools)

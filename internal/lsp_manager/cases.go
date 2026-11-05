@@ -47,8 +47,8 @@ func Cases(slug string) []Case {
 		changed := strings.Replace(files["checkout.py"], "from pricing", "from discounts", 1)
 		prompt := "Use LSP goToDefinition on checkout.py at line 5, character 12. Use Write to change its import from pricing to discounts, preserving the invoice_total alias. Repeat definition lookup at the same position and report the new target."
 		return []Case{
-			{Name: "successive-document-versions", Prompt: prompt + " Restore the pricing import using Write and repeat the lookup.", Queries: []Query{definition, definition, definition}, FinalFiles: map[string]string{"checkout.py": files["checkout.py"]}, WantDefinitions: []string{"pricing.py", "discounts.py", "pricing.py"}},
-			{Name: "write-before-open", Prompt: "Use Write to change checkout.py's import from pricing to discounts, then look up invoice_total at line 5, character 12.", Queries: []Query{definition}, FinalFiles: map[string]string{"checkout.py": changed}, WantDefinitions: []string{"discounts.py"}},
+			{Name: "successive-document-versions", Prompt: prompt + " Restore the pricing import using Write and repeat the definition lookup.", Queries: []Query{definition, definition, definition}, FinalFiles: map[string]string{"checkout.py": files["checkout.py"]}, WantDefinitions: []string{"pricing.py", "discounts.py", "pricing.py"}},
+			{Name: "write-before-open", Prompt: "Use Write to change checkout.py's import from pricing to discounts, then use LSP goToDefinition on checkout.py at line 5, character 12.", Queries: []Query{definition}, FinalFiles: map[string]string{"checkout.py": changed}, WantDefinitions: []string{"discounts.py"}},
 		}
 	case "ql9":
 		files["test_invoice.py"] = InvoiceTests
@@ -65,10 +65,11 @@ func Cases(slug string) []Case {
 		shifted["pricing.py"] = "# Pricing API\n" + shifted["pricing.py"]
 		return []Case{
 			{Name: "api-migration-across-files", Prompt: prompt, Queries: queries, Files: files},
-			{Name: "stale-and-unrelated-diagnostics", Prompt: prompt, Queries: queries, Files: files, Config: Config{StaleDiagnostics: true}},
-			{Name: "unversioned-diagnostics", Prompt: prompt, Queries: queries, Files: files, Config: Config{UnversionedDiagnostics: true}},
-			{Name: "migration-without-diagnostic-publications", Prompt: prompt, Queries: queries, Files: files, Config: Config{MissingDiagnostics: true}},
-			{Name: "migration-with-shifted-definition", Prompt: prompt, Queries: queries, Files: shifted},
+			// A stale versioned report arrives around an unversioned current one, so an agent must both
+			// ignore older versions and accept a report without a version.
+			{Name: "stale-and-unversioned-diagnostics", Prompt: prompt, Queries: queries, Files: files, Config: Config{StaleDiagnostics: true, UnversionedDiagnostics: true}},
+			// Moving the definition and withholding reports are independent, so one run checks both.
+			{Name: "no-diagnostics-with-shifted-definition", Prompt: prompt, Queries: queries, Files: shifted, Config: Config{MissingDiagnostics: true}},
 		}
 	}
 	return nil

@@ -58,7 +58,7 @@
 [tester::#BN2] Wrote pricing.py: "def total(price: int, quantity: int) -> int:\n    return price * quantity\n"
 [tester::#BN2] Wrote reports.py: "from pricing import total\n\n\ndef report_total() -> int:\n    return total(250, 2) + total(100, 1)\n"
 [tester::#BN2] Wrote .lsp.json: {"python":{"args":["--lsp-fixture","/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/codecrafters-lsp-control-1959454802/server.json"],"command":"/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/TestLSPStagesOffline2536165845/001/lsp-tester","extensionToLanguage":{".py":"python"}}}
-[tester::#BN2] $ ./your_program.sh -p 'Use LSP goToDefinition on checkout.py at line 5, character 12. Use Write to change its import from pricing to discounts, preserving the invoice_total alias. Repeat definition lookup at the same position and report the new target. Restore the pricing import using Write and repeat the lookup.'
+[tester::#BN2] $ ./your_program.sh -p 'Use LSP goToDefinition on checkout.py at line 5, character 12. Use Write to change its import from pricing to discounts, preserving the invoice_total alias. Repeat definition lookup at the same position and report the new target. Restore the pricing import using Write and repeat the definition lookup.'
 [your_program] Done.
 [tester::#BN2] Definition lookup followed the updated import without restarting the server
 [tester::#BN2] Case successive-document-versions passed protocol, tool-result and file checks
@@ -69,7 +69,7 @@
 [tester::#BN2] Wrote pricing.py: "def total(price: int, quantity: int) -> int:\n    return price * quantity\n"
 [tester::#BN2] Wrote reports.py: "from pricing import total\n\n\ndef report_total() -> int:\n    return total(250, 2) + total(100, 1)\n"
 [tester::#BN2] Wrote .lsp.json: {"python":{"args":["--lsp-fixture","/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/codecrafters-lsp-control-470806892/server.json"],"command":"/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/TestLSPStagesOffline2536165845/001/lsp-tester","extensionToLanguage":{".py":"python"}}}
-[tester::#BN2] $ ./your_program.sh -p 'Use Write to change checkout.py'"'"'s import from pricing to discounts, then look up invoice_total at line 5, character 12.'
+[tester::#BN2] $ ./your_program.sh -p 'Use Write to change checkout.py'"'"'s import from pricing to discounts, then use LSP goToDefinition on checkout.py at line 5, character 12.'
 [your_program] Done.
 [tester::#BN2] Case write-before-open passed protocol, tool-result and file checks
 [tester::#BN2] Test passed.
@@ -89,7 +89,7 @@
 [tester::#QL9] Returned current diagnostic feedback for each Write, or an explicit feedback timeout
 [tester::#QL9] Project tests passed through Bash: checkout 500 cents, reporting 600 cents
 [tester::#QL9] Case api-migration-across-files passed protocol, tool-result and file checks
-[tester::#QL9] Case: stale-and-unrelated-diagnostics
+[tester::#QL9] Case: stale-and-unversioned-diagnostics
 [tester::#QL9] Wrote checkout.py: "from pricing import total as invoice_total\n\n\ndef checkout_total() -> int:\n    return invoice_total(250, 2)\n"
 [tester::#QL9] Wrote discounts.py: "def total(price: int, quantity: int) -> int:\n    return price * quantity - 50\n"
 [tester::#QL9] Wrote preview.py: "# The word total in this comment should stay as it is.\ndef total(label: str) -> str:\n    return \"Preview total: \" + label\n"
@@ -102,36 +102,8 @@
 [tester::#QL9] Migrated pricing.total and its callers; unrelated preview.total is unchanged
 [tester::#QL9] Returned current diagnostic feedback for each Write, or an explicit feedback timeout
 [tester::#QL9] Project tests passed through Bash: checkout 500 cents, reporting 600 cents
-[tester::#QL9] Case stale-and-unrelated-diagnostics passed protocol, tool-result and file checks
-[tester::#QL9] Case: unversioned-diagnostics
-[tester::#QL9] Wrote checkout.py: "from pricing import total as invoice_total\n\n\ndef checkout_total() -> int:\n    return invoice_total(250, 2)\n"
-[tester::#QL9] Wrote discounts.py: "def total(price: int, quantity: int) -> int:\n    return price * quantity - 50\n"
-[tester::#QL9] Wrote preview.py: "# The word total in this comment should stay as it is.\ndef total(label: str) -> str:\n    return \"Preview total: \" + label\n"
-[tester::#QL9] Wrote pricing.py: "def total(price: int, quantity: int) -> int:\n    return price * quantity\n"
-[tester::#QL9] Wrote reports.py: "from pricing import total\n\n\ndef report_total() -> int:\n    return total(250, 2) + total(100, 1)\n"
-[tester::#QL9] Wrote test_invoice.py: "import unittest\nfrom typing import get_type_hints, is_typeddict\n\nimport pricing\nfrom checkout import checkout_total\nfrom preview import total as preview_total\nfrom reports import report_total\n\n\nclass InvoiceTests(unittest.TestCase):\n    # Pricing returns the new object with the calculated cents.\n    def test_pricing_returns_cents_object(self):\n        # Arrange\n        price, quantity = 37, 4\n\n        # Act\n        actual = pricing.total(price, quantity)\n\n        # Assert\n        self.assertEqual(actual, {\"cents\": 148})\n\n    # The API declares a Price TypedDict with an integer cents field.\n    def test_pricing_declares_price_contract(self):\n        # Arrange\n        hints = get_type_hints(pricing.total)\n\n        # Act\n        result_type = hints[\"return\"]\n\n        # Assert\n        self.assertTrue(is_typeddict(result_type))\n        self.assertIs(result_type, pricing.Price)\n        self.assertEqual(get_type_hints(result_type), {\"cents\": int})\n\n    # The checkout returns an integer amount in cents.\n    def test_checkout_total_is_500_cents(self):\n        # Arrange\n        expected = 500\n\n        # Act\n        actual = checkout_total()\n\n        # Assert\n        self.assertEqual(actual, expected)\n\n    # Both calls in the report keep their original behavior.\n    def test_report_total_is_600_cents(self):\n        # Arrange\n        expected = 600\n\n        # Act\n        actual = report_total()\n\n        # Assert\n        self.assertEqual(actual, expected)\n\n    # The unrelated preview function keeps its original behavior.\n    def test_preview_keeps_its_label(self):\n        # Arrange\n        label = \"sample\"\n\n        # Act\n        actual = preview_total(label)\n\n        # Assert\n        self.assertEqual(actual, \"Preview total: sample\")\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
-[tester::#QL9] Wrote .lsp.json: {"python":{"args":["--lsp-fixture","/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/codecrafters-lsp-control-4198764865/server.json"],"command":"/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/TestLSPStagesOffline2536165845/001/lsp-tester","extensionToLanguage":{".py":"python"}}}
-[tester::#QL9] $ ./your_program.sh -p 'Change pricing.total to return a Price TypedDict with an integer cents field. Update checkout.py and reports.py so their results stay unchanged. Before any Write edits, use LSP goToDefinition on checkout.py at line 5, character 12, and LSP findReferences on the returned pricing.total definition. After all Write edits, repeat LSP goToDefinition on the invoice_total call in checkout.py at its current line and character, and LSP findReferences at the updated pricing.total definition. Use the returned definition position for findReferences, converting its zero-based range to one-based tool inputs. Both post-edit LSP queries are required even if diagnostics are clean and the project tests pass. Use diagnostic feedback from Write to fix type errors. Report any diagnostic timeout. Leave tests and unrelated files unchanged. Run python3 -m unittest -v test_invoice.py and report the result.'
-[your_program] Done.
-[tester::#QL9] Migrated pricing.total and its callers; unrelated preview.total is unchanged
-[tester::#QL9] Returned current diagnostic feedback for each Write, or an explicit feedback timeout
-[tester::#QL9] Project tests passed through Bash: checkout 500 cents, reporting 600 cents
-[tester::#QL9] Case unversioned-diagnostics passed protocol, tool-result and file checks
-[tester::#QL9] Case: migration-without-diagnostic-publications
-[tester::#QL9] Wrote checkout.py: "from pricing import total as invoice_total\n\n\ndef checkout_total() -> int:\n    return invoice_total(250, 2)\n"
-[tester::#QL9] Wrote discounts.py: "def total(price: int, quantity: int) -> int:\n    return price * quantity - 50\n"
-[tester::#QL9] Wrote preview.py: "# The word total in this comment should stay as it is.\ndef total(label: str) -> str:\n    return \"Preview total: \" + label\n"
-[tester::#QL9] Wrote pricing.py: "def total(price: int, quantity: int) -> int:\n    return price * quantity\n"
-[tester::#QL9] Wrote reports.py: "from pricing import total\n\n\ndef report_total() -> int:\n    return total(250, 2) + total(100, 1)\n"
-[tester::#QL9] Wrote test_invoice.py: "import unittest\nfrom typing import get_type_hints, is_typeddict\n\nimport pricing\nfrom checkout import checkout_total\nfrom preview import total as preview_total\nfrom reports import report_total\n\n\nclass InvoiceTests(unittest.TestCase):\n    # Pricing returns the new object with the calculated cents.\n    def test_pricing_returns_cents_object(self):\n        # Arrange\n        price, quantity = 37, 4\n\n        # Act\n        actual = pricing.total(price, quantity)\n\n        # Assert\n        self.assertEqual(actual, {\"cents\": 148})\n\n    # The API declares a Price TypedDict with an integer cents field.\n    def test_pricing_declares_price_contract(self):\n        # Arrange\n        hints = get_type_hints(pricing.total)\n\n        # Act\n        result_type = hints[\"return\"]\n\n        # Assert\n        self.assertTrue(is_typeddict(result_type))\n        self.assertIs(result_type, pricing.Price)\n        self.assertEqual(get_type_hints(result_type), {\"cents\": int})\n\n    # The checkout returns an integer amount in cents.\n    def test_checkout_total_is_500_cents(self):\n        # Arrange\n        expected = 500\n\n        # Act\n        actual = checkout_total()\n\n        # Assert\n        self.assertEqual(actual, expected)\n\n    # Both calls in the report keep their original behavior.\n    def test_report_total_is_600_cents(self):\n        # Arrange\n        expected = 600\n\n        # Act\n        actual = report_total()\n\n        # Assert\n        self.assertEqual(actual, expected)\n\n    # The unrelated preview function keeps its original behavior.\n    def test_preview_keeps_its_label(self):\n        # Arrange\n        label = \"sample\"\n\n        # Act\n        actual = preview_total(label)\n\n        # Assert\n        self.assertEqual(actual, \"Preview total: sample\")\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
-[tester::#QL9] Wrote .lsp.json: {"python":{"args":["--lsp-fixture","/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/codecrafters-lsp-control-3775759872/server.json"],"command":"/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/TestLSPStagesOffline2536165845/001/lsp-tester","extensionToLanguage":{".py":"python"}}}
-[tester::#QL9] $ ./your_program.sh -p 'Change pricing.total to return a Price TypedDict with an integer cents field. Update checkout.py and reports.py so their results stay unchanged. Before any Write edits, use LSP goToDefinition on checkout.py at line 5, character 12, and LSP findReferences on the returned pricing.total definition. After all Write edits, repeat LSP goToDefinition on the invoice_total call in checkout.py at its current line and character, and LSP findReferences at the updated pricing.total definition. Use the returned definition position for findReferences, converting its zero-based range to one-based tool inputs. Both post-edit LSP queries are required even if diagnostics are clean and the project tests pass. Use diagnostic feedback from Write to fix type errors. Report any diagnostic timeout. Leave tests and unrelated files unchanged. Run python3 -m unittest -v test_invoice.py and report the result.'
-[your_program] Done.
-[tester::#QL9] Migrated pricing.total and its callers; unrelated preview.total is unchanged
-[tester::#QL9] Returned current diagnostic feedback for each Write, or an explicit feedback timeout
-[tester::#QL9] Project tests passed through Bash: checkout 500 cents, reporting 600 cents
-[tester::#QL9] Case migration-without-diagnostic-publications passed protocol, tool-result and file checks
-[tester::#QL9] Case: migration-with-shifted-definition
+[tester::#QL9] Case stale-and-unversioned-diagnostics passed protocol, tool-result and file checks
+[tester::#QL9] Case: no-diagnostics-with-shifted-definition
 [tester::#QL9] Wrote checkout.py: "from pricing import total as invoice_total\n\n\ndef checkout_total() -> int:\n    return invoice_total(250, 2)\n"
 [tester::#QL9] Wrote discounts.py: "def total(price: int, quantity: int) -> int:\n    return price * quantity - 50\n"
 [tester::#QL9] Wrote preview.py: "# The word total in this comment should stay as it is.\ndef total(label: str) -> str:\n    return \"Preview total: \" + label\n"
@@ -144,5 +116,5 @@
 [tester::#QL9] Migrated pricing.total and its callers; unrelated preview.total is unchanged
 [tester::#QL9] Returned current diagnostic feedback for each Write, or an explicit feedback timeout
 [tester::#QL9] Project tests passed through Bash: checkout 500 cents, reporting 600 cents
-[tester::#QL9] Case migration-with-shifted-definition passed protocol, tool-result and file checks
+[tester::#QL9] Case no-diagnostics-with-shifted-definition passed protocol, tool-result and file checks
 [tester::#QL9] Test passed.
