@@ -60,11 +60,29 @@ func Events(path string) ([]Event, error) {
 	}
 }
 
-func Serve(config Config, input io.Reader, output io.Writer) error {
+// ServerFailure is the reason the fixture server stopped, or "" if it didn't fail. A
+// learner's program usually exits with its own error after the server stops, so the
+// stage reports this first: "duplicate didOpen" says more than "server exited".
+func ServerFailure(path string) string {
+	events, _ := Events(path)
+	for _, event := range events {
+		if event.Direction == "failure" {
+			return event.Detail
+		}
+	}
+	return ""
+}
+
+func Serve(config Config, input io.Reader, output io.Writer) (err error) {
 	state := projectState{Root: config.Root, Documents: map[string]Document{}}
 	initialized, ready, shutdown := false, false, false
 	clientVersionSupport := false
-	defer appendEvent(config.Log, "ended", Message{}, "")
+	defer func() {
+		if err != nil {
+			appendEvent(config.Log, "failure", Message{}, err.Error())
+		}
+		appendEvent(config.Log, "ended", Message{}, "")
+	}()
 	send := func(value any) error {
 		body, _ := json.Marshal(value)
 		var message Message
@@ -84,7 +102,6 @@ func Serve(config Config, input io.Reader, output io.Writer) error {
 			return nil
 		}
 		if err != nil {
-			appendEvent(config.Log, "failure", Message{}, err.Error())
 			return err
 		}
 		if err := appendEvent(config.Log, "received", message, ""); err != nil {

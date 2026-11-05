@@ -139,6 +139,9 @@ func testLSP(stageHarness *test_case_harness.TestCaseHarness, slug string) error
 		if runError != nil {
 			return fmt.Errorf("%s: %w", testCase.Name, runError)
 		}
+		if failure := lsp_manager.ServerFailure(config.Log); failure != "" {
+			return fmt.Errorf("%s: the language server stopped because %s", testCase.Name, failure)
+		}
 		if result.ExitCode != 0 {
 			return fmt.Errorf("%s: program exited %d; stdout %q; stderr %q", testCase.Name, result.ExitCode, result.Stdout, result.Stderr)
 		}
