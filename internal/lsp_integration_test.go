@@ -30,7 +30,7 @@ func TestLSPRequiresModelCredentials(t *testing.T) {
 	command.Env = append(os.Environ(),
 		"CODECRAFTERS_SECRET_OPENROUTER_API_KEY=",
 		"CODECRAFTERS_REPOSITORY_DIR="+directory,
-		`CODECRAFTERS_TEST_CASES_JSON=[{"slug":"dz5","tester_log_prefix":"lsp-test","title":"LSP connection"}]`,
+		`CODECRAFTERS_TEST_CASES_JSON=[{"slug":"iy3","tester_log_prefix":"lsp-test","title":"LSP tool"}]`,
 	)
 	// Act
 	output, err := command.CombinedOutput()

@@ -1,17 +1,3 @@
-[tester::#DZ5] Running tests for Stage #DZ5 (dz5)
-[tester::#DZ5] Case: client-connected
-[tester::#DZ5] Wrote checkout.py: "from pricing import total as invoice_total\n\n\ndef checkout_total() -> int:\n    return invoice_total(250, 2)\n"
-[tester::#DZ5] Wrote discounts.py: "def total(price: int, quantity: int) -> int:\n    return price * quantity - 50\n"
-[tester::#DZ5] Wrote preview.py: "# The word total in this comment should stay as it is.\ndef total(label: str) -> str:\n    return \"Preview total: \" + label\n"
-[tester::#DZ5] Wrote pricing.py: "def total(price: int, quantity: int) -> int:\n    return price * quantity\n"
-[tester::#DZ5] Wrote reports.py: "from pricing import total\n\n\ndef report_total() -> int:\n    return total(250, 2) + total(100, 1)\n"
-[tester::#DZ5] Wrote .lsp.json: {"python":{"args":["--lsp-fixture","/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/codecrafters-lsp-control-2330331345/server.json"],"command":"/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/TestLSPStagesOffline2536165845/001/lsp-tester","extensionToLanguage":{".py":"python"}}}
-[tester::#DZ5] $ ./your_program.sh -p 'Use only Read to inspect checkout.py and pricing.py. Explain how checkout uses the pricing function.'
-[your_program] Done.
-[tester::#DZ5] Connected the supplied LSP client and read configuration; tool advertisement is next
-[tester::#DZ5] Case client-connected passed protocol, tool-result and file checks
-[tester::#DZ5] Test passed.
-
 [tester::#IY3] Running tests for Stage #IY3 (iy3)
 [tester::#IY3] Case: lsp-tool-call-and-response
 [tester::#IY3] Wrote checkout.py: "from pricing import total as invoice_total\n\n\ndef checkout_total() -> int:\n    return invoice_total(250, 2)\n"

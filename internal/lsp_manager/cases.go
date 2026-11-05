@@ -28,10 +28,6 @@ func Cases(slug string) []Case {
 	definition := Query{Operation: "goToDefinition", File: "checkout.py", Line: 4, Character: 11}
 	references := Query{Operation: "findReferences", File: "pricing.py", Character: 4}
 	switch slug {
-	case "dz5":
-		return []Case{
-			{Name: "client-connected", Prompt: "Use only Read to inspect checkout.py and pricing.py. Explain how checkout uses the pricing function.", ReadFiles: []string{"checkout.py", "pricing.py"}},
-		}
 	case "iy3":
 		return []Case{
 			{Name: "lsp-tool-call-and-response", Prompt: "Use LSP goToDefinition on checkout.py at line 5, character 12. If navigation is not implemented yet, report the tool response without retrying.", Queries: []Query{definition}},
