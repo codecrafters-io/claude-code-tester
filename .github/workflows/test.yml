@@ -37,7 +37,7 @@ jobs:
           go-version: 1.25.5
 
       - name: Install Claude Code
-        run: curl -fsSL https://claude.ai/install.sh | bash -s -- 2.1.266
+        run: curl -fsSL https://claude.ai/install.sh | bash -s -- 2.1.318
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -71,7 +71,7 @@ jobs:
           node-version: "22"
       - name: Install pinned compatibility tools
         run: |
-          curl -fsSL https://claude.ai/install.sh | bash -s -- 2.1.266
+          curl -fsSL https://claude.ai/install.sh | bash -s -- 2.1.318
           npm install --prefix "$RUNNER_TEMP/lsp-pyright" --ignore-scripts pyright@1.1.414
       - name: Check the reference client against Pyright
         run: make test_lsp_with_pyright PYRIGHT_LANGSERVER="$RUNNER_TEMP/lsp-pyright/node_modules/.bin/pyright-langserver"

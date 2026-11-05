@@ -2,7 +2,7 @@
 
 # Skill stacking needs 2.1.199 and the $0/$1 argument shorthand landed after
 # 2.1.14, so the skills stages fail against anything older.
-claude_code_version := 2.1.266
+claude_code_version := 2.1.318
 
 current_version_number := $(shell git tag --list "v*" | sort -V | tail -n 1 | cut -c 2-)
 next_version_number := $(shell echo $$(($(current_version_number)+1)))

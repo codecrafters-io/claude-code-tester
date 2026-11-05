@@ -66,6 +66,14 @@ func call(t *testing.T, url, action string, payload any) json.RawMessage {
 	return result
 }
 
+// opened waits until the server has handled earlier notifications. A notify call returns
+// before the server reads it, and the server checks didOpen against the file on disk, so a
+// test must not edit the file until the response to a later request has arrived.
+func opened(t *testing.T, url, uri string) {
+	t.Helper()
+	call(t, url, "request", map[string]any{"method": "textDocument/definition", "params": map[string]any{"textDocument": map[string]any{"uri": uri}, "position": map[string]int{"line": 0, "character": 0}}})
+}
+
 // The supplied helper reads fragmented frames and retains notifications during requests.
 func TestTransportRetainsNotifications(t *testing.T) {
 	// Arrange
@@ -175,6 +183,7 @@ func TestTransportDefinitionUsesCurrentCallPosition(t *testing.T) {
 	text := lsp_manager.Project(false)["checkout.py"]
 	uri := lsp_manager.URI(filepath.Join(config.Root, "checkout.py"))
 	call(t, transport.URL, "notify", map[string]any{"method": "textDocument/didOpen", "params": map[string]any{"textDocument": map[string]any{"uri": uri, "languageId": "python", "version": 1, "text": text}}})
+	opened(t, transport.URL, uri)
 	text = strings.Replace(text, "return invoice_total(250, 2)", `return (invoice_total(250, 2)["cents"])`, 1)
 	require.NoError(t, os.WriteFile(filepath.Join(config.Root, "checkout.py"), []byte(text), 0644))
 	call(t, transport.URL, "notify", map[string]any{"method": "textDocument/didChange", "params": map[string]any{"textDocument": map[string]any{"uri": uri, "version": 2}, "contentChanges": []any{map[string]any{"text": text}}}})
@@ -198,6 +207,7 @@ func TestTransportReferencesUseCurrentDefinitionPosition(t *testing.T) {
 	text := lsp_manager.Project(false)["pricing.py"]
 	uri := lsp_manager.URI(filepath.Join(config.Root, "pricing.py"))
 	call(t, transport.URL, "notify", map[string]any{"method": "textDocument/didOpen", "params": map[string]any{"textDocument": map[string]any{"uri": uri, "languageId": "python", "version": 1, "text": text}}})
+	opened(t, transport.URL, uri)
 	require.NoError(t, os.WriteFile(filepath.Join(config.Root, "pricing.py"), []byte(lsp_manager.PriceAPI), 0644))
 	call(t, transport.URL, "notify", map[string]any{"method": "textDocument/didChange", "params": map[string]any{"textDocument": map[string]any{"uri": uri, "version": 2}, "contentChanges": []any{map[string]any{"text": lsp_manager.PriceAPI}}}})
 

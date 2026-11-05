@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
-	"strings"
+	"sort"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -39,16 +39,55 @@ func checkRecording(t *testing.T, c Case, root string, tools []call) (Config, []
 	emit("received", "initialize", 1, nil, nil)
 	emit("sent", "", 1, nil, map[string]any{"capabilities": map[string]any{}})
 	emit("received", "initialized", 0, nil, nil)
-	open := func(name string) Document {
+	// publish mirrors the fixture server: after a document changes, it reports every open
+	// document. Like Claude Code, it returns a <new-diagnostics> block of issues not yet shown.
+	shown := map[string]bool{}
+	publish := func(changed string) string {
+		t.Helper()
+		uris := []string{changed}
+		var others []string
+		for uri := range state.Documents {
+			if uri != changed {
+				others = append(others, uri)
+			}
+		}
+		sort.Strings(others)
+		block := ""
+		for _, uri := range append(uris, others...) {
+			document := state.Documents[uri]
+			diagnostics := state.diagnostics(document)
+			report := map[string]any{"uri": uri, "diagnostics": diagnostics}
+			if !config.UnversionedDiagnostics {
+				report["version"] = document.Version
+			}
+			emit("sent", "textDocument/publishDiagnostics", 0, report, nil)
+			lines := ""
+			for _, diagnostic := range diagnostics {
+				line := fmt.Sprintf("  ✘ [Line %s] %s", onePosition(diagnostic["range"].(Range).Start), diagnostic["message"])
+				if !shown[uri+line] {
+					shown[uri+line] = true
+					lines += "\n" + line
+				}
+			}
+			if lines != "" {
+				block += "\n\n" + relativeFile(root, uri) + ":" + lines
+			}
+		}
+		if block == "" {
+			return ""
+		}
+		return "\n\n<new-diagnostics>The following new diagnostic issues were detected:" + block + "</new-diagnostics>"
+	}
+	open := func(name string) (Document, string) {
 		t.Helper()
 		uri := URI(filepath.Join(root, name))
 		if document, ok := state.Documents[uri]; ok {
-			return document
+			return document, ""
 		}
 		document := Document{URI: uri, LanguageID: "python", Version: 1, Text: state.text(name)}
 		state.Documents[uri] = document
 		emit("received", "textDocument/didOpen", 0, map[string]any{"textDocument": document}, nil)
-		return document
+		return document, publish(uri)
 	}
 	var messages []any
 	for index, tool := range tools {
@@ -57,7 +96,7 @@ func checkRecording(t *testing.T, c Case, root string, tools []call) (Config, []
 		if operation, ok := tool.Arguments["operation"].(string); ok {
 			name = "LSP"
 			file := tool.Arguments["filePath"].(string)
-			document := open(file)
+			document, reported := open(file)
 			params := map[string]any{
 				"textDocument": map[string]any{"uri": document.URI},
 				"position":     Position{Line: tool.Arguments["line"].(int) - 1, Character: tool.Arguments["character"].(int) - 1},
@@ -72,7 +111,7 @@ func checkRecording(t *testing.T, c Case, root string, tools []call) (Config, []
 			emit("received", protocolMethod(operation), index+2, params, nil)
 			emit("sent", "", index+2, nil, result)
 			encoded, _ := json.Marshal(result)
-			tool.Result = string(encoded)
+			tool.Result = claudeCodeFormat(root, encoded, operation) + reported
 		} else if content, ok := tool.Arguments["content"].(string); ok {
 			name = "Write"
 			file := tool.Arguments["file_path"].(string)
@@ -89,10 +128,7 @@ func checkRecording(t *testing.T, c Case, root string, tools []call) (Config, []
 			} else {
 				emit("received", "textDocument/didOpen", 0, map[string]any{"textDocument": document}, nil)
 			}
-			report := map[string]any{"uri": uri, "version": document.Version, "diagnostics": state.diagnostics(document)}
-			emit("sent", "textDocument/publishDiagnostics", 0, report, nil)
-			encoded, _ := json.Marshal(map[string]any{"diagnostics": report})
-			tool.Result = string(encoded)
+			tool.Result = "Wrote " + file + publish(uri)
 		} else if tool.Arguments["command"] != nil {
 			name = "Bash"
 		}
@@ -177,13 +213,13 @@ func TestCheckRejectsDiscardedDefinition(t *testing.T) {
 	config, requests := checkRecording(t, c, root, tools)
 	var body map[string]any
 	require.NoError(t, json.Unmarshal([]byte(requests[0]), &body))
-	body["messages"].([]any)[1].(map[string]any)["content"] = "null"
+	body["messages"].([]any)[1].(map[string]any)["content"] = ""
 	encoded, err := json.Marshal(body)
 	require.NoError(t, err)
 	// Act
 	err = Check(c, "ql9", config, []string{string(encoded)})
 	// Assert
-	require.ErrorContains(t, err, "server result did not reach the matching tool call")
+	require.ErrorContains(t, err, "should list pricing.py at 1:5")
 }
 
 // A document that differs from the final saved file is stale even if lookups succeeded.
@@ -202,7 +238,9 @@ func TestCheckRejectsUnsynchronizedText(t *testing.T) {
 func TestCheckMigrationAcceptsShiftedStartingDefinition(t *testing.T) {
 	// Arrange
 	_, root, tools := migrationCalls(t)
-	c := Cases("ql9")[4]
+	c := Cases("ql9")[1]
+	// This test grades the shifted position, so it uses normal diagnostics.
+	c.Config = Config{}
 	tools[1].Arguments["line"] = 2
 	tools[2].Result = c.Files["pricing.py"]
 	config, requests := checkRecording(t, c, root, tools)
@@ -220,8 +258,7 @@ func TestCheckMigrationNamesMissingLookupAndPhase(t *testing.T) {
 		operation string
 		phase     string
 	}{
-		{"only-initial-lookups", []int{8, 9}, "goToDefinition on checkout.py", "after editing"},
-		{"missing-follow-up-definition", []int{8}, "goToDefinition on checkout.py", "after editing"},
+		{"only-initial-lookups", []int{8, 9}, "findReferences on pricing.py", "after editing"},
 		{"missing-follow-up-references", []int{9}, "findReferences on pricing.py", "after editing"},
 		{"missing-initial-definition", []int{0}, "goToDefinition on checkout.py", "before editing"},
 		{"missing-initial-references", []int{1}, "findReferences on pricing.py", "before editing"},
@@ -246,45 +283,29 @@ func TestCheckMigrationNamesMissingLookupAndPhase(t *testing.T) {
 	}
 }
 
-// Post-edit definition lookups target the current call rather than its original coordinates.
-func TestCheckMigrationFollowsMovedCheckoutCall(t *testing.T) {
+// A post-edit definition lookup is the model's choice of position, so it isn't graded.
+func TestCheckMigrationDoesNotGradeFollowUpDefinition(t *testing.T) {
 	for _, variant := range []struct {
-		name      string
-		prefix    string
-		line      int
-		character int
-		valid     bool
+		name string
+		line int
+		omit bool
 	}{
-		{"moved-column", "", 5, 14, true},
-		{"inside-call-name", "", 5, 19, true},
-		{"moved-line-and-column", "\n\n", 7, 14, true},
-		{"old-column", "", 5, 12, false},
-		{"old-line", "\n\n", 5, 14, false},
-		{"alias-import", "", 1, 30, false},
-		{"comment", "# invoice_total(250, 2)\n", 1, 3, false},
+		{"omitted", 0, true},
+		{"stale-position", 1, false},
 	} {
 		t.Run(variant.name, func(t *testing.T) {
 			// Arrange
 			c, root, tools := migrationCalls(t)
-			source := variant.prefix + strings.Replace(c.Files["checkout.py"],
-				"    return invoice_total(250, 2)",
-				"    result = invoice_total(250, 2)\n    return result[\"cents\"]", 1)
-			tools[5].Arguments["content"] = source
-			require.NoError(t, os.WriteFile(filepath.Join(root, "checkout.py"), []byte(source), 0644))
-			tools[8] = navigation("goToDefinition", "checkout.py", variant.line)
-			tools[8].Arguments["character"] = variant.character
+			if variant.omit {
+				tools = append(append([]call{}, tools[:8]...), tools[9:]...)
+			} else {
+				tools[8] = navigation("goToDefinition", "checkout.py", variant.line)
+			}
 			config, requests := checkRecording(t, c, root, tools)
 			// Act
 			err := Check(c, "ql9", config, requests)
 			// Assert
-			if variant.valid {
-				require.NoError(t, err)
-			} else {
-				require.ErrorContains(t, err, "missing goToDefinition on checkout.py at the current invoice_total call")
-				require.ErrorContains(t, err, "after editing")
-				require.ErrorContains(t, err, fmt.Sprintf("queried line %d, character %d", variant.line, variant.character))
-				require.ErrorContains(t, err, fmt.Sprintf("current invoice_total call: line %d, characters 14-26", strings.Count(variant.prefix, "\n")+5))
-			}
+			require.NoError(t, err)
 		})
 	}
 }

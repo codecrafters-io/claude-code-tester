@@ -132,16 +132,30 @@ func (p *projectState) definition() any {
 
 const ArgumentTypeDiagnostic = "Type Price is not assignable to return type int"
 
+const OperatorDiagnostic = "Operator + not supported for types Price and Price"
+
 const PriceAPI = "from typing import TypedDict\n\n\nclass Price(TypedDict):\n    cents: int\n\n\ndef total(price: int, quantity: int) -> Price:\n    return {\"cents\": price * quantity}\n"
 
+// diagnostics reports what Pyright reports once pricing.total returns a Price: a caller
+// that still treats the result as an int, whether or not that caller was the file written.
 func (p *projectState) diagnostics(document Document) []map[string]any {
 	result := []map[string]any{}
-	if filepath.Base(mustPath(document.URI)) != "checkout.py" {
+	if !strings.Contains(p.text("pricing.py"), "-> Price:") {
 		return result
 	}
-	if strings.Contains(p.text("pricing.py"), "-> Price:") && strings.Contains(document.Text, "    return amount\n") {
-		start := strings.Index(document.Text, "return amount") + len("return ")
-		result = append(result, map[string]any{"range": textRange(document.Text, start, start+len("amount")), "severity": 1, "message": ArgumentTypeDiagnostic})
+	// report flags expression where it follows prefix, so only the unconverted use matches.
+	report := func(prefix, expression, message string) {
+		if at := strings.Index(document.Text, prefix+expression+"\n"); at >= 0 {
+			start := at + len(prefix)
+			result = append(result, map[string]any{"range": textRange(document.Text, start, start+len(expression)), "severity": 1, "message": message})
+		}
+	}
+	switch filepath.Base(mustPath(document.URI)) {
+	case "checkout.py":
+		report("    return ", "amount", ArgumentTypeDiagnostic)
+		report("    return ", "invoice_total(250, 2)", ArgumentTypeDiagnostic)
+	case "reports.py":
+		report("    return ", "total(250, 2) + total(100, 1)", OperatorDiagnostic)
 	}
 	return result
 }

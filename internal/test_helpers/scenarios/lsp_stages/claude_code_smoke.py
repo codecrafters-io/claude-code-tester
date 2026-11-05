@@ -55,12 +55,26 @@ def proxy(server, events_url):
         output.join(timeout=1)
 
 
+VERSION = "2.1.318"
+
+
+def tool_results(request):
+    """The text of each tool result in a model request, in order."""
+    texts = []
+    for message in request.get("messages", []):
+        for block in message.get("content", []) if isinstance(message.get("content"), list) else []:
+            if isinstance(block, dict) and block.get("type") == "tool_result":
+                body = block.get("content")
+                texts.append(body if isinstance(body, str) else "".join(part.get("text", "") for part in body if isinstance(part, dict)))
+    return texts
+
+
 # The pinned CLI converts editor coordinates and delivers diagnostics after edits.
 def verify(claude, server):
     # Arrange
     version = subprocess.check_output([claude, "--version"], text=True).strip()
-    if not version.startswith("2.1.266 "):
-        raise RuntimeError(f"Expected the CI-pinned Claude Code 2.1.266, got {version}")
+    if not version.startswith(VERSION + " "):
+        raise RuntimeError(f"Expected the CI-pinned Claude Code {VERSION}, got {version}")
     events, requests, failures = [], [], []
     condition = threading.Condition()
     with tempfile.TemporaryDirectory(prefix="lsp-claude-smoke-") as directory:
@@ -170,7 +184,15 @@ def verify(claude, server):
             raise AssertionError("Type error never reached the model")
         schema = next(tool["input_schema"] for request in requests for tool in request.get("tools", []) if tool.get("name") == "LSP")
         assert "rename" not in schema["properties"]["operation"]["enum"]
-        print("Claude Code 2.1.266 + Pyright: initialization, navigation, synchronization, diagnostic feedback and repair passed")
+        # The tester grades learners against these formats: relative files and 1-based positions,
+        # and new diagnostics appended to a later tool result rather than returned by Write.
+        results = tool_results(requests[-1])
+        assert results[2].startswith("Defined in pricing.py:1:5"), results[2]
+        assert "checkout.py:\n  Line 1:21" in results[3] and "pricing.py:\n  Line 1:5" in results[3], results[3]
+        assert "<new-diagnostics>" not in results[4] and "<new-diagnostics>" not in results[5], results[4:6]
+        reported = [text for text in results if "<new-diagnostics>" in text]
+        assert reported and "checkout.py:" in reported[0] and "[Line 6:12]" in reported[0], results
+        print(f"Claude Code {VERSION} + Pyright: initialization, navigation, synchronization, diagnostic feedback and repair passed")
 
 
 def main():
@@ -188,7 +210,7 @@ def main():
     else:
         claude = shutil.which(arguments.claude)
         if claude is None:
-            parser.error("Install Claude Code 2.1.266 and provide --claude")
+            parser.error(f"Install Claude Code {VERSION} and provide --claude")
         verify(claude, server)
 
 
