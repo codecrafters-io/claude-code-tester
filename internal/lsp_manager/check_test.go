@@ -85,6 +85,18 @@ func TestCheckNamesAnExtraServerRequest(t *testing.T) {
 	require.ErrorContains(t, err, "your program sent 1 request(s) to the language server, but the model made only 0 LSP tool call(s)")
 }
 
+// A model that answers without calling the tool is reported as making no LSP calls.
+func TestCheckReportsAModelThatNeverCalledTheTool(t *testing.T) {
+	// Arrange
+	config := initializedLog(t)
+	request := `{"messages":[{"role":"user","content":"Use LSP findReferences on pricing.py"},{"role":"assistant","content":"Would you like me to proceed?"}]}`
+	// Act
+	err := Check(Cases("rb6")[0], "rb6", config, []string{request})
+	// Assert
+	require.ErrorContains(t, err, "missing findReferences on pricing.py at line 1, character 5 in the model conversation; the model's LSP calls were: none")
+	require.ErrorContains(t, err, "check that the LSP tool's operation enum includes findReferences")
+}
+
 func migratedProject(t *testing.T) (Case, string, []call) {
 	t.Helper()
 	c := Cases("ql9")[0]
@@ -110,25 +122,20 @@ func migratedProject(t *testing.T) (Case, string, []call) {
 	return c, root, tools
 }
 
-// Each file can be read immediately before its own first edit.
-func TestMigrationAcceptsReadBeforeEachFilesWrite(t *testing.T) {
+// Whether the model reads a file before editing it is its choice, so it isn't graded.
+func TestMigrationAcceptsWritesWithoutEarlierReads(t *testing.T) {
 	// Arrange
 	c, root, tools := migratedProject(t)
+	var writesOnly []call
+	for _, tool := range tools {
+		if tool.Arguments["content"] != nil || tool.Arguments["command"] != nil {
+			writesOnly = append(writesOnly, tool)
+		}
+	}
 	// Act
-	err := checkMigration(c, root, tools)
+	err := checkMigration(c, root, writesOnly)
 	// Assert
 	require.NoError(t, err)
-}
-
-// Reading a file only after its first edit does not satisfy the pre-edit Read.
-func TestMigrationRejectsReadAfterFirstWrite(t *testing.T) {
-	// Arrange
-	c, root, tools := migratedProject(t)
-	tools[0], tools[1] = tools[1], tools[0]
-	// Act
-	err := checkMigration(c, root, tools)
-	// Assert
-	require.ErrorContains(t, err, "before editing pricing.py")
 }
 
 // Equivalent Price construction passes without requiring a predetermined source spelling.

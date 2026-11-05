@@ -6,8 +6,8 @@ import os
 from pathlib import Path
 import subprocess
 import sys
-import time
 from lsp_client import LSPClient
+import urllib.parse
 import urllib.request
 
 
@@ -16,6 +16,7 @@ class LanguageServer:
         self.transport = LSPClient()
         self.documents = {}
         self.cursor = 0
+        self.shown = {}
         self.languages = self.transport.call("configuration", {})["extensionToLanguage"]
 
     def send(self, method, params):
@@ -41,7 +42,6 @@ class LanguageServer:
     def write(self, path, content):
         path = Path(path).resolve()
         uri = path.as_uri()
-        self.cursor = self.transport.notifications(self.cursor, 0)["cursor"]
         path.write_text(content, encoding="utf-8")
         if uri in self.documents:
             self.documents[uri] += 1
@@ -51,33 +51,33 @@ class LanguageServer:
             })
         elif path.suffix in self.languages:
             self.open(path)
-        result = {"written": str(path)}
-        if uri in self.documents:
-            try:
-                result["diagnostics"] = self.wait_for_diagnostics(uri)
-            except TimeoutError as error:
-                result["diagnosticsError"] = str(error)
-        return result
+        return "Wrote " + relative(path)
 
-    def wait_for_diagnostics(self, uri):
-        deadline = time.monotonic() + 2
-        while time.monotonic() < deadline:
-            remaining_ms = max(1, int((deadline - time.monotonic()) * 1000))
-            batch = self.transport.notifications(self.cursor, min(200, remaining_ms))
-            self.cursor = batch["cursor"]
-            current = None
-            for notification in batch["notifications"]:
-                if notification["method"] != "textDocument/publishDiagnostics":
-                    continue
-                params = notification["params"]
-                if params["uri"] != uri:
-                    continue
-                if params.get("version", self.documents[uri]) != self.documents[uri]:
-                    continue
-                current = params
-            if current is not None:
-                return current
-        raise TimeoutError("Timed out waiting for language-server diagnostics")
+    def new_diagnostics(self):
+        """Drain queued notifications and return a block of issues the model has not seen yet."""
+        batch = self.transport.notifications(self.cursor, 0)
+        self.cursor = batch["cursor"]
+        latest = {}
+        for notification in batch["notifications"]:
+            if notification["method"] != "textDocument/publishDiagnostics":
+                continue
+            params = notification["params"]
+            if params.get("version", self.documents.get(params["uri"])) != self.documents.get(params["uri"]):
+                continue
+            latest[params["uri"]] = params["diagnostics"]
+        sections = []
+        for uri, diagnostics in latest.items():
+            issues = [
+                f"  \u2718 [Line {d['range']['start']['line'] + 1}:{d['range']['start']['character'] + 1}] {d['message']}"
+                for d in diagnostics
+            ]
+            lines = [issue for issue in issues if issue not in self.shown.get(uri, set())]
+            self.shown[uri] = set(issues)
+            if lines:
+                sections.append(relative(uri_path(uri)) + ":\n" + "\n".join(lines))
+        if not sections:
+            return ""
+        return "\n\n<new-diagnostics>The following new diagnostic issues were detected:\n\n" + "\n\n".join(sections) + "</new-diagnostics>"
 
     def tool(self, arguments):
         operation = arguments["operation"]
@@ -89,12 +89,33 @@ class LanguageServer:
         if operation == "findReferences":
             params["context"] = {"includeDeclaration": True}
         result = self.request("textDocument/" + methods[operation], params)
-        return result
+        if isinstance(result, dict):
+            result = [result]
+        locations = [(relative(uri_path(item["uri"])), item["range"]["start"]) for item in result or []]
+        if operation == "goToDefinition":
+            if not locations:
+                return "No definition found."
+            file, start = locations[0]
+            return f"Defined in {file}:{start['line'] + 1}:{start['character'] + 1}"
+        if not locations:
+            return "No references found."
+        files = {}
+        for file, start in locations:
+            files.setdefault(file, []).append(f"  Line {start['line'] + 1}:{start['character'] + 1}")
+        sections = [file + ":\n" + "\n".join(lines) for file, lines in sorted(files.items())]
+        return f"Found {len(locations)} references across {len(files)} files:\n\n" + "\n\n".join(sections)
 
+
+def uri_path(uri):
+    return Path(urllib.request.url2pathname(urllib.parse.urlparse(uri).path))
+
+
+def relative(path):
+    return os.path.relpath(path, os.getcwd()).replace(os.sep, "/")
 
 
 TOOLS = [
-    {"type": "function", "function": {"name": "LSP", "description": "Find definitions and references of a symbol at a given file position. Input positions are one-based UTF-16; returned ranges are zero-based. Add 1 to each returned coordinate before reusing it as input.", "parameters": {
+    {"type": "function", "function": {"name": "LSP", "description": "Find definitions and references of a symbol at a given file position. Positions are 1-based line and character, as shown in editors.", "parameters": {
         "type": "object", "properties": {
             "operation": {"type": "string", "enum": ["goToDefinition", "findReferences"]},
             "filePath": {"type": "string"}, "line": {"type": "integer", "minimum": 1}, "character": {"type": "integer", "minimum": 1},
@@ -114,9 +135,12 @@ TOOLS = [
 
 
 def run_agent(prompt, server):
-    messages = [{"role": "system", "content": "Use the LSP tool for code navigation. Tool positions are one-based UTF-16. Use Write for edits and inspect its diagnostic feedback to repair type errors."},
+    messages = [{"role": "system", "content": "Use the LSP tool for code navigation. Positions are 1-based. Use Write for edits. Fix the issues reported in new diagnostics."},
                 {"role": "user", "content": prompt}]
     for _ in range(50):
+        diagnostics = server.new_diagnostics()
+        if diagnostics and messages[-1]["role"] == "tool":
+            messages[-1]["content"] += diagnostics
         payload = {"model": "anthropic/claude-haiku-4.5", "messages": messages, "tools": TOOLS}
         request = urllib.request.Request(
             os.environ["OPENROUTER_BASE_URL"].rstrip("/") + "/chat/completions",
@@ -149,7 +173,8 @@ def run_agent(prompt, server):
                     raise ValueError("Unknown tool: " + name)
             except Exception as error:
                 result = {"error": str(error)}
-            messages.append({"role": "tool", "tool_call_id": call["id"], "content": json.dumps(result)})
+            content = result if isinstance(result, str) else json.dumps(result)
+            messages.append({"role": "tool", "tool_call_id": call["id"], "content": content})
     raise RuntimeError("Agent exceeded 50 model requests")
 
 

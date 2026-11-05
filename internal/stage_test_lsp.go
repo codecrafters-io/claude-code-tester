@@ -139,6 +139,9 @@ func testLSP(stageHarness *test_case_harness.TestCaseHarness, slug string) error
 		if runError != nil {
 			return fmt.Errorf("%s: %w", testCase.Name, runError)
 		}
+		if failure := lsp_manager.ServerFailure(config.Log); failure != "" {
+			return fmt.Errorf("%s: the language server stopped because %s", testCase.Name, failure)
+		}
 		if result.ExitCode != 0 {
 			return fmt.Errorf("%s: program exited %d; stdout %q; stderr %q", testCase.Name, result.ExitCode, result.Stdout, result.Stderr)
 		}
@@ -150,11 +153,11 @@ func testLSP(stageHarness *test_case_harness.TestCaseHarness, slug string) error
 		}
 		if slug == "ql9" {
 			stageHarness.Logger.Successf("Migrated pricing.total and its callers; unrelated preview.total is unchanged")
-			stageHarness.Logger.Successf("Returned current diagnostic feedback for each Write, or an explicit feedback timeout")
+			stageHarness.Logger.Successf("Reported new diagnostics to the model, including errors in callers that were not written")
 			stageHarness.Logger.Successf("Project tests passed through Bash: checkout 500 cents, reporting 600 cents")
 		}
 		if slug == "iy3" {
-			stageHarness.Logger.Successf("Advertised LSP and returned a matching tool response; definition lookup is next")
+			stageHarness.Logger.Successf("Advertised LSP and returned a matching tool response")
 		}
 		if slug == "gz6" {
 			stageHarness.Logger.Successf("Resolved invoice_total to pricing.total; preview.total is unrelated")

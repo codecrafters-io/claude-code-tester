@@ -8,7 +8,6 @@ type Query struct {
 	Line         int
 	Character    int
 	AtDefinition bool
-	AtCall       bool
 	AfterEdits   bool
 }
 
@@ -38,11 +37,8 @@ func Cases(slug string) []Case {
 			{Name: "resolve-and-read-implementation", Prompt: prompt, Queries: []Query{definition}, ReadFiles: []string{"pricing.py"}},
 		}
 	case "rb6":
-		prompt := "Use LSP findReferences on pricing.py at line 1, character 5. Identify every affected caller before changing its return type. Preserve the returned locations; preview.total and comments are unrelated."
-		minimal := Project(false)
-		delete(minimal, "reports.py")
+		prompt := "Use LSP findReferences on pricing.py at line 1, character 5, and list the callers that a change to pricing.total's return type would affect. Don't change any code. Preserve the returned locations; preview.total and comments are unrelated."
 		return []Case{
-			{Name: "aliased-caller-and-declaration", Prompt: prompt, Queries: []Query{references}, Files: minimal},
 			{Name: "affected-callers-across-files", Prompt: prompt, Queries: []Query{references}},
 			{Name: "no-references", Prompt: prompt, Queries: []Query{references}, Config: Config{EmptyReferences: true}},
 		}
@@ -50,29 +46,25 @@ func Cases(slug string) []Case {
 		changed := strings.Replace(files["checkout.py"], "from pricing", "from discounts", 1)
 		prompt := "Use LSP goToDefinition on checkout.py at line 5, character 12. Use Write to change its import from pricing to discounts, preserving the invoice_total alias. Repeat definition lookup at the same position and report the new target."
 		return []Case{
-			{Name: "definition-follows-edited-import", Prompt: prompt, Queries: []Query{definition, definition}, FinalFiles: map[string]string{"checkout.py": changed}, WantDefinitions: []string{"pricing.py", "discounts.py"}},
-			{Name: "successive-document-versions", Prompt: prompt + " Restore the pricing import using Write and repeat the lookup.", Queries: []Query{definition, definition, definition}, FinalFiles: map[string]string{"checkout.py": files["checkout.py"]}, WantDefinitions: []string{"pricing.py", "discounts.py", "pricing.py"}},
-			{Name: "write-before-open", Prompt: "Use Write to change checkout.py's import from pricing to discounts, then look up invoice_total at line 5, character 12.", Queries: []Query{definition}, FinalFiles: map[string]string{"checkout.py": changed}, WantDefinitions: []string{"discounts.py"}},
+			{Name: "successive-document-versions", Prompt: prompt + " Restore the pricing import using Write and repeat the definition lookup.", Queries: []Query{definition, definition, definition}, FinalFiles: map[string]string{"checkout.py": files["checkout.py"]}, WantDefinitions: []string{"pricing.py", "discounts.py", "pricing.py"}},
+			{Name: "write-before-open", Prompt: "Use Write to change checkout.py's import from pricing to discounts, then use LSP goToDefinition on checkout.py at line 5, character 12.", Queries: []Query{definition}, FinalFiles: map[string]string{"checkout.py": changed}, WantDefinitions: []string{"discounts.py"}},
 		}
 	case "ql9":
 		files["test_invoice.py"] = InvoiceTests
 		references.AtDefinition = true
-		updatedDefinition := definition
-		updatedDefinition.AfterEdits = true
-		updatedDefinition.AtCall = true
 		updatedReferences := references
 		updatedReferences.AfterEdits = true
-		prompt := `Change pricing.total to return a Price TypedDict with an integer cents field. Update checkout.py and reports.py so their results stay unchanged. Before any Write edits, use LSP goToDefinition on checkout.py at line 5, character 12, and LSP findReferences on the returned pricing.total definition. After all Write edits, repeat LSP goToDefinition on the invoice_total call in checkout.py at its current line and character, and LSP findReferences at the updated pricing.total definition. Use the returned definition position for findReferences, converting its zero-based range to one-based tool inputs. Both post-edit LSP queries are required even if diagnostics are clean and the project tests pass. Use diagnostic feedback from Write to fix type errors. Report any diagnostic timeout. Leave tests and unrelated files unchanged. Run python3 -m unittest -v test_invoice.py and report the result.`
-		queries := []Query{definition, references, updatedDefinition, updatedReferences}
+		prompt := `Change pricing.total to return a Price TypedDict with an integer cents field. Update checkout.py and reports.py so their results stay unchanged. Before any Write edits, use LSP goToDefinition on checkout.py at line 5, character 12, and LSP findReferences on the returned pricing.total definition. After all Write edits, repeat LSP findReferences at the updated pricing.total definition. That query is required even if the project tests pass. Fix the type errors your tools report. Leave tests and unrelated files unchanged. Run python3 -m unittest -v test_invoice.py and report the result.`
+		queries := []Query{definition, references, updatedReferences}
 		shifted := Project(false)
 		shifted["test_invoice.py"] = InvoiceTests
 		shifted["pricing.py"] = "# Pricing API\n" + shifted["pricing.py"]
 		return []Case{
 			{Name: "api-migration-across-files", Prompt: prompt, Queries: queries, Files: files},
-			{Name: "stale-and-unrelated-diagnostics", Prompt: prompt, Queries: queries, Files: files, Config: Config{StaleDiagnostics: true}},
-			{Name: "unversioned-diagnostics", Prompt: prompt, Queries: queries, Files: files, Config: Config{UnversionedDiagnostics: true}},
-			{Name: "migration-without-diagnostic-publications", Prompt: prompt, Queries: queries, Files: files, Config: Config{MissingDiagnostics: true}},
-			{Name: "migration-with-shifted-definition", Prompt: prompt, Queries: queries, Files: shifted},
+			// Stale versioned reports arrive around an unversioned current one, so an agent must both
+			// ignore older versions and accept a report without a version. The definition also sits
+			// below a comment, so the follow-up references must use the position the lookup returns.
+			{Name: "stale-and-unversioned-diagnostics-with-shifted-definition", Prompt: prompt, Queries: queries, Files: shifted, Config: Config{StaleDiagnostics: true, UnversionedDiagnostics: true}},
 		}
 	}
 	return nil

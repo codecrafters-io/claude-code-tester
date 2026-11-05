@@ -96,22 +96,24 @@ Install a pinned server outside the repository, then run:
 ```sh
 npm install --prefix /tmp/lsp-pyright --ignore-scripts pyright@1.1.414
 make test_lsp_with_pyright PYRIGHT_LANGSERVER=/tmp/lsp-pyright/node_modules/.bin/pyright-langserver
-make test_lsp_with_claude_code CLAUDE_CODE_BINARY=/path/to/claude-2.1.266 PYRIGHT_LANGSERVER=/tmp/lsp-pyright/node_modules/.bin/pyright-langserver
+make test_lsp_with_claude_code CLAUDE_CODE_BINARY=/path/to/claude-2.1.318 PYRIGHT_LANGSERVER=/tmp/lsp-pyright/node_modules/.bin/pyright-langserver
 ```
 
 The first check uses the supplied transport and reference integration with real
 Pyright. It waits for Pyright's project discovery before asserting workspace
-references, checks the target after an edited import, then observes the actual
-Price return-type error and diagnostic clearing. The repaired caller returns 500.
-The helper transports notifications; the reference agent implements freshness.
+references, checks the target after an edited import, then observes the Price
+return-type error in the caller that was not written, and its clearing after the
+repair. The repaired caller returns 500. The helper transports notifications; the
+reference agent implements freshness.
 
-The second runs Claude Code 2.1.266 with a temporary plugin, Pyright and a local
+The second runs Claude Code 2.1.318 with a temporary plugin, Pyright and a local
 scripted Anthropic endpoint. It verifies definition, references, position conversion,
 includeDeclaration true, the same API migration, diagnostic delivery and repair.
-Bash stays available because this product version suppresses automatic diagnostic
-attachments without Bash or PowerShell. The scripted model never invokes a shell.
-The native check observes product diagnostic attachments separately from the
-learner fixture's structured Write results. Neither check uses paid model calls.
+It also pins the formats the tester grades against: relative files with 1-based
+positions, and new diagnostics appended to a later tool result rather than returned
+by Write. Bash stays available because this product version suppresses automatic
+diagnostic attachments without Bash or PowerShell. The scripted model never invokes
+a shell. Neither check uses paid model calls.
 
 Versioned stale reports are rejected; unversioned reports are accepted in arrival
 order and cannot establish which edit was analyzed. Missing feedback is an error.
