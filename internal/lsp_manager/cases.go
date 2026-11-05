@@ -38,7 +38,7 @@ func Cases(slug string) []Case {
 			{Name: "resolve-and-read-implementation", Prompt: prompt, Queries: []Query{definition}, ReadFiles: []string{"pricing.py"}},
 		}
 	case "rb6":
-		prompt := "Use LSP findReferences on pricing.py at line 1, character 5. Identify every affected caller before changing its return type. Preserve the returned locations; preview.total and comments are unrelated."
+		prompt := "Use LSP findReferences on pricing.py at line 1, character 5, and list the callers that a change to pricing.total's return type would affect. Don't change any code. Preserve the returned locations; preview.total and comments are unrelated."
 		minimal := Project(false)
 		delete(minimal, "reports.py")
 		return []Case{

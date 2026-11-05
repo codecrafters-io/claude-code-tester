@@ -33,7 +33,7 @@
 [tester::#RB6] Wrote preview.py: "# The word total in this comment should stay as it is.\ndef total(label: str) -> str:\n    return \"Preview total: \" + label\n"
 [tester::#RB6] Wrote pricing.py: "def total(price: int, quantity: int) -> int:\n    return price * quantity\n"
 [tester::#RB6] Wrote .lsp.json: {"python":{"args":["--lsp-fixture","/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/codecrafters-lsp-control-3802808471/server.json"],"command":"/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/TestLSPStagesOffline2536165845/001/lsp-tester","extensionToLanguage":{".py":"python"}}}
-[tester::#RB6] $ ./your_program.sh -p 'Use LSP findReferences on pricing.py at line 1, character 5. Identify every affected caller before changing its return type. Preserve the returned locations; preview.total and comments are unrelated.'
+[tester::#RB6] $ ./your_program.sh -p 'Use LSP findReferences on pricing.py at line 1, character 5, and list the callers that a change to pricing.total'"'"'s return type would affect. Don'"'"'t change any code. Preserve the returned locations; preview.total and comments are unrelated.'
 [your_program] Done.
 [tester::#RB6] Returned the affected pricing callers; excluded unrelated preview.total
 [tester::#RB6] Case aliased-caller-and-declaration passed protocol, tool-result and file checks
@@ -44,7 +44,7 @@
 [tester::#RB6] Wrote pricing.py: "def total(price: int, quantity: int) -> int:\n    return price * quantity\n"
 [tester::#RB6] Wrote reports.py: "from pricing import total\n\n\ndef report_total() -> int:\n    return total(250, 2) + total(100, 1)\n"
 [tester::#RB6] Wrote .lsp.json: {"python":{"args":["--lsp-fixture","/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/codecrafters-lsp-control-2481982779/server.json"],"command":"/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/TestLSPStagesOffline2536165845/001/lsp-tester","extensionToLanguage":{".py":"python"}}}
-[tester::#RB6] $ ./your_program.sh -p 'Use LSP findReferences on pricing.py at line 1, character 5. Identify every affected caller before changing its return type. Preserve the returned locations; preview.total and comments are unrelated.'
+[tester::#RB6] $ ./your_program.sh -p 'Use LSP findReferences on pricing.py at line 1, character 5, and list the callers that a change to pricing.total'"'"'s return type would affect. Don'"'"'t change any code. Preserve the returned locations; preview.total and comments are unrelated.'
 [your_program] Done.
 [tester::#RB6] Returned the affected pricing callers; excluded unrelated preview.total
 [tester::#RB6] Case affected-callers-across-files passed protocol, tool-result and file checks
@@ -55,7 +55,7 @@
 [tester::#RB6] Wrote pricing.py: "def total(price: int, quantity: int) -> int:\n    return price * quantity\n"
 [tester::#RB6] Wrote reports.py: "from pricing import total\n\n\ndef report_total() -> int:\n    return total(250, 2) + total(100, 1)\n"
 [tester::#RB6] Wrote .lsp.json: {"python":{"args":["--lsp-fixture","/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/codecrafters-lsp-control-862498708/server.json"],"command":"/var/folders/d8/1stg8y356s58xyn273zcyjq40000gn/T/TestLSPStagesOffline2536165845/001/lsp-tester","extensionToLanguage":{".py":"python"}}}
-[tester::#RB6] $ ./your_program.sh -p 'Use LSP findReferences on pricing.py at line 1, character 5. Identify every affected caller before changing its return type. Preserve the returned locations; preview.total and comments are unrelated.'
+[tester::#RB6] $ ./your_program.sh -p 'Use LSP findReferences on pricing.py at line 1, character 5, and list the callers that a change to pricing.total'"'"'s return type would affect. Don'"'"'t change any code. Preserve the returned locations; preview.total and comments are unrelated.'
 [your_program] Done.
 [tester::#RB6] Case no-references passed protocol, tool-result and file checks
 [tester::#RB6] Test passed.

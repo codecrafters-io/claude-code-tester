@@ -483,7 +483,23 @@ func Check(c Case, slug string, config Config, requests []string) error {
 			if len(queryDetails[index]) > 0 {
 				detail = "; " + strings.Join(queryDetails[index], "; ") + " (one-based tool coordinates)"
 			}
-			return fmt.Errorf("missing %s on %s %s%s in the model conversation%s", expected.Operation, expected.File, position, phase, detail)
+			made := "none"
+			if len(queryCalls) > 0 {
+				var summaries []string
+				for _, tool := range queryCalls {
+					operation, _ := tool.Arguments["operation"].(string)
+					file, _ := tool.Arguments["filePath"].(string)
+					line, _ := tool.Arguments["line"].(float64)
+					character, _ := tool.Arguments["character"].(float64)
+					summaries = append(summaries, fmt.Sprintf("%s on %s at line %d, character %d", operation, file, int(line), int(character)))
+				}
+				made = strings.Join(summaries, "; ")
+			}
+			hint := ""
+			if len(queryCalls) == 0 {
+				hint = fmt.Sprintf(". If the model replied without calling the tool, check that the LSP tool's operation enum includes %s", expected.Operation)
+			}
+			return fmt.Errorf("missing %s on %s %s%s in the model conversation%s; the model's LSP calls were: %s%s", expected.Operation, expected.File, position, phase, detail, made, hint)
 		}
 	}
 	if slug == "ql9" {

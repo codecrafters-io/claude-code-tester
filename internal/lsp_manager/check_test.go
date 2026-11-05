@@ -85,6 +85,18 @@ func TestCheckNamesAnExtraServerRequest(t *testing.T) {
 	require.ErrorContains(t, err, "your program sent 1 request(s) to the language server, but the model made only 0 LSP tool call(s)")
 }
 
+// A model that answers without calling the tool is reported as making no LSP calls.
+func TestCheckReportsAModelThatNeverCalledTheTool(t *testing.T) {
+	// Arrange
+	config := initializedLog(t)
+	request := `{"messages":[{"role":"user","content":"Use LSP findReferences on pricing.py"},{"role":"assistant","content":"Would you like me to proceed?"}]}`
+	// Act
+	err := Check(Cases("rb6")[0], "rb6", config, []string{request})
+	// Assert
+	require.ErrorContains(t, err, "missing findReferences on pricing.py at line 1, character 5 in the model conversation; the model's LSP calls were: none")
+	require.ErrorContains(t, err, "check that the LSP tool's operation enum includes findReferences")
+}
+
 func migratedProject(t *testing.T) (Case, string, []call) {
 	t.Helper()
 	c := Cases("ql9")[0]
