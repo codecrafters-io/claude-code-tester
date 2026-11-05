@@ -99,7 +99,7 @@ var testerDefinition = tester_definition.TesterDefinition{
 		{
 			Slug:     "bn2",
 			TestFunc: testLSPSynchronize,
-			Timeout:  190 * time.Second,
+			Timeout:  145 * time.Second,
 		},
 		{
 			Slug:     "ql9",

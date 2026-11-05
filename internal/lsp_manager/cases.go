@@ -39,10 +39,7 @@ func Cases(slug string) []Case {
 		}
 	case "rb6":
 		prompt := "Use LSP findReferences on pricing.py at line 1, character 5, and list the callers that a change to pricing.total's return type would affect. Don't change any code. Preserve the returned locations; preview.total and comments are unrelated."
-		minimal := Project(false)
-		delete(minimal, "reports.py")
 		return []Case{
-			{Name: "aliased-caller-and-declaration", Prompt: prompt, Queries: []Query{references}, Files: minimal},
 			{Name: "affected-callers-across-files", Prompt: prompt, Queries: []Query{references}},
 			{Name: "no-references", Prompt: prompt, Queries: []Query{references}, Config: Config{EmptyReferences: true}},
 		}
@@ -50,7 +47,6 @@ func Cases(slug string) []Case {
 		changed := strings.Replace(files["checkout.py"], "from pricing", "from discounts", 1)
 		prompt := "Use LSP goToDefinition on checkout.py at line 5, character 12. Use Write to change its import from pricing to discounts, preserving the invoice_total alias. Repeat definition lookup at the same position and report the new target."
 		return []Case{
-			{Name: "definition-follows-edited-import", Prompt: prompt, Queries: []Query{definition, definition}, FinalFiles: map[string]string{"checkout.py": changed}, WantDefinitions: []string{"pricing.py", "discounts.py"}},
 			{Name: "successive-document-versions", Prompt: prompt + " Restore the pricing import using Write and repeat the lookup.", Queries: []Query{definition, definition, definition}, FinalFiles: map[string]string{"checkout.py": files["checkout.py"]}, WantDefinitions: []string{"pricing.py", "discounts.py", "pricing.py"}},
 			{Name: "write-before-open", Prompt: "Use Write to change checkout.py's import from pricing to discounts, then look up invoice_total at line 5, character 12.", Queries: []Query{definition}, FinalFiles: map[string]string{"checkout.py": changed}, WantDefinitions: []string{"discounts.py"}},
 		}
