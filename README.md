@@ -17,15 +17,14 @@ Code" challenge.
 
 ## LSP extension
 
-Six graded stages add navigation and synchronized edits to the existing agent
+Five graded stages add navigation and synchronized edits to the existing agent
 loop:
 
-1. dz5: Connect the LSP client and read configuration.
-2. iy3: Advertise the LSP tool without implementing navigation yet.
-3. gz6: Find the implementation with one successful definition lookup and Read.
-4. rb6: Find the affected callers.
-5. bn2: Keep the analysis current.
-6. ql9: Change an API across files.
+1. iy3: Connect the LSP client and advertise the LSP tool without implementing navigation yet.
+2. gz6: Find the implementation with one successful definition lookup and Read.
+3. rb6: Find the affected callers.
+4. bn2: Keep the analysis current.
+5. ql9: Change an API across files.
 
 The supplied transport starts the configured server, handles JSON-RPC framing
 and initialization, and queues notifications while requests are running. The
@@ -33,10 +32,9 @@ tester provides CODECRAFTERS_LSP_URL to the submitted program. The native starte
 clients retrieve extensionToLanguage through the configuration action and call
 request, notify, and notifications through that local URL. Document language IDs
 come from configuration rather than a Python default.
-Every LSP case supplies a connection. The connection stage checks configuration
-before the first model request and uses Read to inspect the example; it passes
-without an advertised LSP tool. The advertisement stage checks the schema in
-every model request and passes before navigation is implemented.
+Every LSP case supplies a connection. The first stage checks configuration
+before the first model request and the schema in every model request, and
+passes before navigation is implemented.
 The definition exercise supplies valid Python files and a single location. It
 does not grade multiple definitions, missing definitions, or server-error tool
 results. Reference lookup later introduces location arrays and empty results.
@@ -75,7 +73,7 @@ line; the model chooses the resulting edits.
 Navigation operations are goToDefinition and findReferences, with filePath and
 one-based UTF-16 coordinates. Protocol positions are zero-based. Configuration
 uses the product's named command/args/extensionToLanguage map. Plugin management,
-hover stages and rename are outside the extension. The two setup IDs dz5/iy3 come from the slugs supplied on 3 November 2026.
+hover stages and rename are outside the extension. The setup stage, iy3, connects the client and advertises the tool. It absorbed the separate connection stage, dz5.
 Later stages retain gz6/rb6/bn2/ql9. The combined setup ID cx7 and retired
 ls1/ir2/hv2 IDs are not reallocated.
 

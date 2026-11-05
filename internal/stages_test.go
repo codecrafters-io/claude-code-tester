@@ -106,7 +106,7 @@ func normalizeTesterOutput(testerOutput []byte) []byte {
 	return requestCountPattern.ReplaceAll(normalized, []byte("sent N request(s)"))
 }
 
-var lspStageSlugs = []string{"dz5", "iy3", "gz6", "rb6", "bn2", "ql9"}
+var lspStageSlugs = []string{"iy3", "gz6", "rb6", "bn2", "ql9"}
 
 func lspOutputTestCase() tester_utils_testing.TesterOutputTestCase {
 	return tester_utils_testing.TesterOutputTestCase{

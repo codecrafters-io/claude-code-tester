@@ -106,7 +106,7 @@ func testLSP(stageHarness *test_case_harness.TestCaseHarness, slug string) error
 			return err
 		}
 		connectionURL := transport.URL
-		if slug == "dz5" || slug == "iy3" {
+		if slug == "iy3" {
 			// Observe setup's configuration call without changing the supplied helper.
 			target, err := url.Parse(transport.URL)
 			if err != nil {
@@ -141,7 +141,7 @@ func testLSP(stageHarness *test_case_harness.TestCaseHarness, slug string) error
 		if result.ExitCode != 0 {
 			return fmt.Errorf("%s: program exited %d; stdout %q; stderr %q", testCase.Name, result.ExitCode, result.Stdout, result.Stderr)
 		}
-		if (slug == "dz5" || slug == "iy3") && !configurationBeforeModel.Load() {
+		if slug == "iy3" && !configurationBeforeModel.Load() {
 			return fmt.Errorf("%s: connect with the supplied client and call configuration with {} before the first model request", testCase.Name)
 		}
 		if err := lsp_manager.Check(testCase, slug, config, recorder.RequestBodies()); err != nil {
@@ -151,9 +151,6 @@ func testLSP(stageHarness *test_case_harness.TestCaseHarness, slug string) error
 			stageHarness.Logger.Successf("Migrated pricing.total and its callers; unrelated preview.total is unchanged")
 			stageHarness.Logger.Successf("Returned current diagnostic feedback for each Write, or an explicit feedback timeout")
 			stageHarness.Logger.Successf("Project tests passed through Bash: checkout 500 cents, reporting 600 cents")
-		}
-		if slug == "dz5" {
-			stageHarness.Logger.Successf("Connected the supplied LSP client and read configuration; tool advertisement is next")
 		}
 		if slug == "iy3" {
 			stageHarness.Logger.Successf("Advertised LSP and returned a matching tool response; definition lookup is next")
