@@ -11,7 +11,9 @@ import (
 // RequestRecorder keeps a copy of every request body that reaches the proxy.
 type RequestRecorder struct {
 	mutex         sync.Mutex
+	dispatch      sync.Mutex
 	requestBodies []string
+	observer      func(string)
 }
 
 // WrapHandler copies each request body before passing the request on. The body
@@ -39,8 +41,19 @@ func (r *RequestRecorder) RequestBodies() []string {
 }
 
 func (r *RequestRecorder) appendRequestBody(requestBody string) {
+	r.dispatch.Lock()
+	defer r.dispatch.Unlock()
+	r.mutex.Lock()
+	r.requestBodies = append(r.requestBodies, requestBody)
+	observer := r.observer
+	r.mutex.Unlock()
+	if observer != nil {
+		observer(requestBody)
+	}
+}
+
+func (r *RequestRecorder) SetObserver(observer func(string)) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
-
-	r.requestBodies = append(r.requestBodies, requestBody)
+	r.observer = observer
 }

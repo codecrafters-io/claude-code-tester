@@ -85,3 +85,52 @@ func TestDiagnosticsAllowNoReports(t *testing.T) {
 	// Assert
 	require.NoError(t, err)
 }
+
+func TestDiagnosticsDoNotRequireSupersededReports(t *testing.T) {
+	for _, variant := range []string{"cleared-before-request", "edited-before-read"} {
+		t.Run(variant, func(t *testing.T) {
+			config := Config{Root: t.TempDir()}
+			one := 1
+			events := publishedLog(t, config.Root, &one, "Superseded error")
+			uri := URI(filepath.Join(config.Root, "checkout.py"))
+			opened, err := json.Marshal(map[string]any{"textDocument": map[string]any{"uri": uri, "version": 1}})
+			require.NoError(t, err)
+			events[0].Message.Params = opened
+			if variant == "cleared-before-request" {
+				cleared, err := json.Marshal(map[string]any{"uri": uri, "version": 1, "diagnostics": []any{}})
+				require.NoError(t, err)
+				events = append(events, Event{Direction: "sent", Message: Message{Method: "textDocument/publishDiagnostics", Params: cleared}})
+			} else {
+				changed, err := json.Marshal(map[string]any{"textDocument": map[string]any{"uri": uri, "version": 2}})
+				require.NoError(t, err)
+				events = append(events, Event{Direction: "received", Message: Message{Method: "textDocument/didChange", Params: changed}})
+			}
+			require.NoError(t, checkDiagnosticsReachedModel(config, events, conversation("Wrote checkout.py")))
+		})
+	}
+}
+
+func checkDiagnosticsReachedModel(config Config, events []Event, requests []string) error {
+	recorder := &DiagnosticRecorder{}
+	var notifications []any
+	for _, event := range events {
+		if event.Direction == "received" {
+			body, err := json.Marshal(map[string]any{"method": event.Message.Method, "params": event.Message.Params})
+			if err != nil {
+				return err
+			}
+			recorder.record("notify", body, []byte("null"))
+		} else if event.Direction == "sent" {
+			notifications = append(notifications, map[string]any{"method": event.Message.Method, "params": event.Message.Params})
+		}
+	}
+	batch, err := json.Marshal(map[string]any{"cursor": len(notifications), "notifications": notifications})
+	if err != nil {
+		return err
+	}
+	recorder.record("notifications", []byte(`{"after":0,"timeoutMs":0}`), batch)
+	for _, request := range requests {
+		recorder.RecordModelRequest(request)
+	}
+	return recorder.Check(config.Root)
+}

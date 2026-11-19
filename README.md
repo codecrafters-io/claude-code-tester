@@ -58,17 +58,21 @@ make test_lsp_with_users_code
 ```
 
 `make test_lsp` runs offline protocol, checker, and reference-client unit tests.
-`make test_lsp_with_users_code` runs all 14 graded cases with the live model and
+`make test_lsp_with_users_code` runs all eight graded cases with the live model and
 requires CODECRAFTERS_SECRET_OPENROUTER_API_KEY. Separate transport tests cover
 fragmented startup, notifications during requests, failed initialization, and
 process cleanup.
 
 The capstone migrates pricing.total from integer cents to a Price TypedDict,
 updates checkout and reporting, repeats navigation, and runs the project tests
-through Bash. Every successful Write must return current diagnostic feedback or
-an explicit diagnostic timeout. Final files, protocol traffic, and matching tool
-results are checked. The shifted-definition case starts with an extra source
-line; the model chooses the resulting edits.
+through Bash. Write saves and synchronizes the file without waiting for
+diagnostics. Before each model request, the agent reads queued notifications
+and appends new, current issues to the latest tool result. The grader records
+the actual notification batches and successful document-version updates at
+these request boundaries. A later report can replace or clear an earlier
+issue before the model sees it. Final files, protocol traffic, and matching
+tool results are also checked. The shifted-definition case starts with an
+extra source line, and the model chooses the resulting edits.
 
 Navigation operations are goToDefinition and findReferences, with filePath and
 one-based UTF-16 coordinates. Protocol positions are zero-based. Configuration
@@ -115,11 +119,14 @@ by Write. Bash stays available because this product version suppresses automatic
 diagnostic attachments without Bash or PowerShell. The scripted model never invokes
 a shell. Neither check uses paid model calls.
 
-Versioned stale reports are rejected; unversioned reports are accepted in arrival
-order and cannot establish which edit was analyzed. Missing feedback is an error.
-The fixture publishes once per open/change except in its missing-feedback case;
-real servers determine publication timing. Cleared diagnostics do not prove
-behavioral correctness.
+Versioned reports must match the document version at the notification read.
+Unversioned reports are accepted in arrival order and cannot establish which
+edit was analyzed. The latest current report replaces that file's earlier
+issues. Empty reports clear them, and unchanged issues must not be added again.
+Missing current feedback is an error. Previously reported issues may remain
+in conversation history. Reports arriving after a read are considered on a
+later read, so shutdown-time publications do not create retroactive grading
+requirements. Cleared diagnostics do not prove behavioral correctness.
 
 ## CI and repository conventions
 
