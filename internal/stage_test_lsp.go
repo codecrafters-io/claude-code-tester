@@ -102,12 +102,16 @@ func testLSP(stageHarness *test_case_harness.TestCaseHarness, slug string) error
 		oldTransport, hadTransport := os.LookupEnv("CODECRAFTERS_LSP_URL")
 		var setupProxy *httptest.Server
 		var configurationBeforeModel atomic.Bool
+		diagnostics := &lsp_manager.DiagnosticRecorder{}
+		if slug == "ql9" {
+			recorder.SetObserver(diagnostics.RecordModelRequest)
+		}
 		transport, err := lsp_transport.Start(filepath.Join(project, ".lsp.json"))
 		if err != nil {
 			return err
 		}
 		connectionURL := transport.URL
-		if slug == "iy3" {
+		if slug == "iy3" || slug == "ql9" {
 			// Observe setup's configuration call without changing the supplied helper.
 			target, err := url.Parse(transport.URL)
 			if err != nil {
@@ -115,6 +119,9 @@ func testLSP(stageHarness *test_case_harness.TestCaseHarness, slug string) error
 				return err
 			}
 			proxy := httputil.NewSingleHostReverseProxy(target)
+			if slug == "ql9" {
+				proxy.Transport = diagnostics
+			}
 			setupProxy = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				if r.Method == http.MethodPost && r.URL.Path == "/configuration" && len(recorder.RequestBodies()) == 0 {
 					configurationBeforeModel.Store(true)
@@ -152,6 +159,9 @@ func testLSP(stageHarness *test_case_harness.TestCaseHarness, slug string) error
 			return fmt.Errorf("%s: %w", testCase.Name, err)
 		}
 		if slug == "ql9" {
+			if err := diagnostics.Check(config.Root); err != nil {
+				return fmt.Errorf("%s: %w", testCase.Name, err)
+			}
 			stageHarness.Logger.Successf("Migrated pricing.total and its callers; unrelated preview.total is unchanged")
 			stageHarness.Logger.Successf("Reported new diagnostics to the model, including errors in callers that were not written")
 			stageHarness.Logger.Successf("Project tests passed through Bash: checkout 500 cents, reporting 600 cents")

@@ -47,3 +47,19 @@ func TestRequestRecorderReturnsACopy(t *testing.T) {
 func TestRequestRecorderStartsEmpty(t *testing.T) {
 	assert.Empty(t, (&RequestRecorder{}).RequestBodies())
 }
+
+func TestRequestRecorderObservesBeforeForwarding(t *testing.T) {
+	recorder := &RequestRecorder{}
+	observed := ""
+	recorder.SetObserver(func(body string) {
+		observed = body
+		assert.Equal(t, []string{body}, recorder.RequestBodies())
+	})
+	handler := recorder.WrapHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "request body", observed)
+		body, err := io.ReadAll(r.Body)
+		assert.NoError(t, err)
+		assert.Equal(t, observed, string(body))
+	}))
+	handler.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodPost, "/api/v1/chat/completions", strings.NewReader("request body")))
+}

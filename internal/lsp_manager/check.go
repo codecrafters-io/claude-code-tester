@@ -471,7 +471,7 @@ func Check(c Case, slug string, config Config, requests []string) error {
 		if err := checkMigration(c, config.Root, allCalls); err != nil {
 			return err
 		}
-		return checkDiagnosticsReachedModel(config, events, requests)
+		return nil
 	}
 
 	files := c.Files
